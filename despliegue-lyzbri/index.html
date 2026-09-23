@@ -1,0 +1,2589 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Plataforma de evaluación y orientación legal digital en Colombia: Hábeas Data, deudas, registro de marca y derechos de familias con hijos TEA o con discapacidad. Empieza gratis y sin promesas de resultado." />
+  <title>Lyzbri | Evaluación y Orientación Legal Digital en Colombia</title>
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Lyzbri reemplaza a un abogado?", "acceptedAnswer": {"@type": "Answer", "text": "No. Lyzbri es un punto de entrada jurídico estructurado. Cuando el caso lo requiere, la gestión es realizada o revisada por profesionales del derecho."}}, {"@type": "Question", "name": "¿Cómo me van a contactar?", "acceptedAnswer": {"@type": "Answer", "text": "A través del WhatsApp que nos dejes en el formulario. El contacto directo con nuestro equipo se habilita en las siguientes etapas del proceso, una vez precalificamos tu caso."}}, {"@type": "Question", "name": "¿Esto reemplaza una consulta jurídica tradicional?", "acceptedAnswer": {"@type": "Answer", "text": "No necesariamente. La evaluación inicial organiza la información; cualquier recomendación jurídica definitiva requiere revisión profesional."}}, {"@type": "Question", "name": "¿Qué pasa con mis datos personales?", "acceptedAnswer": {"@type": "Answer", "text": "Usamos tu información únicamente para evaluar tu caso, conforme a nuestra Política de Tratamiento de Datos y Aviso de Privacidad."}}, {"@type": "Question", "name": "¿Me van a sacar de Datacrédito o CIFIN?", "acceptedAnswer": {"@type": "Answer", "text": "No lo prometemos. Revisamos tu caso y te decimos si existe base jurídica para reclamar o corregir información reportada, según la Ley 1266 de 2008."}}, {"@type": "Question", "name": "¿La evaluación inicial tiene costo?", "acceptedAnswer": {"@type": "Answer", "text": "No. La evaluación inicial es gratuita. Si decides avanzar con un servicio pago, verás el alcance y el valor antes de contratar."}}, {"@type": "Question", "name": "¿Qué derechos tiene mi hijo con TEA en salud y educación?", "acceptedAnswer": {"@type": "Answer", "text": "Depende de tu caso. La evaluación gratuita identifica qué normas aplican (Ley TEA, Ley 1618 de 2013, Decreto 1421 de 2017, entre otras) y cuál es el primer paso concreto."}}]}
+  </script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"LegalService","name":"Lyzbri","description":"Plataforma de evaluación y orientación legal digital en Colombia: Hábeas Data, gestión de deudas, registro de marca y derechos de familias con hijos con TEA o discapacidad.","areaServed":{"@type":"Country","name":"Colombia"},"availableLanguage":"es","serviceType":["Hábeas Data","Gestión de deudas","Registro de marca","TEA y discapacidad"]}
+  </script>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --bg-2: #eef3f9;
+      --surface: rgba(255, 255, 255, 0.82);
+      --surface-strong: #ffffff;
+      --text: #10233f;
+      --muted: #5d6b83;
+      --line: rgba(16, 35, 63, 0.12);
+      --accent: #173b72;
+      --accent-2: #0f7f8c;
+      --accent-3: #b38a4c;
+      --success: #1f8a5b;
+      --shadow: 0 18px 50px rgba(16, 35, 63, 0.10);
+      --shadow-soft: 0 10px 24px rgba(16, 35, 63, 0.08);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --container: 1160px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(23, 59, 114, 0.10), transparent 35%),
+        radial-gradient(circle at top right, rgba(15, 127, 140, 0.10), transparent 32%),
+        linear-gradient(180deg, var(--bg) 0%, #fafcff 100%);
+      text-wrap: pretty;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    button { font: inherit; }
+
+    .shell {
+      width: min(100%, var(--container));
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(18px);
+      background: rgba(245, 247, 251, 0.75);
+      border-bottom: 1px solid rgba(16, 35, 63, 0.08);
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 72px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background:
+        linear-gradient(135deg, var(--accent) 0%, #244f92 55%, var(--accent-2) 100%);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      box-shadow: 0 10px 28px rgba(23, 59, 114, 0.28);
+      flex: none;
+    }
+
+    .brand-copy { min-width: 0; }
+    .brand-name {
+      font-size: 0.98rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      margin: 0;
+    }
+    .brand-tag {
+      font-size: 0.83rem;
+      color: var(--muted);
+      margin: 1px 0 0;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid rgba(16, 35, 63, 0.10);
+      background: rgba(255,255,255,0.80);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      box-shadow: 0 8px 24px rgba(16, 35, 63, 0.05);
+    }
+
+    .pill-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent-2), var(--success));
+      box-shadow: 0 0 0 5px rgba(15, 127, 140, 0.08);
+    }
+
+    .hero {
+      padding: 28px 0 24px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+      align-items: stretch;
+      min-height: calc(100svh - 96px);
+    }
+
+    .hero-main,
+    .hero-aside,
+    .card,
+    .section-box,
+    .faq-item {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-main {
+      padding: clamp(24px, 4vw, 42px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .hero-main::before,
+    .hero-main::after {
+      content: "";
+      position: absolute;
+      inset: auto;
+      border-radius: 999px;
+      pointer-events: none;
+      z-index: -1;
+      filter: blur(0);
+    }
+
+    .hero-main::before {
+      width: 260px;
+      height: 260px;
+      right: -80px;
+      top: -70px;
+      background: radial-gradient(circle, rgba(15, 127, 140, 0.16), transparent 70%);
+    }
+
+    .hero-main::after {
+      width: 320px;
+      height: 320px;
+      left: -120px;
+      bottom: -160px;
+      background: radial-gradient(circle, rgba(179, 138, 76, 0.14), transparent 72%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 18px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 34px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent-3), var(--accent));
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      max-width: 20ch;
+    }
+
+    .hero-copy {
+      margin-top: 20px;
+      max-width: 62ch;
+      font-size: clamp(1rem, 1.45vw, 1.17rem);
+      color: var(--muted);
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .btn {
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, border-color 180ms ease;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, #214d8f 55%, var(--accent-2) 100%);
+      color: #fff;
+      box-shadow: 0 14px 32px rgba(23, 59, 114, 0.28);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.90);
+      color: var(--accent);
+      border-color: rgba(23, 59, 114, 0.18);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--accent);
+      border-color: rgba(23, 59, 114, 0.14);
+    }
+
+    .hero-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .meta-card {
+      border-radius: 18px;
+      padding: 14px 14px 15px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(16, 35, 63, 0.10);
+    }
+
+    .meta-label {
+      display: block;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .meta-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .hero-aside {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      justify-content: space-between;
+    }
+
+    .aside-panel {
+      padding: 18px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(245, 248, 252, 0.90));
+      border: 1px solid rgba(16, 35, 63, 0.09);
+    }
+
+    .aside-kicker {
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      margin: 0 0 8px;
+    }
+
+    .aside-title {
+      margin: 0;
+      font-size: 1.16rem;
+      line-height: 1.15;
+    }
+
+    .aside-text {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .checklist {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .check {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 11px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.74);
+      border: 1px solid rgba(16, 35, 63, 0.09);
+      color: var(--text);
+      font-size: 0.94rem;
+    }
+
+    .check svg {
+      width: 18px;
+      height: 18px;
+      color: var(--success);
+      flex: none;
+      margin-top: 2px;
+    }
+
+    .note {
+      font-size: 0.84rem;
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    section {
+      padding: 16px 0 0;
+    }
+
+    .section-box {
+      padding: clamp(22px, 3vw, 34px);
+      margin-top: 18px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: clamp(1.55rem, 2.5vw, 2.2rem);
+      letter-spacing: -0.03em;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 46ch;
+      font-size: 0.97rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.88);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .card h3 a { color: inherit; }
+    .card h3 a:hover { text-decoration: underline; }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 1.03rem;
+      letter-spacing: -0.02em;
+    }
+
+    .card p, .card li {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .card ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(23, 59, 114, 0.08);
+      border: 1px solid rgba(23, 59, 114, 0.10);
+      padding: 8px 10px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    .tag::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent-3), var(--accent-2));
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .step {
+      position: relative;
+      padding-top: 16px;
+    }
+
+    .step-num {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 10px 24px rgba(23, 59, 114, 0.22);
+      margin-bottom: 12px;
+    }
+
+    .step h3 { margin: 0 0 8px; font-size: 1rem; }
+    .step p { margin: 0; color: var(--muted); font-size: 0.93rem; }
+
+    .pricing {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+    }
+
+    .price-card {
+      position: relative;
+      overflow: hidden;
+      background: rgba(255,255,255,0.9);
+    }
+
+    .price-card.featured {
+      border-color: rgba(23, 59, 114, 0.22);
+      box-shadow: 0 24px 58px rgba(23, 59, 114, 0.12);
+    }
+
+    .price-label {
+      display: inline-flex;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(15, 127, 140, 0.08);
+      color: var(--accent-2);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .price {
+      margin: 8px 0 10px;
+      font-size: clamp(2rem, 3vw, 2.7rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+    }
+
+    .price small {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: normal;
+    }
+
+    .price-list {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .price-list li + li { margin-top: 8px; }
+
+    .faq {
+      display: grid;
+      gap: 12px;
+    }
+
+    .faq-item {
+      padding: 18px 18px 16px;
+      background: rgba(255,255,255,0.88);
+    }
+
+    .faq-item summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      font-weight: 750;
+    }
+
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after {
+      content: "+";
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(23, 59, 114, 0.08);
+      color: var(--accent);
+      flex: none;
+      transition: transform 180ms ease;
+    }
+
+    .faq-item[open] summary::after { content: "–"; }
+    .faq-item p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      max-width: 70ch;
+    }
+
+    .footer-cta {
+      margin: 22px 0 34px;
+      padding: clamp(22px, 3.5vw, 32px);
+      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(23, 59, 114, 0.98), rgba(15, 127, 140, 0.94));
+      color: white;
+      box-shadow: 0 26px 60px rgba(23, 59, 114, 0.24);
+    }
+
+    .footer-cta .section-head h2,
+    .footer-cta .section-head p,
+    .footer-cta .note,
+    .footer-cta .card p,
+    .footer-cta .card li { color: rgba(255,255,255,0.92); }
+
+    .footer-cta .card,
+    .footer-cta .section-box,
+    .footer-cta .faq-item {
+      background: rgba(255,255,255,0.10);
+      border-color: rgba(255,255,255,0.16);
+      box-shadow: none;
+    }
+
+    .footer-cta .tag {
+      color: #fff;
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .footer-cta .btn-secondary {
+      background: rgba(255,255,255,0.96);
+      color: var(--accent);
+    }
+
+    .footer-legal {
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .links-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-top: 14px;
+      font-size: 0.85rem;
+    }
+
+    .links-row a {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .footer-cta .links-row a { color: rgba(255,255,255,0.92); }
+
+    .mobile-cta {
+      display: none;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(245, 247, 251, 0.94);
+      border-top: 1px solid rgba(16, 35, 63, 0.08);
+      backdrop-filter: blur(16px);
+      gap: 10px;
+    }
+
+    .mobile-cta .btn {
+      flex: 1;
+      min-height: 48px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .fine-print {
+      color: var(--muted);
+      font-size: 0.86rem;
+      margin-top: 10px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .chip {
+      padding: 9px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.74);
+      border: 1px solid rgba(16, 35, 63, 0.08);
+      color: var(--accent);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    /* --- V2: selector de servicios y formulario --- */
+
+    .selector-card {
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+      text-align: left;
+      width: 100%;
+      border: 1px solid var(--line);
+    }
+
+    .selector-card:hover { transform: translateY(-2px); }
+
+    .selector-card.is-selected {
+      border-color: var(--accent-2);
+      background: rgba(15, 127, 140, 0.08);
+      box-shadow: 0 18px 40px rgba(15, 127, 140, 0.16);
+    }
+
+    .selector-card .btn { margin-top: 14px; align-self: flex-start; }
+
+    .service-includes {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 0.93rem;
+    }
+
+    .service-includes li {
+      padding: 7px 0 7px 22px;
+      position: relative;
+      border-top: 1px solid rgba(16, 35, 63, 0.08);
+    }
+
+    .service-includes li::before {
+      content: "✓";
+      color: var(--accent-2);
+      font-weight: 800;
+      position: absolute;
+      left: 0;
+    }
+
+    /* La información extensa se trasladará a páginas individuales por servicio.
+       Se conserva temporalmente en el archivo para no reconstruir la landing desde cero. */
+    /* ---------- GUÍAS (BLOG) ---------- */
+    .guias { display:flex; flex-direction:column; gap:12px; }
+    .guia { background:rgba(255,255,255,0.9); border:1px solid var(--line); border-radius:var(--radius-lg); box-shadow:var(--shadow-soft); }
+    .guia summary { list-style:none; cursor:pointer; padding:16px 18px; display:flex; flex-direction:column; align-items:flex-start; gap:8px; position:relative; padding-right:48px; }
+    .guia summary::-webkit-details-marker { display:none; }
+    .guia summary::after { content:"+"; position:absolute; right:18px; top:16px; font-size:1.5rem; line-height:1; color:var(--accent); font-weight:700; }
+    .guia[open] summary::after { content:"−"; }
+    .guia summary .tag { margin:0; }
+    .guia summary h3 { margin:0; font-size:1.12rem; letter-spacing:-0.02em; line-height:1.3; }
+    .guia-cuerpo { padding:0 18px 20px; }
+    .guia-cuerpo h4 { margin:22px 0 6px; font-size:1.08rem; letter-spacing:-0.01em; }
+    .guia-cuerpo p, .guia-cuerpo li { color:var(--text); line-height:1.65; font-size:1rem; }
+    .guia-cuerpo ul, .guia-cuerpo ol { padding-left:22px; margin:6px 0 0; }
+    .guia-cuerpo .btn { margin-top:16px; }
+    .blog-resp { background:rgba(15,127,140,0.08); border:1px solid rgba(15,127,140,0.22); border-radius:var(--radius-md); padding:14px 16px; margin:4px 0 6px; }
+    .blog-resp strong { display:block; margin-bottom:6px; color:var(--accent-2); font-size:0.8rem; letter-spacing:.05em; text-transform:uppercase; }
+    .blog-resp p { margin:0; }
+    .legacy-service-detail { display: none; }
+    .precios-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .precios-grid .card h3 { margin:0 0 10px; }
+    .precio-linea { display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px solid rgba(23,59,114,0.10); font-size:0.95rem; }
+    .precio-linea span:last-child { font-weight:800; white-space:nowrap; }
+    .precio-linea small { display:block; font-weight:500; opacity:.75; }
+    #aviso-pago { display:none; margin:18px auto 0; }
+    @media (max-width: 720px) { .precios-grid { grid-template-columns:minmax(0,1fr); } }
+
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 6px;
+    }
+
+    .form-grid.full { grid-template-columns: 1fr; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      font: inherit;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(16, 35, 63, 0.18);
+      background: rgba(255,255,255,0.92);
+      color: var(--text);
+    }
+
+    .field textarea { resize: vertical; min-height: 88px; }
+
+    .conditional-block {
+      margin-top: 4px;
+      padding-top: 4px;
+    }
+
+    /* ---------- Wizard: una pregunta por pantalla ---------- */
+    .wizard-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .btn-back {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 6px 0;
+    }
+    .btn-back:hover { color: var(--accent); }
+
+    .wizard-question {
+      font-size: clamp(1.1rem, 2.2vw, 1.35rem);
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      margin: 0 0 18px;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 640px) {
+      .choice-grid.two-col { grid-template-columns: 1fr 1fr; }
+    }
+
+    .choice-btn {
+      text-align: left;
+      padding: 18px 18px;
+      min-height: 56px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--line);
+      background: rgba(255,255,255,0.9);
+      color: var(--text);
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+    }
+    .choice-btn:hover { border-color: var(--accent-2); transform: translateY(-1px); }
+    .choice-btn.is-selected {
+      border-color: var(--accent-2);
+      background: rgba(15, 127, 140, 0.10);
+    }
+
+    .wizard-actions {
+      margin-top: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .consent-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: 18px;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .consent-row input { margin-top: 3px; flex: none; }
+
+    .form-actions {
+      margin-top: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .lawyer-box { display: grid; grid-template-columns: 96px 1fr; gap: 22px; align-items: start; }
+    .lawyer-avatar { width: 96px; height: 96px; border-radius: 28px; display: grid; place-items: center; font-size: 2rem; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+    .lawyer-box h3 { margin: 0 0 4px; font-size: 1.3rem; }
+    .lawyer-role { color: var(--accent-2); font-weight: 700; font-size: 0.92rem; margin: 0 0 10px; }
+    @media (max-width: 700px) { .lawyer-box { grid-template-columns: 1fr; } }
+    .trust { margin-top: 18px; }
+    .trust-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .trust-item { display: flex; gap: 14px; align-items: flex-start; padding: 18px; border-radius: var(--radius-lg); background: rgba(255,255,255,0.88); border: 1px solid var(--line); box-shadow: var(--shadow-soft); }
+    .trust-icon { flex: none; width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+    .trust-icon svg { width: 22px; height: 22px; }
+    .trust-item h3 { margin: 0 0 4px; font-size: 1rem; letter-spacing: -0.01em; }
+    .trust-item p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+    h1 { max-width: none; }
+
+    @media (max-width: 1024px) {
+      .trust-grid { grid-template-columns: 1fr; }
+      .hero-grid,
+      .steps,
+      .pricing,
+      .grid-3,
+      .grid-4 { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .hero-grid { min-height: auto; }
+      .hero-main { min-height: auto; }
+      .hero-meta { grid-template-columns: 1fr; }
+      .section-head { flex-direction: column; align-items: flex-start; }
+      .top-actions .pill { display: none; }
+    }
+
+    @media (max-width: 700px) {
+      .topbar-inner { min-height: 64px; }
+      .brand-mark { width: 40px; height: 40px; border-radius: 12px; }
+      .hero { padding-top: 20px; }
+      h1 { font-size: clamp(1.75rem, 7.4vw, 2.2rem); line-height: 1.08; letter-spacing: -0.03em; }
+      .hero-main { padding: 20px 18px; }
+      .eyebrow { margin-bottom: 10px; }
+      .hero-copy { margin-top: 12px; font-size: 0.98rem; }
+      .cta-row { flex-direction: column; margin-top: 18px; }
+      .btn { width: 100%; }
+      .aside-panel { padding: 16px; }
+      .section-box { padding: 20px 18px; }
+      .mobile-cta { display: flex; }
+      body { padding-bottom: 86px; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+    @media (max-width: 720px) { .top-actions { flex-wrap:nowrap; gap:8px; } .top-actions .btn { width:auto; min-height:42px; padding:0 14px; } .brand-tag { display:none; } }
+
+    .legal{display:none;padding:28px 0}
+    .legal:target{display:block}
+    .legal .section-box{max-width:820px}
+    .legal h2{margin-bottom:6px}
+    .legal h3{margin:22px 0 6px;font-size:1.05rem}
+    .legal p,.legal li{color:var(--text);line-height:1.65}
+    .legal ul{padding-left:20px;margin:6px 0}
+    .legal .legal-fecha{color:var(--muted);font-size:.9rem}
+    .legal .legal-volver{display:inline-block;margin-top:18px;font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand" aria-label="Lyzbri, soluciones legales digitales">
+        <div class="brand-mark">L</div>
+        <div class="brand-copy">
+          <p class="brand-name">Lyzbri</p>
+          <p class="brand-tag">Soluciones legales digitales</p>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <span class="pill"><span class="pill-dot"></span> Evaluación inicial gratuita</span>
+        <a class="btn btn-secondary" href="#blog">Blog</a>
+        <a class="btn btn-primary" href="#contacto">Empezar ahora</a>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div class="shell">
+      <article id="aviso-pago" class="card"><h3>Gracias por continuar</h3><p>Cuando Wompi confirme tu pago, revisaremos tu caso y te escribiremos al WhatsApp que dejaste en el formulario.</p></article>
+      <article id="formulario-detallado-container" class="card" style="display:none;"></article>
+    </div>
+    <section class="hero">
+      <div class="shell hero-grid">
+        <article class="hero-main">
+          <div>
+            <p class="eyebrow" id="hero-eyebrow">Lyzbri · Soluciones legales digitales</p>
+            <h1 id="hero-h1">Plataforma de Evaluación y Orientación Legal Digital en Colombia</h1>
+            <p class="hero-copy" id="hero-copy">
+              Hábeas Data, deudas, registro de marca y derechos de familias con hijos TEA o con discapacidad. Cuéntanos lo esencial de tu situación y conoce tu siguiente paso, sin costo.
+            </p>
+
+            <div class="cta-row">
+              <a class="btn btn-primary" id="hero-cta" href="#contacto">Empezar evaluación gratuita</a>
+            </div>
+
+            <div class="hero-meta" aria-label="puntos clave de Lyzbri">
+              <div class="meta-card">
+                <span class="meta-label">Enfoque</span>
+                <div class="meta-value">Evaluación inicial clara y precisa</div>
+              </div>
+              <div class="meta-card">
+                <span class="meta-label">Servicios</span>
+                <div class="meta-value">Hábeas Data · Gestiona tu Deuda · Marca · TEA</div>
+              </div>
+              <div class="meta-card">
+                <span class="meta-label">Entrega</span>
+                <div class="meta-value">100% online</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chips" aria-label="características de Lyzbri">
+            <span class="chip">Colombia</span>
+            <span class="chip">Hábeas Data</span>
+            <span class="chip">Gestiona tu Deuda</span>
+            <span class="chip">Registro de marca</span>
+            <span class="chip">TEA y discapacidad</span>
+            <span class="chip">Evaluación inicial gratuita</span>
+          </div>
+        </article>
+
+        <aside class="hero-aside">
+          <div class="aside-panel">
+            <p class="aside-kicker">Cómo funciona</p>
+            <h2 class="aside-title">Ordena tu caso, aclara tus opciones y define el siguiente paso.</h2>
+
+            <div class="checklist">
+              <div class="check">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Preguntas breves según el servicio que elijas</span>
+              </div>
+              <div class="check">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Resultado inicial y próximos datos relevantes</span>
+              </div>
+              <div class="check">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Revisión profesional antes de cualquier gestión jurídica</span>
+              </div>
+            </div>
+
+            <p class="note" style="margin-top: 16px;">
+              La ruta jurídica definitiva y el alcance del servicio se confirman con revisión profesional, antes de contratar.
+            </p>
+          </div>
+
+          <div class="aside-panel">
+            <p class="aside-kicker">Familias con hijos TEA o discapacidad</p>
+            <h2 class="aside-title">Tu hijo tiene derechos claros. Empecemos por saber cuáles aplican a tu caso.</h2>
+            <p class="aside-text">
+              Una evaluación legal gratuita, en minutos, para familias que enfrentan barreras en salud, educación o espacios deportivos por la condición de su hijo o hija. Construido sobre la Ley TEA y casos reales.
+            </p>
+            <div class="cta-row" style="margin-top: 14px;">
+              <a class="btn btn-primary" href="#contacto" onclick="startWizard('tea')">Empezar evaluación gratuita</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="trust" aria-label="Confianza y marco legal">
+      <div class="shell">
+        <div class="trust-grid">
+          <div class="trust-item">
+            <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 12l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <div><h3>Enmarcado en la ley colombiana</h3><p>Ley 1266 de 2008, Ley 1581 de 2012 y Ley TEA.</p></div>
+          </div>
+          <div class="trust-item">
+            <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v18M5 7h14M7 7l-3 7a3 3 0 006 0L7 7zm10 0l-3 7a3 3 0 006 0l-3-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <div><h3>Revisión por profesionales del derecho</h3><p>La tecnología organiza tu caso; las decisiones jurídicas las revisa un abogado.</p></div>
+          </div>
+          <div class="trust-item">
+            <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 018 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+            <div><h3>100% confidencial y digital</h3><p>Tus datos se usan solo para evaluar tu caso, conforme a nuestra política de tratamiento de datos.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="servicios">
+      <div class="shell section-box">
+        <div class="section-head">
+          <div>
+            <h2>¿Qué necesitas resolver?</h2>
+            <p>Elige el tema que más se parece a tu situación. La evaluación inicial es breve y gratuita.</p>
+          </div>
+        </div>
+
+        <div class="grid-4">
+          <article class="card">
+            <span class="tag">Reportes negativos</span>
+            <h3><a href="?servicio=habeas-data">Hábeas Data: reportes negativos en Datacrédito y CIFIN</a></h3>
+            <p>Organiza la información de un reporte que te preocupa y conoce los datos necesarios para una revisión profesional.</p>
+            <ul class="service-includes">
+              <li>Preguntas adaptadas a tu situación</li>
+              <li>Lista inicial de soportes relevantes</li>
+              <li>Siguiente paso claro</li>
+            </ul>
+            <div class="cta-row"><a class="btn btn-primary" href="#contacto" onclick="startWizard('habeas-data')">Evaluar mi reporte gratis</a></div>
+          </article>
+
+          <article class="card">
+            <span class="tag">Evaluación + estrategia</span>
+            <h3><a href="?servicio=deudas">Gestiona tu Deuda: asesoría legal en deudas y cobranza</a></h3>
+            <p>Ordena la información de tus obligaciones para identificar qué datos harán falta antes de una evaluación jurídica.</p>
+            <ul class="service-includes">
+              <li>Panorama inicial de obligaciones</li>
+              <li>Datos clave para la evaluación</li>
+              <li>Siguiente paso claro</li>
+            </ul>
+            <div class="cta-row"><a class="btn btn-primary" href="#contacto" onclick="startWizard('deudas')">Revisar el estado de mis deudas</a></div>
+          </article>
+
+          <article class="card">
+            <span class="tag">Registro + acompañamiento</span>
+            <h3><a href="?servicio=marca">Registro de marca: nombre y logo ante la SIC</a></h3>
+            <p>Empieza por organizar lo esencial de tu solicitud antes de definir el alcance del acompañamiento jurídico.</p>
+            <ul class="service-includes">
+              <li>Revisión inicial del tipo de marca</li>
+              <li>Información para definir cobertura</li>
+              <li>Siguiente paso claro</li>
+            </ul>
+            <div class="cta-row"><a class="btn btn-primary" href="#contacto" onclick="startWizard('marca')">Consultar viabilidad de marca</a></div>
+          </article>
+
+          <article class="card">
+            <span class="tag">Familias TEA y discapacidad</span>
+            <h3><a href="?servicio=tea">TEA y discapacidad: derechos de tu hijo en salud y educación</a></h3>
+            <p>Evaluación gratuita para familias que enfrentan barreras en salud, educación o espacios deportivos por TEA u otra condición del neurodesarrollo o discapacidad de su hijo o hija.</p>
+            <ul class="service-includes">
+              <li>Ley aplicable a tu caso (Ley TEA, Ley 1618 de 2013 y normativa conexa)</li>
+              <li>Primer paso concreto a seguir</li>
+              <li>Siguiente paso claro</li>
+            </ul>
+            <div class="cta-row"><a class="btn btn-primary" href="#contacto" onclick="startWizard('tea')">Evaluar el caso de mi hijo gratis</a></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="proceso">
+      <div class="shell section-box">
+        <div class="section-head">
+          <div>
+            <h2>Cómo funciona</h2>
+            <p>Un recorrido breve para entender tu punto de partida antes de decidir si deseas contratar una gestión.</p>
+          </div>
+        </div>
+
+        <div class="steps">
+          <article class="card step">
+            <div class="step-num">1</div>
+            <h3>Elige tu tema</h3>
+            <p>Selecciona Hábeas Data, Gestiona tu Deuda o registro de marca.</p>
+          </article>
+          <article class="card step">
+            <div class="step-num">2</div>
+            <h3>Responde lo esencial</h3>
+            <p>Completa preguntas breves, sin subir documentos en este paso.</p>
+          </article>
+          <article class="card step">
+            <div class="step-num">3</div>
+            <h3>Recibe tu resultado inicial</h3>
+            <p>Conoce qué información falta y si corresponde avanzar a una evaluación o gestión contratada.</p>
+          </article>
+        </div>
+
+        <p class="note" style="margin-top: 18px;">
+          La tecnología organiza la información y hace preguntas adaptativas. Las decisiones jurídicas siempre requieren revisión y criterio profesional.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================= HÁBEAS DATA ================= -->
+    <section id="habeas-data" class="legacy-service-detail">
+      <div class="shell section-box">
+        <div class="section-head">
+          <div>
+            <span class="tag">Servicio 1 · Reportes negativos</span>
+            <h2>Evaluación Hábeas Data + Ruta de Acción</h2>
+            <p>Revisamos tu reporte crediticio y los documentos aportados para saber si existe base jurídica para reclamar.</p>
+          </div>
+        </div>
+
+        <p class="note" style="max-width: 70ch; margin-bottom: 10px; font-size: 1rem;">
+          <strong>Antes de hablar de trámites:</strong> dejas de sentirte impotente frente a un reporte que no entiendes. Vas a saber con certeza en qué punto estás y qué puedes hacer al respecto.
+        </p>
+
+        <p class="note" style="max-width: 70ch; margin-bottom: 18px;">
+          Revisamos el reporte y los documentos aportados, identificamos posibles inconsistencias, analizamos antecedentes relevantes y determinamos qué alternativas jurídicas pueden ser procedentes. Cuando corresponde, elaboramos o gestionamos la reclamación según el servicio contratado. No prometemos borrar reportes ni dar resultados automáticos o garantizados.
+        </p>
+
+        <div class="grid-2">
+          <article class="card">
+            <span class="tag">Incluye</span>
+            <h3>Evaluación + ruta operativa</h3>
+            <ul>
+              <li>Revisión de reporte o soportes aportados</li>
+              <li>Análisis de posibles inconsistencias</li>
+              <li>Clasificación del caso</li>
+              <li>Recomendación del siguiente paso</li>
+              <li>Redacción de reclamación inicial cuando corresponda</li>
+              <li>Seguimiento básico de la respuesta</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <span class="tag">No incluye</span>
+            <h3>Límites del producto</h3>
+            <ul>
+              <li>Promesa de eliminación del reporte</li>
+              <li>Garantía de resultado</li>
+              <li>Litigio completo</li>
+              <li>Asesoría ilimitada por chat</li>
+              <li>Negociación de deuda, salvo servicio adicional</li>
+              <li>Acciones judiciales sin revisión profesional previa</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="grid-3" style="margin-top: 14px;">
+          <article class="card">
+            <span class="tag">Caso fuerte</span>
+            <h3>Hay base para reclamar</h3>
+            <ul>
+              <li>La obligación ya fue pagada y el dato sigue apareciendo</li>
+              <li>El reporte no tiene soporte suficiente</li>
+              <li>Hay errores de identificación</li>
+              <li>Hay inconsistencias en fechas, saldos o estado de la obligación</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <span class="tag">Caso medio</span>
+            <h3>Faltan documentos o validaciones</h3>
+            <ul>
+              <li>La cronología no está clara</li>
+              <li>Se necesita confirmar quién reportó</li>
+              <li>Hace falta más evidencia</li>
+              <li>Se debe revisar la legitimación para reclamar</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <span class="tag">Caso débil</span>
+            <h3>No es viable por ahora</h3>
+            <ul>
+              <li>El reporte parece correcto</li>
+              <li>No existe soporte mínimo</li>
+              <li>El cliente solo quiere que desaparezca</li>
+              <li>El problema realmente es una deuda vigente</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="section-head" style="margin-top: 24px;">
+          <div>
+            <h2 style="font-size: clamp(1.3rem, 2vw, 1.7rem);">Precio de lanzamiento</h2>
+            <p>Precios de lanzamiento, sujetos a validación de mercado.</p>
+          </div>
+        </div>
+
+        <div class="pricing">
+          <article class="card price-card">
+            <span class="price-label">Entrada</span>
+            <h3>Evaluación básica</h3>
+            <div class="price">COP 99.000 <small>desde</small></div>
+            <ul class="price-list">
+              <li>Revisión inicial</li>
+              <li>Clasificación del caso</li>
+              <li>Ruta recomendada</li>
+            </ul>
+          </article>
+
+          <article class="card price-card featured">
+            <span class="price-label">Más vendido</span>
+            <h3>Evaluación + reclamación</h3>
+            <div class="price">COP 229.000 <small>desde</small></div>
+            <ul class="price-list">
+              <li>Evaluación completa</li>
+              <li>Borrador de reclamación</li>
+              <li>Seguimiento básico</li>
+            </ul>
+          </article>
+
+          <article class="card price-card">
+            <span class="price-label">Premium</span>
+            <h3>Gestión completa</h3>
+            <div class="price">A medida</div>
+            <ul class="price-list">
+              <li>Más seguimiento</li>
+              <li>Más actuaciones</li>
+              <li>Valor según complejidad</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="faq" style="margin-top: 18px;">
+          <details class="faq-item">
+            <summary>¿Me van a sacar de Datacrédito?</summary>
+            <p>No lo prometemos. Revisamos tu caso y te decimos si existe base jurídica para reclamar o corregir información.</p>
+          </details>
+          <details class="faq-item">
+            <summary>¿Sirve si ya hice un reclamo antes?</summary>
+            <p>Sí. Podemos revisar lo que ya presentaste y definir qué faltó o cuál sería el siguiente paso.</p>
+          </details>
+          <details class="faq-item">
+            <summary>¿Puedo contratar solo la evaluación?</summary>
+            <p>Sí. La evaluación puede contratarse por separado como primer paso y luego escalarse a reclamación o seguimiento.</p>
+          </details>
+        </div>
+
+        <div class="cta-row" style="margin-top: 22px;">
+          <a class="btn btn-primary" href="#contacto" onclick="startWizard('habeas-data')">Quiero revisar mi caso</a>
+        </div>
+
+        <p class="footer-legal" style="color: var(--muted); margin-top: 18px;">
+          Base legal: el hábeas data financiero y crediticio en Colombia está regulado por la Ley 1266 de 2008 y la Ley 1581 de 2012, con orientaciones de la Superintendencia de Industria y Comercio sobre soporte de la obligación y autorización previa para el reporte.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================= DEUDAS ================= -->
+    <section id="deudas" class="legacy-service-detail">
+      <div class="shell section-box">
+        <div class="section-head">
+          <div>
+            <span class="tag">Servicio 2 · Evaluación + estrategia</span>
+            <h2>Evaluación de deudas y ruta jurídica</h2>
+            <p>Entiende tu situación y las alternativas jurídicas disponibles antes de tomar decisiones.</p>
+          </div>
+        </div>
+
+        <p class="note" style="max-width: 70ch; margin-bottom: 10px; font-size: 1rem;">
+          <strong>Antes de hablar de trámites:</strong> dejas de imaginar el peor escenario posible. En vez de la niebla, tienes un mapa claro de qué puedes hacer legalmente con lo que debes.
+        </p>
+
+        <p class="note" style="max-width: 70ch; margin-bottom: 18px;">
+          Analizamos el número y tipo de tus obligaciones, saldos, mora, acreedores, procesos de cobro, tu situación económica y otros factores relevantes, para determinar qué ruta jurídica es adecuada para tu caso. No prometemos reducción de deuda ni resultados garantizados.
+        </p>
+
+        <div class="grid-2">
+          <article class="card">
+            <span class="tag">Qué analizamos</span>
+            <h3>Evaluación de tu situación</h3>
+            <ul>
+              <li>Número y tipo de obligaciones</li>
+              <li>Saldos y estado de mora</li>
+              <li>Acreedores y procesos de cobro</li>
+              <li>Situación económica general</li>
+              <li>Otros factores relevantes del caso</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <span class="tag">No incluye</span>
+            <h3>Límites del producto</h3>
+            <ul>
+              <li>Promesa de reducción o eliminación de deuda</li>
+              <li>Negociación garantizada con acreedores</li>
+              <li>Resultados garantizados</li>
+              <li>Litigio automático sin revisión previa</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="section-head" style="margin-top: 24px;">
+          <div>
+            <h2 style="font-size: clamp(1.3rem, 2vw, 1.7rem);">Precio de lanzamiento</h2>
+            <p>Precio de lanzamiento, sujeto a validación de mercado.</p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <article class="card price-card">
+            <span class="price-label">Evaluación</span>
+            <h3>Evaluación de deudas</h3>
+            <div class="price">COP 129.000 <small>desde</small></div>
+            <ul class="price-list">
+              <li>Revisión de tus obligaciones</li>
+              <li>Clasificación de alternativas jurídicas</li>
+              <li>Ruta de acción recomendada</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Nota</h3>
+            <p>El valor final depende del número y complejidad de las obligaciones. Te damos una cotización clara antes de iniciar.</p>
+          </article>
+        </div>
+
+        <div class="cta-row" style="margin-top: 22px;">
+          <a class="btn btn-primary" href="#contacto" onclick="startWizard('deudas')">Quiero mi evaluación de deudas</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= REGISTRO DE MARCA ================= -->
+    <section id="marca" class="legacy-service-detail">
+      <div class="shell section-box">
+        <div class="section-head">
+          <div>
+            <span class="tag">Servicio 3 · Registro + acompañamiento</span>
+            <h2>Registro de marca con acompañamiento jurídico</h2>
+            <p>Te acompañamos desde la verificación inicial hasta el seguimiento del trámite.</p>
+          </div>
+        </div>
+
+        <p class="note" style="max-width: 70ch; margin-bottom: 10px; font-size: 1rem;">
+          <strong>Antes de hablar de trámites:</strong> tu idea deja de ser informal. Ganas la tranquilidad de saber que lo que construiste tiene respaldo legal.
+        </p>
+
+        <p class="note" style="max-width: 70ch; margin-bottom: 18px;">
+          Lyzbri ofrece acompañamiento jurídico para iniciar y gestionar el proceso de registro de marca ante la autoridad competente en Colombia. Nuestros honorarios profesionales son independientes de las tasas oficiales que cobra la autoridad por el trámite; esas tasas se pagan aparte y no están incluidas en nuestros honorarios.
+        </p>
+
+        <div class="grid-2">
+          <article class="card">
+            <span class="tag">Incluye</span>
+            <h3>Acompañamiento en el proceso</h3>
+            <ul>
+              <li>Verificación preliminar de disponibilidad</li>
+              <li>Asesoría sobre clase(s) y cobertura del registro</li>
+              <li>Preparación y radicación de la solicitud</li>
+              <li>Seguimiento del trámite ante la autoridad competente</li>
+              <li>Orientación frente a requerimientos u oposiciones, según el servicio contratado</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <span class="tag">No incluye</span>
+            <h3>Límites del producto</h3>
+            <ul>
+              <li>Tasas oficiales de la autoridad competente (se pagan aparte)</li>
+              <li>Garantía de concesión del registro</li>
+              <li>Litigios de propiedad industrial fuera del alcance contratado</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="section-head" style="margin-top: 24px;">
+          <div>
+            <h2 style="font-size: clamp(1.3rem, 2vw, 1.7rem);">Precio de lanzamiento</h2>
+            <p>Honorarios de lanzamiento, sujetos a validación. No incluyen tasas oficiales.</p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <article class="card price-card">
+            <span class="price-label">Acompañamiento</span>
+            <h3>Registro de marca</h3>
+            <div class="price">Cotización personalizada</div>
+            <ul class="price-list">
+              <li>Verificación de disponibilidad</li>
+              <li>Radicación y seguimiento</li>
+              <li>Honorarios; tasas oficiales aparte</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Nota</h3>
+            <p>El valor final depende del número de clases y la complejidad del caso. Las tasas oficiales las define la autoridad competente y no forman parte de nuestros honorarios.</p>
+          </article>
+        </div>
+
+        <div class="cta-row" style="margin-top: 22px;">
+          <a class="btn btn-primary" href="#contacto" onclick="startWizard('marca')">Quiero registrar mi marca</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FORMULARIO / CONTACTO (wizard) ================= -->
+    <section id="contacto">
+      <div class="shell section-box">
+        <div class="section-head">
+          <div>
+            <h2>Recibe tu evaluación inicial gratuita</h2>
+            <p>Responde unas preguntas breves. No subas documentos ni compartas información financiera sensible en este paso.</p>
+          </div>
+        </div>
+
+        <!-- Elegir servicio: única superficie de selección. Los anuncios llegan aquí
+             ya preseleccionados por parámetro de URL (?servicio=habeas-data) y saltan
+             directo a la primera pregunta, sin volver a elegir. -->
+        <div class="grid-4" id="service-picker">
+          <article class="card selector-card" data-service="habeas-data" onclick="startWizard('habeas-data')">
+            <span class="tag">Servicio 1</span>
+            <h3>Reporte negativo / Hábeas Data</h3>
+            <p>Reporte, pago, datos incorrectos o reclamo previo.</p>
+          </article>
+          <article class="card selector-card" data-service="deudas" onclick="startWizard('deudas')">
+            <span class="tag">Servicio 2</span>
+            <h3>Gestiona tu Deuda</h3>
+            <p>Obligaciones, mora o procesos de cobro.</p>
+          </article>
+          <article class="card selector-card" data-service="marca" onclick="startWizard('marca')">
+            <span class="tag">Servicio 3</span>
+            <h3>Registro de marca</h3>
+            <p>Nombre, logo o nombre y logo.</p>
+          </article>
+          <article class="card selector-card" data-service="tea" onclick="startWizard('tea')">
+            <span class="tag">Servicio 4</span>
+            <h3>TEA y discapacidad infantil</h3>
+            <p>Salud, educación, deporte u otra condición del neurodesarrollo.</p>
+          </article>
+        </div>
+
+        <!-- Wizard: una pregunta por pantalla, respuestas grandes, avance automático -->
+        <div id="wizard-card" class="card" style="margin-top: 18px; display:none;">
+          <div class="wizard-head">
+            <button type="button" class="btn-back" id="wizardBack" onclick="wizardBack()" style="visibility:hidden;">← Atrás</button>
+            <span class="note" id="wizardProgress"></span>
+          </div>
+
+          <div id="wizardStepBody"></div>
+        </div>
+
+        <!-- Resultado: una sola acción hacia el pago -->
+        <article id="form-confirmacion" class="card" style="margin-top: 18px; display:none;">
+          <span class="tag" id="resultado-etiqueta">Resultado inicial</span>
+          <h3 id="resultado-titulo">Tu evaluación inicial está lista.</h3>
+          <p id="resultado-descripcion"></p>
+          <p class="fine-print" id="resultado-nota">Este resultado organiza la información disponible; la viabilidad jurídica y el alcance final requieren revisión profesional.</p>
+          <div class="form-actions" style="margin-top:18px;">
+            <a class="btn btn-primary" id="resultado-pago" href="#" target="_blank" rel="noopener">Continuar al pago</a>
+          </div>
+          <p class="fine-print">Wompi te permitirá pagar con PSE, Botón Bancolombia, Nequi o tarjeta en el siguiente paso.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="abogada">
+      <div class="shell section-box">
+        <div class="lawyer-box">
+          <div class="lawyer-avatar" aria-hidden="true">LT</div>
+          <div>
+            <h2 style="margin:0 0 6px;font-size:clamp(1.4rem,2.3vw,1.9rem);letter-spacing:-0.03em;">Quién está detrás de Lyzbri</h2>
+            <p class="note" style="font-size:0.98rem;">
+              Lyzbri es una solución jurídica digital creada y desarrollada por Liza Lorethy Lozano Torres, para hacer más accesibles los servicios legales y ayudar a las personas a entender sus opciones antes de gastar tiempo o dinero.
+            </p>
+            <p class="note" style="font-size:0.98rem;">
+              Nuestra fundadora es abogada egresada de la Universidad Cooperativa de Colombia, con estudios de posgrado en la Universidad de Medellín y más de 15 años de experiencia profesional en los sectores público y privado.
+            </p>
+            <p class="note" style="font-size:0.98rem;">
+              Hoy combina su experiencia jurídica con la tecnología para crear soluciones en hábeas data, deudas, registro de marca y derechos de personas con TEA y discapacidad. Como madre de un niño en el espectro, conoce de primera mano las barreras que enfrentan las familias, y por eso quiere poner soluciones digitales al alcance de todas las personas.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="blog">
+      <div class="shell section-box">
+        <div class="section-head">
+          <div>
+            <h2>Blog</h2>
+          </div>
+        </div>
+        <p class="note" id="blog-vacio">Muy pronto publicaremos aquí nuestros primeros artículos.</p>
+        <div class="guias">
+        <!-- =====================================================================
+             COMO AGREGAR UN ARTICULO
+             1. Copia el bloque de ejemplo de abajo, desde details hasta /details,
+                y pegalo dentro de esta caja "guias", arriba de este comentario.
+                No copies los signos de apertura y cierre del comentario.
+             2. Cambia: el id (sin espacios ni tildes), el titulo (h3), la respuesta
+                corta, los subtitulos (h4) y el texto.
+             3. Si quieres que el boton final abra la evaluacion de un servicio, deja
+                el boton y cambia ?servicio= y data-cta (habeas-data, deudas, marca
+                o tea). Si no lo quieres, borra la linea del boton.
+             4. Al agregar el primer articulo, el mensaje "Muy pronto publicaremos"
+                desaparece solo.
+             El articulo se enlaza con  tu-pagina.html#id-del-articulo
+             Sin promesas de resultado (Ley 1123 de 2007).
+
+             EJEMPLO
+             <details class="guia" id="titulo-corto-del-articulo" data-servicio="habeas-data">
+               <summary><span class="tag">Habeas Data</span><h3>Titulo del articulo</h3></summary>
+               <div class="guia-cuerpo">
+                 <div class="blog-resp"><strong>Respuesta corta</strong><p>Respuesta directa en 2 o 3 frases.</p></div>
+                 <h4>Subtitulo</h4>
+                 <p>Texto del articulo.</p>
+                 <a class="btn btn-primary" href="?servicio=habeas-data" data-cta="habeas-data">Evaluar mi reporte gratis</a>
+               </div>
+             </details>
+             ===================================================================== -->
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="shell section-box">
+        <div class="section-head">
+          <div>
+            <h2>Preguntas frecuentes</h2>
+            <p>Respuestas claras sobre cómo funciona Lyzbri como plataforma.</p>
+          </div>
+        </div>
+
+        <div class="faq">
+          <details class="faq-item">
+            <summary>¿Lyzbri reemplaza a un abogado?</summary>
+            <p>No. Lyzbri es un punto de entrada jurídico estructurado. Cuando el caso lo requiere, la gestión es realizada o revisada por profesionales del derecho.</p>
+          </details>
+          <details class="faq-item">
+            <summary>¿Cómo me van a contactar?</summary>
+            <p>A través del WhatsApp que nos dejes en el formulario. El contacto directo con nuestro equipo se habilita en las siguientes etapas del proceso, una vez precalificamos tu caso.</p>
+          </details>
+          <details class="faq-item">
+            <summary>¿Esto reemplaza una consulta jurídica tradicional?</summary>
+            <p>No necesariamente. La evaluación inicial organiza la información; cualquier recomendación jurídica definitiva requiere revisión profesional.</p>
+          </details>
+          <details class="faq-item">
+            <summary>¿Qué pasa con mis datos personales?</summary>
+            <p>Usamos tu información únicamente para evaluar tu caso, conforme a nuestra Política de Tratamiento de Datos y Aviso de Privacidad.</p>
+          </details>
+          <details class="faq-item">
+            <summary>¿Me van a sacar de Datacrédito o CIFIN?</summary>
+            <p>No lo prometemos. Revisamos tu caso y te decimos si existe base jurídica para reclamar o corregir información reportada, según la Ley 1266 de 2008.</p>
+          </details>
+          <details class="faq-item">
+            <summary>¿La evaluación inicial tiene costo?</summary>
+            <p>No. La evaluación inicial es gratuita. Si decides avanzar con un servicio pago, verás el alcance y el valor antes de contratar.</p>
+          </details>
+          <details class="faq-item">
+            <summary>¿Qué derechos tiene mi hijo con TEA en salud y educación?</summary>
+            <p>Depende de tu caso. La evaluación gratuita identifica qué normas aplican (Ley TEA, Ley 1618 de 2013, Decreto 1421 de 2017, entre otras) y cuál es el primer paso concreto.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer-cta">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <span class="tag">Da el siguiente paso</span>
+            <h2>Empieza con una evaluación inicial gratuita</h2>
+            <p>Cuéntanos lo esencial y conoce el siguiente paso, con un proceso claro y sin promesas de resultado.</p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <article class="card">
+            <h3>Empieza ahora</h3>
+            <p>Responde el formulario breve. Si decides avanzar, recibirás el alcance, honorarios y condiciones antes de contratar.</p>
+            <div class="cta-row">
+              <a class="btn btn-primary" href="#contacto">Empezar evaluación gratuita</a>
+            </div>
+          </article>
+          <article class="card">
+            <h3>Nota legal</h3>
+            <p>
+              El resultado de cualquier gestión depende de los elementos de prueba aportados, las circunstancias particulares del caso y la valoración de la entidad o autoridad competente.
+            </p>
+          </article>
+        </div>
+
+        <p class="footer-legal">
+          Base legal general (Hábeas Data): Ley 1266 de 2008, Ley 1581 de 2012 y orientaciones de la SIC sobre el manejo y reporte de información.
+        </p>
+        <div class="links-row">
+          <a href="?servicio=habeas-data">Hábeas Data</a>
+          <a href="?servicio=deudas">Gestiona tu Deuda</a>
+          <a href="?servicio=marca">Registro de marca</a>
+          <a href="?servicio=tea">TEA y discapacidad</a>
+          <a href="#blog">Blog</a>
+          <a href="#aviso-privacidad">Aviso de privacidad</a>
+          <a href="#politica-datos">Política de tratamiento de datos</a>
+          <a href="#terminos">Términos y condiciones</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="aviso-privacidad" class="legal">
+      <div class="shell section-box">
+        <h2>Aviso de privacidad</h2>
+        <p class="legal-fecha">Última actualización: 18 de septiembre de 2026</p>
+        <h3>Responsable del tratamiento</h3>
+        <p>Lyzbri Legal (en adelante, “Lyzbri”) es una plataforma digital de servicios jurídicos desarrollada para facilitar el acceso a soluciones legales en Colombia, mediante la prestación de servicios jurídicos de forma 100% online, clara, ágil y accesible.</p>
+        <h3>Para qué usamos tus datos</h3>
+        <ul>
+          <li>Realizar la evaluación inicial gratuita de tu caso y orientarte sobre la ruta jurídica que aplica.</li>
+          <li>Contactarte por WhatsApp para dar continuidad a tu solicitud.</li>
+          <li>Gestionar el pago y la prestación del servicio que contrates.</li>
+          <li>Cumplir obligaciones legales, contables y tributarias.</li>
+        </ul>
+        <h3>Datos sensibles y de menores</h3>
+        <p>Algunos servicios (por ejemplo, TEA y discapacidad) pueden implicar datos de salud, que son datos sensibles. Su suministro es voluntario: no estás obligado a entregarlos, pero sin ellos puede no ser posible orientar tu caso. Si el caso involucra a un niño, niña o adolescente, los datos deben ser suministrados por su padre, madre o representante legal, y se tratarán respetando el interés superior del menor.</p>
+        <h3>Tus derechos</h3>
+        <p>Como titular puedes conocer, actualizar, rectificar y suprimir tus datos, solicitar prueba de la autorización, ser informado del uso que se les ha dado, revocar la autorización y presentar quejas ante la Superintendencia de Industria y Comercio (SIC).</p>
+        <p>Puedes ejercer tus derechos escribiéndonos por el WhatsApp o el formulario de contacto de esta plataforma, indicando tu nombre, el derecho que deseas ejercer y una descripción clara de tu solicitud. Para proteger tu información, podremos pedirte datos que nos permitan verificar tu identidad.</p>
+        <p>El detalle completo está en nuestra <a href="#politica-datos">Política de tratamiento de datos</a>.</p>
+
+        <a class="legal-volver" href="#top">Volver al inicio</a>
+      </div>
+    </section>
+
+    <section id="politica-datos" class="legal">
+      <div class="shell section-box">
+        <h2>Política de tratamiento de datos personales</h2>
+        <p class="legal-fecha">Última actualización: 18 de septiembre de 2026</p>
+        <h3>Responsable del tratamiento</h3>
+        <p>Lyzbri Legal (en adelante, “Lyzbri”) es una plataforma digital de servicios jurídicos operada por una persona natural, abogada en ejercicio, con domicilio en Colombia.</p>
+        <p>Para efectos del tratamiento de datos personales, Lyzbri actúa como responsable del tratamiento de la información recopilada a través de la plataforma y de los canales digitales asociados a sus servicios.</p>
+        <p>Lyzbri presta sus servicios exclusivamente por medios digitales y no cuenta con una sede física de atención al público.</p>
+        <h3>1. Marco legal</h3>
+        <p>Esta política se expide conforme al artículo 15 de la Constitución Política, la Ley 1581 de 2012, el Decreto 1377 de 2013 (compilado en el Decreto 1074 de 2015) y, en lo pertinente, la Ley 1266 de 2008.</p>
+        <h3>2. Datos que recolectamos</h3>
+        <ul>
+          <li>Datos de identificación y contacto: nombre y número de WhatsApp.</li>
+          <li>Información del caso que tú nos suministras al responder la evaluación inicial y, si contratas, los documentos y hechos que aportes.</li>
+          <li>Datos sensibles, solo si tú los suministras y cuando el servicio los requiera (por ejemplo, información de salud o discapacidad).</li>
+          <li>Datos de niños, niñas y adolescentes, únicamente cuando su representante legal los entregue para atender el caso.</li>
+          <li>Datos de pago: el pago se procesa a través de Wompi. Lyzbri no recibe ni almacena números de tarjeta ni credenciales bancarias; solo conoce el estado y la referencia de la transacción.</li>
+        </ul>
+        <h3>3. Finalidades</h3>
+        <ul>
+          <li>Realizar la evaluación inicial gratuita y orientar el caso.</li>
+          <li>Contactarte y hacer seguimiento a tu solicitud.</li>
+          <li>Prestar el servicio contratado, incluida la elaboración de documentos y la gestión ante entidades cuando así se acuerde.</li>
+          <li>Confirmar pagos y cumplir obligaciones contables y tributarias.</li>
+          <li>Atender consultas, reclamos y solicitudes de los titulares.</li>
+        </ul>
+        <h3>4. Autorización</h3>
+        <p>El tratamiento requiere tu autorización previa, expresa e informada, que otorgas al marcar la casilla de autorización en el formulario. Al tratarse de datos sensibles, te informamos que no estás obligado a autorizar su tratamiento y que la finalidad es exclusivamente atender tu caso. Puedes revocar la autorización en cualquier momento, salvo cuando exista un deber legal o contractual de conservar la información.</p>
+        <h3>5. Derechos del titular</h3>
+        <ul>
+          <li>Conocer, actualizar y rectificar tus datos.</li>
+          <li>Solicitar prueba de la autorización otorgada.</li>
+          <li>Ser informado, previa solicitud, del uso dado a tus datos.</li>
+          <li>Presentar quejas ante la Superintendencia de Industria y Comercio por infracciones a la ley, una vez agotado el trámite de consulta o reclamo ante el responsable.</li>
+          <li>Revocar la autorización y solicitar la supresión de tus datos cuando no se respeten los principios y garantías legales.</li>
+          <li>Acceder gratuitamente a tus datos personales objeto de tratamiento.</li>
+        </ul>
+        <h3>6. Procedimiento para consultas y reclamos</h3>
+        <p>Puedes ejercer tus derechos escribiéndonos por el WhatsApp o el formulario de contacto de esta plataforma, indicando tu nombre, el derecho que deseas ejercer y una descripción clara de tu solicitud. Para proteger tu información, podremos pedirte datos que nos permitan verificar tu identidad.</p>
+        <p>Las consultas se responderán en un máximo de diez (10) días hábiles contados desde su recibo, prorrogables por cinco (5) días hábiles más si informamos los motivos de la demora. Los reclamos de rectificación, actualización o supresión se resolverán en un máximo de quince (15) días hábiles, prorrogables por ocho (8) días hábiles más en los términos de la ley. Si el reclamo está incompleto, te pediremos subsanarlo dentro de los cinco (5) días siguientes a su recibo.</p>
+        <h3>7. Seguridad, conservación y terceros</h3>
+        <p>Aplicamos medidas razonables para proteger la información contra acceso no autorizado, pérdida o uso indebido. Conservamos tus datos durante el tiempo necesario para las finalidades descritas y los plazos legales aplicables. Solo compartimos información con terceros cuando es necesario para prestar el servicio (por ejemplo, la pasarela de pagos Wompi) o cuando una autoridad competente lo exija. No vendemos tus datos.</p>
+        <h3>8. Vigencia y cambios</h3>
+        <p>Esta política rige desde la fecha de su última actualización. Cualquier cambio sustancial se publicará en esta página.</p>
+
+        <a class="legal-volver" href="#top">Volver al inicio</a>
+      </div>
+    </section>
+
+    <section id="terminos" class="legal">
+      <div class="shell section-box">
+        <h2>Términos y condiciones</h2>
+        <p class="legal-fecha">Última actualización: 18 de septiembre de 2026</p>
+        <h3>1. Quién presta el servicio</h3>
+        <p>Lyzbri Legal es una plataforma digital de servicios jurídicos operada por una abogada en ejercicio, persona natural con domicilio en Colombia.</p>
+        <p>El acceso, navegación y uso de este sitio web, así como la solicitud o contratación de cualquiera de los servicios ofrecidos a través de Lyzbri, implica la aceptación expresa de estos Términos y Condiciones. Si no estás de acuerdo con alguna de sus disposiciones, debes abstenerte de utilizar la plataforma o contratar sus servicios.</p>
+        <h3>2. Naturaleza de la evaluación inicial</h3>
+        <p>La evaluación inicial es gratuita y tiene carácter orientativo, con base en la información que tú suministras. No constituye por sí sola un concepto jurídico, ni genera relación abogado-cliente, ni garantiza la viabilidad de tu caso.</p>
+        <h3>3. Servicios</h3>
+        <p>Los servicios disponibles (Hábeas Data, Gestiona tu Deuda, Registro de marca y TEA y discapacidad) se describen en el sitio. El alcance específico de cada servicio es el que se te informa antes de pagar. Lyzbri presta servicios de medios y no de resultado: no se garantiza ningún resultado, decisión favorable, tiempo de respuesta de entidades ni éxito de trámite alguno, pues dependen de las pruebas aportadas, las circunstancias del caso y la decisión de la autoridad competente.</p>
+        <h3>4. Tus obligaciones</h3>
+        <p>Debes suministrar información veraz, completa y actualizada, y los documentos que se requieran. Lyzbri no es responsable por las consecuencias de información falsa o incompleta.</p>
+        <h3>5. Precios y pago</h3>
+        <p>El precio del servicio se te muestra al momento de contratar, antes de pagar, en pesos colombianos. Los pagos se realizan a través de la pasarela Wompi; Lyzbri no almacena datos de tu tarjeta ni de tu cuenta. Cuando el precio se anuncie como "Desde", el valor final se te informará antes del pago según la complejidad del caso.</p>
+        <h3>6. Retracto y devoluciones</h3>
+        <p>Si contratas a distancia, tienes derecho de retracto en los términos del artículo 47 de la Ley 1480 de 2011 (Estatuto del Consumidor), salvo las excepciones legales, entre ellas los servicios cuya prestación haya comenzado con tu consentimiento. Para ejercerlo, escríbenos por el WhatsApp o el formulario de contacto de la plataforma.</p>
+        <h3>7. Propiedad intelectual</h3>
+        <p>Los contenidos, textos, diseño y marca de Lyzbri pertenecen a su titular. Los documentos que elaboremos para ti son para tu uso en el caso contratado.</p>
+        <h3>8. Confidencialidad y datos personales</h3>
+        <p>Tratamos tu información con reserva y conforme a nuestra <a href="#politica-datos">Política de tratamiento de datos</a> y nuestro <a href="#aviso-privacidad">Aviso de privacidad</a>.</p>
+        <h3>9. Limitación de responsabilidad</h3>
+        <p>En la medida permitida por la ley, Lyzbri no responde por decisiones de terceros o entidades, por demoras ajenas a su control ni por el uso que hagas de la información del sitio sin asesoría profesional adicional. Nada de lo aquí dispuesto limita derechos irrenunciables que la ley te reconoce como consumidor.</p>
+        <h3>10. Ley aplicable y jurisdicción</h3>
+        <p>Estos términos se rigen por las leyes de la República de Colombia. Cualquier controversia se someterá a las autoridades competentes de Colombia, sin perjuicio de tu derecho a acudir a la Superintendencia de Industria y Comercio como autoridad de protección al consumidor.</p>
+        <h3>11. Cambios</h3>
+        <p>Podemos actualizar estos términos; la versión vigente es la publicada en esta página.</p>
+
+        <a class="legal-volver" href="#top">Volver al inicio</a>
+      </div>
+    </section>
+  </main>
+
+  <div class="mobile-cta" aria-label="acciones rápidas en celular">
+    <a class="btn btn-primary" id="mobile-cta-btn" href="#contacto">Empezar evaluación gratuita</a>
+  </div>
+
+  <script>
+    // =========================================================================
+    // CONFIGURACIÓN DE PAGO (WOMPI)
+    // -------------------------------------------------------------------------
+    // Llave pública de pruebas (sandbox) puesta. Para cobrar de verdad, reemplazar por la de producción.
+    // La encuentras en tu panel de Wompi > Configuración > Llaves API.
+    // Con esta llave, el link de checkout deja a la persona elegir PSE, Botón
+    // Bancolombia, Nequi o tarjeta directamente en Wompi — no se construyen
+    // botones separados aquí.
+    // =========================================================================
+    var WOMPI_PUBLIC_KEY = "pub_test_TL847L1p5HtyqRkYPLPxIYWY9JQ3X95M"; // llave PÚBLICA de PRUEBAS (sandbox). Antes de vender de verdad, cambiar por la de producción (pub_prod_...).
+
+    function buildWompiLink(amountCOP, reference, servicio) {
+      var amountCents = Math.round(amountCOP * 100);
+      // La URL de retorno lleva nuestra propia referencia y el servicio como
+      // parámetros propios (no dependemos solo de lo que Wompi decida anexar,
+      // p. ej. ?id=<transactionId>) — así el formulario detallado post-pago
+      // siempre sabe qué caso y qué servicio mostrar al volver.
+      var redirectUrl = window.location.href.split('#')[0].split('?')[0]
+        + '?pago=ok&referencia=' + encodeURIComponent(reference)
+        + '&servicio=' + encodeURIComponent(servicio);
+      var params = new URLSearchParams({
+        'public-key': WOMPI_PUBLIC_KEY,
+        'currency': 'COP',
+        'amount-in-cents': String(amountCents),
+        'reference': reference,
+        'redirect-url': redirectUrl
+      });
+      return 'https://checkout.wompi.co/p/?' + params.toString();
+    }
+
+    function formatCOP(n) {
+      return '$' + n.toLocaleString('es-CO');
+    }
+
+    // =========================================================================
+    // DATOS DE LA EVALUACIÓN TEA / DISCAPACIDAD (Ley 2628 de 2026 y normativa conexa)
+    // =========================================================================
+    var TEA_DATA = {
+      salud: {
+        titulo: "Salud (EPS / IPS)",
+        estados: [
+          {value:"sin_gestion", label:"Aún no he presentado ninguna solicitud formal"},
+          {value:"peticion_sin_respuesta", label:"Ya presenté un derecho de petición, sin respuesta o con respuesta negativa/incompleta"},
+          {value:"tutela_incumplida", label:"Ya tengo una tutela a mi favor y no la están cumpliendo"},
+        ],
+        laws: "Ley Estatutaria 1751 de 2015",
+        steps: {
+          sin_gestion: "Presenta un derecho de petición formal a la EPS solicitando el servicio o tratamiento requerido, citando el diagnóstico y {NORMA}.",
+          peticion_sin_respuesta: "Procede la acción de tutela, invocando el principio de continuidad en la atención en salud y {NORMA}.",
+          tutela_incumplida: "Corresponde iniciar un incidente de desacato ante el juzgado que falló la tutela.",
+        },
+      },
+      educacion: {
+        titulo: "Educación (colegio)",
+        estados: [
+          {value:"sin_gestion", label:"Aún no he presentado ninguna solicitud formal"},
+          {value:"peticion_sin_respuesta", label:"Ya presenté una solicitud o derecho de petición, sin respuesta o con respuesta negativa/incompleta"},
+          {value:"tutela_incumplida", label:"Ya tengo una tutela a mi favor y el colegio no la está cumpliendo"},
+          {value:"exclusion_directa", label:"Han sugerido que mi hijo/a cambie de colegio o actividad"},
+        ],
+        laws: "Decreto 1421 de 2017 (PIAR)",
+        steps: {
+          sin_gestion: "Solicita por escrito a la rectoría la construcción o actualización del PIAR, conforme al Decreto 1421 de 2017.",
+          peticion_sin_respuesta: "Escala la queja a la Secretaría de Educación, o procede la acción de tutela.",
+          tutela_incumplida: "Corresponde iniciar un incidente de desacato ante el juzgado que falló la tutela.",
+          exclusion_directa: "Solicita por escrito el fundamento pedagógico y qué ajustes razonables se evaluaron antes de sugerir la exclusión.",
+        },
+      },
+      deporte: {
+        titulo: "Deporte o espacio público",
+        estados: [
+          {value:"sin_gestion", label:"Aún no he presentado ninguna solicitud formal"},
+          {value:"peticion_sin_respuesta", label:"Ya presenté una queja o PQRS, sin respuesta o con respuesta negativa/incompleta"},
+          {value:"tutela_incumplida", label:"Ya tengo una tutela a mi favor y no la están cumpliendo"},
+          {value:"acoso_no_investigado", label:"Mi hijo/a ha sido objeto de burlas o exclusión, y no se ha investigado"},
+        ],
+        laws: "Ley 1618 de 2013",
+        steps: {
+          sin_gestion: "Solicita por escrito que se evalúen ajustes razonables dentro de la misma actividad, antes de la reubicación o el retiro.",
+          peticion_sin_respuesta: "Si la respuesta no resolvió el fondo, procede la acción de tutela por vulneración del derecho de petición.",
+          tutela_incumplida: "Corresponde iniciar un incidente de desacato ante el juzgado que falló la tutela.",
+          acoso_no_investigado: "Pon los hechos por escrito solicitando expresamente que se investiguen; puede valorarse una denuncia penal si son graves y reiterados.",
+        },
+      },
+      otro: {
+        titulo: "Otra área o varias áreas",
+        estados: [
+          {value:"sin_gestion", label:"No estoy segura de qué mecanismo legal aplica"},
+          {value:"peticion_sin_respuesta", label:"Ya presenté una solicitud formal, sin respuesta o con respuesta negativa/incompleta"},
+          {value:"tutela_incumplida", label:"Ya tengo una tutela a mi favor y no la están cumpliendo"},
+          {value:"varias_areas", label:"Es una combinación de varias áreas"},
+        ],
+        laws: "Ley 1618 de 2013, Ley 1755 de 2015 (derecho de petición)",
+        steps: {
+          sin_gestion: "El punto de partida es un derecho de petición formal a la entidad responsable, citando la normativa de protección aplicable a su condición.",
+          peticion_sin_respuesta: "Procede la acción de tutela para proteger el derecho afectado.",
+          tutela_incumplida: "Corresponde iniciar un incidente de desacato ante el juzgado que falló la tutela.",
+          varias_areas: "Conviene documentar cada frente por separado, con su propia comunicación formal.",
+        },
+      }
+    };
+
+    // =========================================================================
+    // CONDICIÓN (matriz normativa TEA y discapacidad, corte sept-2026)
+    // Cada categoría trae su norma especial. "revision" = la ruta la define la
+    // abogada; no se automatiza sin revisión previa.
+    // =========================================================================
+    var TEA_CONDICION = {
+      tea: { label: 'Trastorno del espectro autista (TEA)',
+             norma: 'Ley 2628 de 2026 (Ley TEA)',
+             cita: 'la Ley 2628 de 2026 (Ley TEA)' },
+      neuro: { label: 'Otro trastorno del neurodesarrollo (TDAH, aprendizaje, Rett u otro)',
+               norma: 'Ley 2628 de 2026; la Ley 2216 de 2022 solo aplica de forma complementaria si es un trastorno de aprendizaje escolar específico',
+               cita: 'la Ley 2628 de 2026' },
+      intelectual: { label: 'Síndrome de Down o discapacidad intelectual',
+                     norma: 'Ley 2628 de 2026 (cubre la discapacidad intelectual); si es escolar, Decreto 1421 de 2017; y Ley 1996 de 2019 (capacidad legal, solo si la persona es mayor de edad)',
+                     cita: 'la Ley 2628 de 2026' },
+      fisica: { label: 'Discapacidad física o motora',
+                norma: 'Ley 361 de 1997 (su art. 26 aplica al ámbito laboral) y Ley 1618 de 2013',
+                cita: 'la Ley 361 de 1997 y la Ley 1618 de 2013' },
+      visual: { label: 'Discapacidad visual (ceguera o baja visión)',
+                norma: 'Ley 1618 de 2013 (información accesible, tecnología de apoyo, movilidad y educación); los ajustes dependen de la necesidad concreta',
+                cita: 'la Ley 1618 de 2013' },
+      sordera: { label: 'Sordera o sordoceguera',
+                 norma: 'Ley 1618 de 2013 (accesibilidad y ajustes razonables, incluida la lengua de señas colombiana)',
+                 cita: 'la Ley 1618 de 2013' },
+      mudez: { label: 'Mudez',
+               norma: 'Ley 1618 de 2013, de forma provisional según la causa',
+               cita: 'la Ley 1618 de 2013',
+               revision: 'Por la particularidad de esta condición, la ruta jurídica la define la abogada tras revisar tu caso; no se resuelve de forma automática.' },
+      no_visible: { label: 'Discapacidad no visible (psicosocial, orgánica o crónica)',
+                    norma: 'Ley 1618 de 2013 y Ley 1751 de 2015',
+                    cita: 'la Ley 1618 de 2013 y la Ley 1751 de 2015',
+                    revision: 'No toda condición crónica o psiquiátrica equivale jurídicamente a una discapacidad; la abogada revisa tu caso antes de definir la ruta.' }
+    };
+    // Ley 2628 de 2026: el Certificado Único de Trastorno del Neurodesarrollo es voluntario y su
+    // ausencia no puede ser barrera de acceso a servicios de salud.
+    var TEA_CATEGORIAS_2628 = ['tea', 'neuro', 'intelectual'];
+    var TEA_TRANSVERSAL = 'Marco general: Constitución (arts. 13, 44, 45, 47, 48, 49 y 67), Convención sobre los Derechos de las Personas con Discapacidad (Ley 1346 de 2009) y Ley 1618 de 2013.';
+
+    // Nivel de servicio recomendado y nivel de tarifa (A = gestión administrativa,
+    // B = representación en tutela / desacato / denuncia penal) según el estado del caso.
+    var TEA_NIVEL = {
+      sin_gestion: { tier: 'A', nombre: "Evaluación + derecho de petición" },
+      peticion_sin_respuesta: { tier: 'B', nombre: "Evaluación + acción de tutela" },
+      tutela_incumplida: { tier: 'B', nombre: "Evaluación + incidente de desacato" },
+      exclusion_directa: { tier: 'A', nombre: "Evaluación + derecho de petición" },
+      acoso_no_investigado: { tier: 'B', nombre: "Evaluación + escrito de denuncia" },
+      varias_areas: { tier: 'A', nombre: "Evaluación + derecho de petición" },
+    };
+
+    // =========================================================================
+    // PRECIOS
+    // -------------------------------------------------------------------------
+    // Precios aprobados (matriz "Precios a publicar", 18-sep-2026), en COP.
+    // A = servicio de entrada; B = nivel superior cuando el caso lo requiere.
+    // Deudas: Ruta 2 (desde $1.710.000) y Rutas 3 y 4 (según caso) se cotizan
+    // aparte con la abogada y NO tienen botón de pago en la landing.
+    // =========================================================================
+    var PRECIOS = {
+      'habeas-data': { A: 99000,  B: 229000 },  // Evaluación / Evaluación + reclamación
+      'deudas':      { A: 129000, B: 129000 },  // Evaluación de deudas (entrada)
+      'marca':       { A: 199000, B: 199000 },  // Registro de marca (autogestión)
+      'tea':         { A: 149000, B: 420000 },  // Derecho de petición / Tutela por incumplimiento
+    };
+    // =========================================================================
+    // CONFIGURACIÓN DE PASOS POR SERVICIO
+    // Cada paso es 'choice' (botones grandes, avanzan solos) o 'text' (campo,
+    // requiere botón "Continuar"). El último paso siempre es 'contacto'.
+    // =========================================================================
+    function getSteps(servicio, a) {
+      if (servicio === 'habeas-data') {
+        return [
+          { id: 'hd_problema', type: 'choice', q: '¿Qué describe mejor tu situación?', options: [
+            { value: 'pago', label: 'Pagué, pero el reporte continúa' },
+            { value: 'datos', label: 'Hay datos, fechas, saldos o estado incorrectos' },
+            { value: 'no-reconoce', label: 'No reconozco la obligación' },
+            { value: 'suplantacion', label: 'Creo que puede haber suplantación' },
+            { value: 'otro', label: 'No estoy seguro' },
+          ]},
+          { id: 'hd_reclamo', type: 'choice', q: '¿Ya presentaste un reclamo antes?', options: [
+            { value: 'si', label: 'Sí' }, { value: 'no', label: 'No' }, { value: 'no-se', label: 'No sé' },
+          ]},
+          { id: 'hd_entidad', type: 'text', q: '¿Qué entidad reportó la información? (opcional)', optional: true },
+        ];
+      }
+      if (servicio === 'deudas') {
+        return [
+          { id: 'deuda_cantidad', type: 'choice', q: '¿Aproximadamente cuántas obligaciones tienes?', options: [
+            { value: '1', label: '1' }, { value: '2-3', label: '2 a 3' }, { value: '4+', label: '4 o más' },
+          ]},
+          { id: 'deuda_cobro', type: 'choice', q: '¿Alguna ya está en cobro jurídico o demanda?', options: [
+            { value: 'si', label: 'Sí' }, { value: 'no', label: 'No' }, { value: 'no-se', label: 'No sé' },
+          ]},
+        ];
+      }
+      if (servicio === 'marca') {
+        return [
+          { id: 'marca_tipo', type: 'choice', q: '¿Qué tipo de marca quieres registrar?', options: [
+            { value: 'nombre', label: 'Nombre' }, { value: 'logo', label: 'Logo' }, { value: 'nombre-logo', label: 'Nombre y logo' },
+          ]},
+          { id: 'marca_disponibilidad', type: 'choice', q: '¿Ya verificaste si el nombre está disponible?', options: [
+            { value: 'si', label: 'Sí' }, { value: 'no', label: 'No' }, { value: 'no-se', label: 'No sé' },
+          ]},
+        ];
+      }
+      if (servicio === 'tea') {
+        var steps = [
+          { id: 'tea_condicion', type: 'choice', q: '¿Cuál es la condición o discapacidad?', options: Object.keys(TEA_CONDICION).map(function (k) {
+            return { value: k, label: TEA_CONDICION[k].label };
+          })},
+          { id: 'tea_area', type: 'choice', q: '¿En qué área se presenta la dificultad?', options: [
+            { value: 'salud', label: 'Salud (EPS / IPS)' },
+            { value: 'educacion', label: 'Educación (colegio)' },
+            { value: 'deporte', label: 'Deporte o espacio público' },
+            { value: 'otro', label: 'Otra área, o varias a la vez' },
+          ]},
+        ];
+        if (a.tea_condicion && a.tea_area && TEA_DATA[a.tea_area]) {
+          steps.push({
+            id: 'tea_estado', type: 'choice', q: '¿Qué ha pasado hasta ahora?',
+            options: TEA_DATA[a.tea_area].estados.map(function (e) { return { value: e.value, label: e.label }; })
+          });
+        }
+        return steps;
+      }
+      return [];
+    }
+
+    function getResultado(servicio, a) {
+      if (servicio === 'habeas-data') {
+        if (a.hd_problema === 'pago' || a.hd_problema === 'datos') {
+          return { titulo: 'Hay elementos para iniciar una evaluación y posible reclamación.',
+                    descripcion: 'Indicas un pago no actualizado o una posible inconsistencia. Revisamos los soportes antes de definir cualquier reclamación.',
+                    tier: 'B' };
+        }
+        if (a.hd_problema === 'no-reconoce' || a.hd_problema === 'suplantacion') {
+          return { titulo: 'Tu información requiere una revisión especializada.',
+                    descripcion: 'Las situaciones de obligación no reconocida o posible suplantación necesitan verificar identidad, soportes y cronología.',
+                    tier: 'A' };
+        }
+        return { titulo: 'Podemos iniciar una evaluación estructurada.',
+                  descripcion: 'La información suministrada permite organizar los datos relevantes y definir los soportes necesarios.',
+                  tier: 'A' };
+      }
+      if (servicio === 'deudas') {
+        return { titulo: 'Podemos iniciar una evaluación de tu situación.',
+                  descripcion: 'Ordenamos tus obligaciones, estado de mora y datos relevantes antes de una evaluación jurídica.',
+                  tier: 'A' };
+      }
+      if (servicio === 'marca') {
+        return { titulo: 'Podemos iniciar la evaluación de tu solicitud.',
+                  descripcion: 'Verificamos disponibilidad y definimos la información necesaria para iniciar el trámite.',
+                  tier: 'A' };
+      }
+      if (servicio === 'tea') {
+        var d = TEA_DATA[a.tea_area];
+        var nivel = TEA_NIVEL[a.tea_estado] || { tier: 'A', nombre: 'Evaluación + derecho de petición' };
+        var c = TEA_CONDICION[a.tea_condicion];
+        if (c && d && a.tea_estado && d.steps[a.tea_estado]) {
+          var desc = 'Condición: ' + c.label + '. Área: ' + d.titulo + '. Normativa aplicable: ' + c.norma + '; ' + d.laws + '. ' + TEA_TRANSVERSAL + ' Servicio recomendado: ' + nivel.nombre + '.';
+          if (a.tea_area === 'salud' && TEA_CATEGORIAS_2628.indexOf(a.tea_condicion) >= 0) {
+            desc += ' El Certificado Único de Trastorno del Neurodesarrollo es voluntario y su ausencia no puede ser una barrera para acceder a servicios de salud.';
+          }
+          if (c.revision) desc += ' ' + c.revision;
+          return { titulo: d.steps[a.tea_estado].replace('{NORMA}', c.cita),
+                    descripcion: desc,
+                    tier: nivel.tier };
+        }
+        return { titulo: 'Con tu respuesta identificamos la ley aplicable y el primer paso a seguir.',
+                  descripcion: '', tier: 'A' };
+      }
+      return { titulo: '', descripcion: '', tier: 'A' };
+    }
+
+    // =========================================================================
+    // MOTOR DEL WIZARD
+    // =========================================================================
+    var wz = { servicio: null, answers: {}, stepIndex: 0 };
+
+    function startWizard(servicio) {
+      wz = { servicio: servicio, answers: {}, stepIndex: 0 };
+      document.getElementById('service-picker').style.display = 'none';
+      document.getElementById('form-confirmacion').style.display = 'none';
+      document.getElementById('wizard-card').style.display = 'block';
+      renderStep();
+      var target = document.getElementById('contacto');
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function currentSteps() {
+      var steps = getSteps(wz.servicio, wz.answers);
+      steps.push({ id: 'contacto', type: 'contacto', q: 'Casi listo: ¿cómo te contactamos?' });
+      return steps;
+    }
+
+    function wizardBack() {
+      if (wz.stepIndex > 0) {
+        wz.stepIndex -= 1;
+        renderStep();
+      }
+    }
+
+    function renderStep() {
+      var steps = currentSteps();
+      var step = steps[wz.stepIndex];
+      var body = document.getElementById('wizardStepBody');
+      var back = document.getElementById('wizardBack');
+      var progress = document.getElementById('wizardProgress');
+
+      back.style.visibility = wz.stepIndex === 0 ? 'hidden' : 'visible';
+      progress.textContent = 'Pregunta ' + (wz.stepIndex + 1) + ' de ' + steps.length;
+
+      if (step.type === 'choice') {
+        var twoCol = step.options.length > 3 ? '' : ' two-col';
+        var html = '<p class="wizard-question">' + step.q + '</p>' +
+          '<div class="choice-grid' + twoCol + '">' +
+          step.options.map(function (o) {
+            var sel = wz.answers[step.id] === o.value ? ' is-selected' : '';
+            return '<button type="button" class="choice-btn' + sel + '" onclick="chooseAnswer(\'' + step.id + '\',\'' + o.value + '\')">' + o.label + '</button>';
+          }).join('') +
+          '</div>';
+        body.innerHTML = html;
+      } else if (step.type === 'text') {
+        body.innerHTML =
+          '<p class="wizard-question">' + step.q + '</p>' +
+          '<div class="field"><input type="text" id="wizardTextInput" value="' + (wz.answers[step.id] || '') + '" /></div>' +
+          '<div class="wizard-actions">' +
+          '<button type="button" class="btn btn-primary" onclick="continueText(\'' + step.id + '\')">Continuar</button>' +
+          '</div>';
+        setTimeout(function () {
+          var el = document.getElementById('wizardTextInput');
+          if (el) el.focus();
+        }, 50);
+      } else if (step.type === 'contacto') {
+        body.innerHTML =
+          '<p class="wizard-question">' + step.q + '</p>' +
+          '<div class="form-grid">' +
+          '<div class="field"><label for="wz-nombre">Nombre completo *</label><input id="wz-nombre" type="text" value="' + (wz.answers.nombre || '') + '" autocomplete="name" /></div>' +
+          '<div class="field"><label for="wz-whatsapp">Tu número de WhatsApp *</label><input id="wz-whatsapp" type="tel" value="' + (wz.answers.whatsapp || '') + '" autocomplete="tel" /></div>' +
+          '<div class="field"><label for="wz-correo">Correo electrónico</label><input id="wz-correo" type="email" value="' + (wz.answers.correo || '') + '" autocomplete="email" /></div>' +
+          '</div>' +
+          '<div class="consent-row">' +
+          '<input id="wz-consentimiento" type="checkbox"' + (wz.answers.consiente ? ' checked' : '') + ' />' +
+          '<label for="wz-consentimiento">Autorizo el tratamiento de mis datos personales conforme a la <a href="#politica-datos" target="_blank" rel="noopener">Política de Tratamiento de Datos</a> de Lyzbri.</label>' +
+          '</div>' +
+          '<div class="wizard-actions">' +
+          '<button type="button" class="btn btn-primary" onclick="submitContacto()">Ver mi resultado</button>' +
+          '</div>' +
+          '<p class="note">La evaluación inicial organiza tu caso; no reemplaza la revisión jurídica profesional.</p>';
+      }
+    }
+
+    function chooseAnswer(stepId, value) {
+      wz.answers[stepId] = value;
+      // Si cambia el área en TEA, se limpia el estado dependiente para no arrastrar una respuesta inválida.
+      if (stepId === 'tea_condicion') { delete wz.answers.tea_area; delete wz.answers.tea_estado; }
+      if (stepId === 'tea_area') { delete wz.answers.tea_estado; }
+      wz.stepIndex += 1;
+      renderStep();
+    }
+
+    function continueText(stepId) {
+      var el = document.getElementById('wizardTextInput');
+      wz.answers[stepId] = el ? el.value.trim() : '';
+      wz.stepIndex += 1;
+      renderStep();
+    }
+
+    function submitContacto() {
+      var nombre = document.getElementById('wz-nombre').value.trim();
+      var whatsapp = document.getElementById('wz-whatsapp').value.trim();
+      var correo = document.getElementById('wz-correo').value.trim();
+      var consiente = document.getElementById('wz-consentimiento').checked;
+
+      if (!nombre || !whatsapp || !consiente) {
+        alert('Por favor completa tu nombre y WhatsApp, y autoriza el tratamiento de tus datos.');
+        return;
+      }
+      wz.answers.nombre = nombre;
+      wz.answers.whatsapp = whatsapp;
+      wz.answers.correo = correo;
+      wz.answers.consiente = true;
+
+      mostrarResultado();
+    }
+
+    function mostrarResultado() {
+      var resultado = getResultado(wz.servicio, wz.answers);
+      var precios = PRECIOS[wz.servicio] || { A: 0, B: 0 };
+      var monto = precios[resultado.tier] || precios.A;
+
+      document.getElementById('wizard-card').style.display = 'none';
+      var conf = document.getElementById('form-confirmacion');
+      conf.style.display = 'block';
+
+      document.getElementById('resultado-etiqueta').textContent = 'Resultado inicial';
+      document.getElementById('resultado-titulo').textContent = resultado.titulo;
+      document.getElementById('resultado-descripcion').textContent = resultado.descripcion;
+
+      var reference = wz.servicio + '-' + Date.now();
+
+      // Guardamos el caso localmente ANTES de salir a Wompi, porque al volver
+      // (redirect-url) esta página se recarga desde cero y se pierde wz.answers
+      // en memoria. Esto es respaldo del ?referencia=/&servicio= que ya viaja
+      // en la URL de retorno — cubre el caso de que se abra en otra pestaña/dispositivo.
+      try {
+        localStorage.setItem('lyzbri_caso_' + reference, JSON.stringify({
+          servicio: wz.servicio, answers: wz.answers, referencia: reference, monto: monto
+        }));
+      } catch (e) { /* localStorage puede fallar en modo privado — no es bloqueante */ }
+
+      // Enviar el caso a HubSpot ANTES de salir a pagar — sin esto, cuando la
+      // persona vuelve del pago no existe ningún contacto que buscar por
+      // referencia_pago. No bloquea el botón de pago si falla (queda el
+      // respaldo de localStorage), pero se intenta de inmediato.
+      // El wizard de TEA usa internamente las claves tea_condicion/tea_area
+      // (así están definidas las tablas TEA_CONDICION/TEA_DATA más arriba),
+      // pero en HubSpot esos datos ya existen como propiedades con otro
+      // nombre: categoria_condicion_tea / area_caso_tea. Se traduce aquí,
+      // justo antes de enviar, sin tocar la lógica interna del wizard.
+      var respuestasParaHubspot = Object.assign({}, wz.answers);
+      if ('tea_condicion' in respuestasParaHubspot) {
+        respuestasParaHubspot.categoria_condicion_tea = respuestasParaHubspot.tea_condicion;
+        delete respuestasParaHubspot.tea_condicion;
+      }
+      if ('tea_area' in respuestasParaHubspot) {
+        respuestasParaHubspot.area_caso_tea = respuestasParaHubspot.tea_area;
+        delete respuestasParaHubspot.tea_area;
+      }
+      fetch('/.netlify/functions/crear-caso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: wz.answers.nombre,
+          whatsapp: wz.answers.whatsapp,
+          correo: wz.answers.correo || null,
+          servicio: SERVICIO_A_HUBSPOT[wz.servicio] || wz.servicio,
+          referenciaPago: reference,
+          respuestasWizard: respuestasParaHubspot
+        })
+      }).catch(function (err) { console.warn('crear-caso no disponible todavía:', err); });
+
+      var payBtn = document.getElementById('resultado-pago');
+      payBtn.textContent = 'Continuar al pago — ' + formatCOP(monto);
+      payBtn.href = buildWompiLink(monto, reference, wz.servicio);
+
+      conf.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // =========================================================================
+    // Entrada desde anuncios: ?servicio=habeas-data abre el wizard ya
+    // preseleccionado, sin que la persona tenga que elegir el servicio de nuevo.
+    // =========================================================================
+    // =========================================================================
+    // MESSAGE MATCH POR VERTICAL (una sola landing, varias entradas)
+    // La página se adapta según la URL de entrada:
+    //   ?servicio=habeas-data | tea | deudas | marca
+    //   o la ruta /habeas-data, /tea-discapacidad, /gestiona-deuda, /registro-marca
+    //   (las rutas requieren que el hosting sirva este mismo archivo para esas
+    //   direcciones: en Netlify, una regla "/*  /index.html  200").
+    // Cada campaña de Google Ads apunta a su URL y ve su propio H1, título,
+    // descripción, texto y botón. Sin parámetro se ve la versión general.
+    // =========================================================================
+    var VERTICALES = {
+      'tea': {
+        title: 'Derechos Ley TEA Colombia: educación y salud | Lyzbri',
+        desc: 'Conoce los derechos de tu hijo con TEA o discapacidad en Colombia (Ley TEA, Ley 1618 de 2013, Decreto 1421 de 2017) en educación y salud. Evaluación legal gratuita, en minutos.',
+        eyebrow: 'TEA y discapacidad infantil',
+        h1: 'Derechos Ley TEA en Colombia: educación y salud para tu hijo',
+        copy: 'Descubre en minutos qué derechos aplican a tu caso frente a la EPS, el colegio o espacios deportivos, y cuál es el primer paso concreto a seguir.',
+        cta: 'Evaluar caso de mi hijo'
+      },
+      'habeas-data': {
+        title: 'Reporte negativo en Datacrédito y CIFIN: evalúalo gratis | Lyzbri',
+        desc: 'Evalúa gratis tu reporte negativo en Datacrédito o CIFIN. Te decimos si existe base jurídica para reclamar o corregirlo según la Ley 1266 de 2008. Sin promesas de eliminación.',
+        eyebrow: 'Hábeas Data · Reportes negativos',
+        h1: 'Reporte negativo en Datacrédito y CIFIN: evalúa si puedes reclamar',
+        copy: 'Si buscas eliminar o corregir un reporte negativo, empieza por saber si existe base jurídica para reclamar. Revisamos tu caso bajo la Ley 1266 de 2008 y la Ley 1581 de 2012, sin promesas de resultado.',
+        cta: 'Evaluar mi reporte gratis'
+      },
+      'deudas': {
+        title: 'Asesoría legal en deudas y cobranza en Colombia | Lyzbri',
+        desc: 'Asesoría legal en deudas y cobranza en Colombia: ordena tus obligaciones y conoce qué opciones jurídicas pueden existir. Evaluación inicial gratuita, sin promesas de reducción de deuda.',
+        eyebrow: 'Gestiona tu Deuda',
+        h1: 'Asesoría legal en deudas y cobranza en Colombia',
+        copy: 'Ordena tus obligaciones, entiende tu situación frente a la cobranza y conoce qué alternativas jurídicas pueden existir antes de tomar decisiones.',
+        cta: 'Revisar estado de mis deudas'
+      },
+      'marca': {
+        title: 'Registro de marca y logo ante la Superintendencia (SIC) | Lyzbri',
+        desc: 'Registro de marca y logo ante la Superintendencia de Industria y Comercio en Colombia. Consulta gratis la viabilidad de tu marca antes de iniciar el trámite. Tasas oficiales aparte.',
+        eyebrow: 'Registro de marca',
+        h1: 'Registro de marca y logo ante la Superintendencia de Industria y Comercio',
+        copy: 'Consulta la viabilidad de tu nombre o logo antes de iniciar el trámite y define el alcance del acompañamiento jurídico. Las tasas oficiales se pagan aparte.',
+        cta: 'Consultar viabilidad de marca'
+      }
+    };
+
+    var RUTAS = {
+      'habeas-data': 'habeas-data',
+      'tea-discapacidad': 'tea',
+      'gestiona-deuda': 'deudas',
+      'registro-marca': 'marca'
+    };
+
+    function aplicarVertical(svc) {
+      var v = VERTICALES[svc];
+      if (!v) return;
+      document.title = v.title;
+      var md = document.querySelector('meta[name="description"]');
+      if (md) md.setAttribute('content', v.desc);
+      var set = function (id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; };
+      set('hero-eyebrow', v.eyebrow);
+      set('hero-h1', v.h1);
+      set('hero-copy', v.copy);
+      var botones = ['hero-cta', 'mobile-cta-btn'].map(function (id) { return document.getElementById(id); });
+      botones.forEach(function (a) {
+        if (!a) return;
+        a.textContent = v.cta;
+        a.onclick = function () { startWizard(svc); };
+      });
+    }
+
+    // =========================================================================
+    // FORMULARIO DETALLADO DE HECHOS (POST-PAGO)
+    // -------------------------------------------------------------------------
+    // Se muestra cuando se vuelve de Wompi con ?pago=ok (o, para probar la
+    // interfaz sin pagar de verdad, visitando directamente esta misma URL con
+    // ?pago=ok&servicio=<habeas-data|deudas|marca|tea>&referencia=demo-123).
+    // Los nombres de los campos (id) son los mismos nombres de propiedad que se
+    // usarían en HubSpot, para que conectar el envío más adelante sea directo.
+    // Para TEA no se repiten tea_condicion/tea_area/tea_estado: esos ya se
+    // preguntaron en el wizard antes del pago y se recuperan de localStorage.
+    // =========================================================================
+    var CAMPOS_DETALLADOS = {
+      'habeas-data': [
+        { id: 'tipo_documento', label: 'Tipo de documento', type: 'select', options: [{v:'cc',l:'C.C.'}, {v:'ce',l:'C.E.'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}, {v:'pep',l:'PEP'}, {v:'nit',l:'NIT'}] },
+        { id: 'numero_documento', label: 'N° de documento', type: 'text' },
+        { id: 'entidad_reportante', label: 'Entidad reportante / operador', type: 'select', options: [{v:'bancolombia',l:'Bancolombia'}, {v:'davivienda',l:'Davivienda'}, {v:'datacredito',l:'Datacrédito'}, {v:'transunion',l:'TransUnión'}, {v:'banco_bogota',l:'Banco de Bogotá'}, {v:'bbva',l:'BBVA'}, {v:'otra',l:'Otra'}] },
+        { id: 'fecha_hecho', label: 'Fecha del pago / del hecho', type: 'date' },
+        { id: 'numero_obligaciones', label: 'N° de obligación / referencia', type: 'text' },
+        { id: 'monto_obligacion', label: 'Monto (si aplica)', type: 'number', optional: true },
+        { id: 'hechos_adicionales_hd', label: 'Hechos adicionales / observaciones', type: 'textarea', maxLength: 800 }
+      ],
+      'deudas': [
+        { id: 'tipo_documento', label: 'Tipo de documento', type: 'select', options: [{v:'cc',l:'C.C.'}, {v:'ce',l:'C.E.'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}, {v:'pep',l:'PEP'}, {v:'nit',l:'NIT'}] },
+        { id: 'numero_documento', label: 'N° de documento', type: 'text' },
+        { id: 'acreedores', label: 'Acreedor(es) — puede marcar varios', type: 'multiselect', options: [{v:'bancolombia_deuda',l:'Bancolombia'}, {v:'davivienda_deuda',l:'Davivienda'}, {v:'bbva_deuda',l:'BBVA'}, {v:'banco_bogota_deuda',l:'Banco de Bogotá'}, {v:'scotiabank_colpatria',l:'Scotiabank Colpatria'}, {v:'banco_popular',l:'Banco Popular'}, {v:'otro_acreedor',l:'Otro'}] },
+        { id: 'numero_obligaciones', label: 'N° de obligación(es)', type: 'text' },
+        { id: 'monto_total_adeudado', label: 'Monto total adeudado', type: 'number' },
+        { id: 'objetivo_negociacion', label: 'Qué busca al negociar', type: 'select', options: [{v:'plazo_mayor',l:'Plazo mayor'}, {v:'mejor_tasa',l:'Mejor tasa'}, {v:'condonacion_parcial',l:'Condonación parcial'}, {v:'otro_objetivo',l:'Otro'}] },
+        { id: 'observaciones_deudas', label: 'Observaciones', type: 'textarea', maxLength: 600 }
+      ],
+      'marca': [
+        { id: 'nombre_marca', label: 'Nombre de la marca', type: 'text' },
+        { id: 'denominacion_signo', label: 'Denominación del signo (palabra/nombre, si aplica)', type: 'text', optional: true },
+        { id: 'tipo_signo_especial', label: '¿Es un signo sonoro o tridimensional?', type: 'select', options: [{v:'no_especial',l:'No'}, {v:'sonoro',l:'Sonoro'}, {v:'tridimensional',l:'Tridimensional'}] },
+        { id: 'incluye_elementos_graficos', label: '¿La marca incluye elementos gráficos?', type: 'select', options: [{v:'si_elementos',l:'Sí'}, {v:'no_elementos',l:'No'}] },
+        { id: 'descripcion_productos_servicios', label: 'Descripción de productos/servicios a proteger', type: 'textarea', maxLength: 500 },
+        { id: 'titular_tipo', label: 'Titular', type: 'select', options: [{v:'persona_natural', l:'Persona natural'}, {v:'persona_juridica', l:'Persona jurídica'}] },
+        { id: 'razon_social', label: 'Razón social', type: 'text', optional: true, condSobre: 'titular_tipo', condValor: 'persona_juridica' },
+        { id: 'nit_titular', label: 'NIT', type: 'text', optional: true, condSobre: 'titular_tipo', condValor: 'persona_juridica' }
+      ],
+      'tea': [
+        { id: 'entidad_involucrada_tea', label: 'Entidad involucrada (colegio, EPS, club, etc.)', type: 'text' },
+        { id: 'nombre_beneficiario_tea', label: 'Nombre del beneficiario (si es distinto a quien paga, ej. hijo/a)', type: 'text' },
+        { id: 'tipo_documento_beneficiario_tea', label: 'Tipo de documento del beneficiario', type: 'select', options: [{v:'ti',l:'T.I.'}, {v:'cc',l:'C.C.'}, {v:'rc_menor',l:'Registro Civil / Otro (menor sin cédula)'}] },
+        { id: 'documento_beneficiario_tea', label: 'N° de documento del beneficiario', type: 'text' },
+        { id: 'ajuste_solicitado_tea', label: 'Ajuste o derecho que está solicitando', type: 'textarea', maxLength: 500 },
+        { id: 'hechos_incumplimiento_tea', label: 'Hechos — qué pasó y por qué considera que no se ha resuelto', type: 'textarea', maxLength: 1000 }
+      ]
+    };
+
+    var NOMBRE_SERVICIO = { 'habeas-data': 'Hábeas Data', 'deudas': 'Gestiona tu Deuda', 'marca': 'Registro de marca', 'tea': 'TEA y discapacidad' };
+
+    // El wizard usa sus propios códigos cortos ('habeas-data', 'marca', 'tea'),
+    // pero el dropdown servicio_comprado en HubSpot tiene sus propios valores
+    // internos, ya fijados y verificados (habeas_data, deudas, registro_marca,
+    // tea_discapacidad) -- no coinciden en 2 de los 4 casos, así que hay que
+    // traducir en ambas direcciones antes de leer o escribir esa propiedad.
+    var SERVICIO_A_HUBSPOT = { 'habeas-data': 'habeas_data', 'deudas': 'deudas', 'marca': 'registro_marca', 'tea': 'tea_discapacidad' };
+    var SERVICIO_DESDE_HUBSPOT = { 'habeas_data': 'habeas-data', 'deudas': 'deudas', 'registro_marca': 'marca', 'tea_discapacidad': 'tea' };
+
+    function campoHtml(c) {
+      var req = c.optional ? '' : 'required';
+      var label = '<label style="display:block;margin-top:14px;font-weight:600;">' + c.label + (c.optional ? ' <span class="fine-print">(opcional)</span>' : '') + '</label>';
+      var attrs = 'id="fd_' + c.id + '" name="' + c.id + '" ' + req + ' style="width:100%;padding:10px;margin-top:6px;border-radius:8px;border:1px solid #ccc;"';
+      var input;
+      if (c.type === 'select') {
+        var opts = c.options.map(function (o) {
+          var v = typeof o === 'object' ? o.v : o;
+          var l = typeof o === 'object' ? o.l : o;
+          return '<option value="' + v + '">' + l + '</option>';
+        }).join('');
+        input = '<select ' + attrs + '><option value="">Selecciona…</option>' + opts + '</select>';
+      } else if (c.type === 'multiselect') {
+        // Propiedad de HubSpot de selección múltiple (checkbox): se envía como
+        // valores internos unidos con ';', el formato que espera esa propiedad.
+        var mopts = c.options.map(function (o) {
+          var v = typeof o === 'object' ? o.v : o;
+          var l = typeof o === 'object' ? o.l : o;
+          return '<label style="display:block;font-weight:400;margin-top:4px;"><input type="checkbox" name="' + c.id + '" value="' + v + '"> ' + l + '</label>';
+        }).join('');
+        input = '<div id="fd_' + c.id + '" style="margin-top:6px;">' + mopts + '</div>';
+      } else if (c.type === 'textarea') {
+        input = '<textarea ' + attrs + (c.maxLength ? ' maxlength="' + c.maxLength + '"' : '') + ' rows="4"></textarea>';
+      } else if (c.type === 'date') {
+        input = '<input type="date" ' + attrs + ' max="' + new Date().toISOString().split('T')[0] + '">';
+      } else if (c.type === 'number') {
+        input = '<input type="number" ' + attrs + '>';
+      } else {
+        input = '<input type="text" ' + attrs + '>';
+      }
+      var wrapperAttrs = c.condSobre ? ' data-cond-sobre="' + c.condSobre + '" data-cond-valor="' + c.condValor + '" style="display:none;"' : '';
+      return '<div class="fd-campo"' + wrapperAttrs + '>' + label + input + '</div>';
+    }
+
+    function aplicarCondicionales(container) {
+      container.querySelectorAll('[data-cond-sobre]').forEach(function (div) {
+        var origen = document.getElementById('fd_' + div.getAttribute('data-cond-sobre'));
+        if (!origen) return;
+        var actualizar = function () {
+          div.style.display = (origen.value === div.getAttribute('data-cond-valor')) ? 'block' : 'none';
+        };
+        origen.addEventListener('change', actualizar);
+        actualizar();
+      });
+    }
+
+    function mostrarFormularioDetallado(servicio, referencia) {
+      var campos = CAMPOS_DETALLADOS[servicio];
+      var cont = document.getElementById('formulario-detallado-container');
+      if (!campos || !cont) return;
+
+      var av = document.getElementById('aviso-pago');
+      if (av) av.style.display = 'none';
+
+      var html = '<h3>Cuéntanos los hechos de tu caso — ' + NOMBRE_SERVICIO[servicio] + '</h3>'
+        + '<p class="fine-print">Tu pago fue registrado (referencia ' + referencia + '). Esta información es la que usamos para preparar tu documento.</p>'
+        + '<form id="fd_form">' + campos.map(campoHtml).join('') + '<div class="form-actions" style="margin-top:18px;"><button type="submit" class="btn btn-primary">Enviar información</button></div>'
+        + '<p class="fine-print" id="fd_estado"></p></form>';
+      cont.innerHTML = html;
+      cont.style.display = 'block';
+      aplicarCondicionales(cont);
+
+      document.getElementById('fd_form').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var datos = {};
+        campos.forEach(function (c) {
+          if (c.type === 'multiselect') {
+            var grupo = document.getElementById('fd_' + c.id);
+            if (grupo && grupo.style.display !== 'none' && (!grupo.closest('.fd-campo') || grupo.closest('.fd-campo').style.display !== 'none')) {
+              var vals = Array.prototype.slice.call(grupo.querySelectorAll('input[type="checkbox"]:checked')).map(function (i) { return i.value; });
+              if (vals.length) datos[c.id] = vals.join(';');
+            }
+            return;
+          }
+          var el = document.getElementById('fd_' + c.id);
+          if (el && el.style.display !== 'none' && (!el.closest('.fd-campo') || el.closest('.fd-campo').style.display !== 'none')) {
+            datos[c.id] = el.value;
+          }
+        });
+        // tipo_documento_beneficiario_tea en HubSpot solo acepta cc/ce/pasaporte/
+        // ppt/pep/ti -- no existe valor para Registro Civil ni "Otro". Para no
+        // mandar un valor inválido (lo que haría fallar todo el guardado), el
+        // caso "Registro Civil / menor sin cédula" no escribe esa propiedad:
+        // deja la anotación en el número de documento del beneficiario.
+        if (datos.tipo_documento_beneficiario_tea === 'rc_menor') {
+          delete datos.tipo_documento_beneficiario_tea;
+          if (datos.documento_beneficiario_tea) {
+            datos.documento_beneficiario_tea = 'Registro Civil / sin cédula — ' + datos.documento_beneficiario_tea;
+          }
+        }
+
+        var estado = document.getElementById('fd_estado');
+        estado.textContent = 'Enviando…';
+
+        fetch('/.netlify/functions/guardar-formulario', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ referenciaPago: referencia, servicio: servicio, campos: datos })
+        }).then(function (res) {
+          if (!res.ok) throw new Error('guardar-formulario respondió ' + res.status);
+          estado.textContent = 'Listo. Recibimos tu información y en breve te enviaremos el documento a tu correo.';
+          document.getElementById('fd_form').querySelectorAll('input,select,textarea,button').forEach(function (el) { el.disabled = true; });
+        }).catch(function (err) {
+          // El endpoint de guardado (Netlify Function) todavía no está desplegado en
+          // producción -- se deja la información guardada localmente como respaldo,
+          // sin perderla, mientras esa pieza se conecta.
+          try { localStorage.setItem('lyzbri_hechos_pendientes_' + referencia, JSON.stringify(datos)); } catch (e) {}
+          estado.textContent = 'Recibimos tu información. Si no ves confirmación por correo en un rato, escríbenos por WhatsApp con tu referencia (' + referencia + ') y con gusto lo revisamos.';
+          console.warn('guardar-formulario no disponible todavía:', err);
+        });
+      });
+
+      cont.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('pago') === 'ok') {
+        var referencia = params.get('referencia');
+        var servicio = params.get('servicio');
+        var wompiTxId = params.get('id'); // Wompi anexa esto solo en un retorno real de pago
+        if (!referencia || !servicio) {
+          // Respaldo: si la URL no trae los parámetros (p. ej. Wompi los reescribió),
+          // se busca el último caso guardado en localStorage antes de salir a pagar.
+          try {
+            for (var i = 0; i < localStorage.length; i++) {
+              var k = localStorage.key(i);
+              if (k && k.indexOf('lyzbri_caso_') === 0) {
+                var caso = JSON.parse(localStorage.getItem(k));
+                referencia = referencia || caso.referencia;
+                servicio = servicio || caso.servicio;
+              }
+            }
+          } catch (e) {}
+        }
+
+        if (!servicio || !CAMPOS_DETALLADOS[servicio]) {
+          var av0 = document.getElementById('aviso-pago'); if (av0) av0.style.display = 'block';
+        } else if (wompiTxId) {
+          // Retorno real de Wompi: re-validar en el servidor antes de mostrar el
+          // formulario -- nunca confiar solo en el parámetro de la URL.
+          var contVal = document.getElementById('formulario-detallado-container');
+          if (contVal) { contVal.style.display = 'block'; contVal.innerHTML = '<p>Verificando tu pago…</p>'; }
+          fetch('/.netlify/functions/validar-formulario?id=' + encodeURIComponent(wompiTxId))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (data.valid) {
+                // data.servicio viene de HubSpot (p.ej. "tea_discapacidad") -- se
+                // traduce de vuelta al código corto que usa CAMPOS_DETALLADOS
+                // ("tea"). Si HubSpot no devolvió servicio (advertencia de token
+                // no configurado), se usa el que ya traía la URL como respaldo.
+                var svcFinal = (data.servicio && SERVICIO_DESDE_HUBSPOT[data.servicio]) || servicio;
+                mostrarFormularioDetallado(svcFinal, data.referenciaPago || referencia || 'sin-referencia');
+              } else if (contVal) {
+                contVal.innerHTML = '<p>No pudimos verificar tu pago. Si ya pagaste, escríbenos por WhatsApp con tu referencia (' + (referencia || '') + ').</p>';
+              }
+            })
+            .catch(function () {
+              // La función de validación todavía no está desplegada / no responde:
+              // se cae al modo de confianza en la URL, igual que antes de tener
+              // el backend conectado, para no dejar al cliente sin formulario.
+              mostrarFormularioDetallado(servicio, referencia || 'sin-referencia');
+            });
+        } else {
+          // Sin ?id=: no viene de un pago real de Wompi -- es una visita de prueba
+          // (?pago=ok&servicio=...&referencia=...) para maquetar/probar la interfaz,
+          // tal como se definió. Se muestra directo, sin llamar al backend.
+          mostrarFormularioDetallado(servicio, referencia || 'sin-referencia');
+        }
+      }
+      var svc = params.get('servicio');
+      if (!svc) {
+        var seg = window.location.pathname.replace(/\/+$/, '').split('/').pop();
+        svc = RUTAS[seg] || null;
+      }
+      if (svc && VERTICALES[svc]) { aplicarVertical(svc); }
+    });
+
+    // =========================================================================
+    // BLOG: abre el artículo del enlace (#id), conecta los botones al formulario
+    // y suma las preguntas de las guías al FAQPage de la página (datos estructurados).
+    // Para agregar artículos NO tocas este código: solo copias un bloque en la sección Blog del HTML.
+    // =========================================================================
+    (function () {
+      function abrirDesdeHash() {
+        var id = decodeURIComponent((window.location.hash || '').replace('#', ''));
+        if (!id) return;
+        var el = document.getElementById(id);
+        if (el && el.classList.contains('guia')) {
+          el.open = true;
+          setTimeout(function () { el.scrollIntoView({ block: 'start' }); }, 50);
+        }
+      }
+      window.addEventListener('DOMContentLoaded', function () {
+        Array.prototype.forEach.call(document.querySelectorAll('.guia .btn[data-cta]'), function (b) {
+          b.addEventListener('click', function (e) { e.preventDefault(); startWizard(b.getAttribute('data-cta')); });
+        });
+        if (document.querySelector('.guia')) { var v = document.getElementById('blog-vacio'); if (v) v.style.display = 'none'; }
+        abrirDesdeHash();
+        // Datos estructurados: las guías se suman al FAQPage existente
+        try {
+          var ld = null;
+          Array.prototype.forEach.call(document.querySelectorAll('script[type="application/ld+json"]'), function (s) {
+            if (!ld && s.textContent.indexOf('"FAQPage"') >= 0) ld = s;
+          });
+          if (ld) {
+            var data = JSON.parse(ld.textContent);
+            Array.prototype.forEach.call(document.querySelectorAll('.guia'), function (g) {
+              var q = g.querySelector('summary h3'), r = g.querySelector('.blog-resp p');
+              if (q && r) data.mainEntity.push({ '@type': 'Question', 'name': q.textContent.trim(), 'acceptedAnswer': { '@type': 'Answer', 'text': r.textContent.trim() } });
+            });
+            ld.textContent = JSON.stringify(data);
+          }
+        } catch (err) { /* sin datos estructurados adicionales */ }
+      });
+      window.addEventListener('hashchange', abrirDesdeHash);
+    })();
+  </script>
+</body>
+</html>
