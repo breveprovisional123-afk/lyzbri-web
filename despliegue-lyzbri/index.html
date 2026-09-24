@@ -3,13 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Plataforma de evaluación y orientación legal digital en Colombia: Hábeas Data, deudas, registro de marca y derechos de familias con hijos TEA o con discapacidad. Empieza gratis y sin promesas de resultado." />
-  <title>Lyzbri | Evaluación y Orientación Legal Digital en Colombia</title>
+  <meta name="description" content="Asesoría jurídica 100% digital. Resolvemos trámites de hábeas data, deudas, derechos TEA y registro de marcas para toda Colombia y colombianos en el exterior." />
+  <title>Lyzbri | Plataforma Legal Digital: Deudas, TEA y Marcas en Colombia</title>
   <script type="application/ld+json">
   {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Lyzbri reemplaza a un abogado?", "acceptedAnswer": {"@type": "Answer", "text": "No. Lyzbri es un punto de entrada jurídico estructurado. Cuando el caso lo requiere, la gestión es realizada o revisada por profesionales del derecho."}}, {"@type": "Question", "name": "¿Cómo me van a contactar?", "acceptedAnswer": {"@type": "Answer", "text": "A través del WhatsApp que nos dejes en el formulario. El contacto directo con nuestro equipo se habilita en las siguientes etapas del proceso, una vez precalificamos tu caso."}}, {"@type": "Question", "name": "¿Esto reemplaza una consulta jurídica tradicional?", "acceptedAnswer": {"@type": "Answer", "text": "No necesariamente. La evaluación inicial organiza la información; cualquier recomendación jurídica definitiva requiere revisión profesional."}}, {"@type": "Question", "name": "¿Qué pasa con mis datos personales?", "acceptedAnswer": {"@type": "Answer", "text": "Usamos tu información únicamente para evaluar tu caso, conforme a nuestra Política de Tratamiento de Datos y Aviso de Privacidad."}}, {"@type": "Question", "name": "¿Me van a sacar de Datacrédito o CIFIN?", "acceptedAnswer": {"@type": "Answer", "text": "No lo prometemos. Revisamos tu caso y te decimos si existe base jurídica para reclamar o corregir información reportada, según la Ley 1266 de 2008."}}, {"@type": "Question", "name": "¿La evaluación inicial tiene costo?", "acceptedAnswer": {"@type": "Answer", "text": "No. La evaluación inicial es gratuita. Si decides avanzar con un servicio pago, verás el alcance y el valor antes de contratar."}}, {"@type": "Question", "name": "¿Qué derechos tiene mi hijo con TEA en salud y educación?", "acceptedAnswer": {"@type": "Answer", "text": "Depende de tu caso. La evaluación gratuita identifica qué normas aplican (Ley TEA, Ley 1618 de 2013, Decreto 1421 de 2017, entre otras) y cuál es el primer paso concreto."}}]}
-  </script>
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"LegalService","name":"Lyzbri","description":"Plataforma de evaluación y orientación legal digital en Colombia: Hábeas Data, gestión de deudas, registro de marca y derechos de familias con hijos con TEA o discapacidad.","areaServed":{"@type":"Country","name":"Colombia"},"availableLanguage":"es","serviceType":["Hábeas Data","Gestión de deudas","Registro de marca","TEA y discapacidad"]}
   </script>
   <style>
     :root {
@@ -24,6 +21,8 @@
       --accent-2: #0f7f8c;
       --accent-3: #b38a4c;
       --success: #1f8a5b;
+      --urgent: #d94a1f;
+      --urgent-2: #f2762a;
       --shadow: 0 18px 50px rgba(16, 35, 63, 0.10);
       --shadow-soft: 0 10px 24px rgba(16, 35, 63, 0.08);
       --radius-xl: 28px;
@@ -274,6 +273,11 @@
       color: var(--accent);
       border-color: rgba(23, 59, 114, 0.14);
     }
+    .btn-urgent {
+      background: linear-gradient(135deg, var(--urgent) 0%, var(--urgent-2) 100%);
+      color: #fff;
+      box-shadow: 0 14px 32px rgba(217, 74, 31, 0.32);
+    }
 
     .hero-meta {
       display: grid;
@@ -420,6 +424,25 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 14px;
     }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .pillar-card {
+      padding: 22px;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.92);
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .pillar-icon { font-size: 1.8rem; line-height: 1; }
+    .pillar-card h3 { margin: 0; font-size: 1.12rem; letter-spacing: -0.01em; }
+    .pillar-card p { color: var(--muted); font-size: 0.95rem; margin: 0; flex: 1; }
+    @media (max-width: 900px) { .grid-3 { grid-template-columns: 1fr; } }
 
     .card {
       padding: 18px;
@@ -956,6 +979,17 @@
     .legal .legal-fecha{color:var(--muted);font-size:.9rem}
     .legal .legal-volver{display:inline-block;margin-top:18px;font-weight:600}
   </style>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LegalService",
+  "name": "Lyzbri",
+  "url": "https://lyzbri.com",
+  "description": "Plataforma legal digital especializada en finanzas, familia/TEA y emprendimiento.",
+  "areaServed": "CO",
+  "email": "contacto@lyzbri.com"
+}
+</script>
 </head>
 <body>
   <div class="topbar">
@@ -986,9 +1020,9 @@
         <article class="hero-main">
           <div>
             <p class="eyebrow" id="hero-eyebrow">Lyzbri · Soluciones legales digitales</p>
-            <h1 id="hero-h1">Plataforma de Evaluación y Orientación Legal Digital en Colombia</h1>
+            <h1 id="hero-h1">Soluciones legales estratégicas, directas y sin enredos en Colombia.</h1>
             <p class="hero-copy" id="hero-copy">
-              Hábeas Data, deudas, registro de marca y derechos de familias con hijos TEA o con discapacidad. Cuéntanos lo esencial de tu situación y conoce tu siguiente paso, sin costo.
+              Blindamos tu patrimonio, tus derechos y tu negocio con una plataforma 100% digital, ágil y especializada. Selecciona el área en la que necesitas apoyo experto:
             </p>
 
             <div class="cta-row">
@@ -1075,6 +1109,40 @@
             <span class="trust-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 018 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
             <div><h3>100% confidencial y digital</h3><p>Tus datos se usan solo para evaluar tu caso, conforme a nuestra política de tratamiento de datos.</p></div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pilares" aria-label="Áreas de servicio">
+      <div class="shell section-box">
+        <div class="section-head">
+          <div>
+            <h2>Blindamos tu patrimonio, tus derechos y tu negocio</h2>
+            <p>Selecciona el área en la que necesitas apoyo experto.</p>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <article class="pillar-card">
+            <span class="pillar-icon" aria-hidden="true">🏛️</span>
+            <h3>Finanzas y Patrimonio</h3>
+            <p>Analizamos tu situación financiera, reportes negativos y alternativas frente a deudas y cesación de pagos. Protege tu patrimonio con una estrategia jurídica clara y estructurada 100% online.</p>
+            <div class="cta-row"><a class="btn btn-urgent" href="#servicios">Analizar mi situación financiera</a></div>
+          </article>
+
+          <article class="pillar-card">
+            <span class="pillar-icon" aria-hidden="true">🧩</span>
+            <h3>Familia y Apoyo TEA</h3>
+            <p>Orientación y representación legal experta en la garantía de derechos fundamentales, tutelas y rutas de atención para familias con condición TEA y discapacidad. Transformamos la norma en soluciones claras para tu familia.</p>
+            <div class="cta-row"><a class="btn btn-urgent" href="#contacto" onclick="startWizard('tea')">Consultar mi caso familiar</a></div>
+          </article>
+
+          <article class="pillar-card">
+            <span class="pillar-icon" aria-hidden="true">🚀</span>
+            <h3>Emprendimiento y Registro de Marca</h3>
+            <p>Protege tu marca y estructura jurídicamente tu negocio digital o e-commerce. Registro de marca ante la SIC, contratos blindados y seguridad legal para que te dediques a crecer.</p>
+            <div class="cta-row"><a class="btn btn-urgent" href="#contacto" onclick="startWizard('marca')">Blindar mi marca</a></div>
+          </article>
         </div>
       </div>
     </section>
@@ -1659,6 +1727,9 @@
         <p class="footer-legal">
           Base legal general (Hábeas Data): Ley 1266 de 2008, Ley 1581 de 2012 y orientaciones de la SIC sobre el manejo y reporte de información.
         </p>
+        <p class="footer-legal" style="margin-top:6px;">
+          Contáctanos directamente en <a href="mailto:contacto@lyzbri.com">contacto@lyzbri.com</a> para soporte y gestión de casos de manera remota.
+        </p>
         <div class="links-row">
           <a href="?servicio=habeas-data">Hábeas Data</a>
           <a href="?servicio=deudas">Gestiona tu Deuda</a>
@@ -1737,7 +1808,7 @@
         <p>Puedes ejercer tus derechos escribiéndonos por el WhatsApp o el formulario de contacto de esta plataforma, indicando tu nombre, el derecho que deseas ejercer y una descripción clara de tu solicitud. Para proteger tu información, podremos pedirte datos que nos permitan verificar tu identidad.</p>
         <p>Las consultas se responderán en un máximo de diez (10) días hábiles contados desde su recibo, prorrogables por cinco (5) días hábiles más si informamos los motivos de la demora. Los reclamos de rectificación, actualización o supresión se resolverán en un máximo de quince (15) días hábiles, prorrogables por ocho (8) días hábiles más en los términos de la ley. Si el reclamo está incompleto, te pediremos subsanarlo dentro de los cinco (5) días siguientes a su recibo.</p>
         <h3>7. Seguridad, conservación y terceros</h3>
-        <p>Aplicamos medidas razonables para proteger la información contra acceso no autorizado, pérdida o uso indebido. Conservamos tus datos durante el tiempo necesario para las finalidades descritas y los plazos legales aplicables. Solo compartimos información con terceros cuando es necesario para prestar el servicio (por ejemplo, la pasarela de pagos Wompi) o cuando una autoridad competente lo exija. No vendemos tus datos.</p>
+        <p>Aplicamos medidas razonables para proteger la información contra acceso no autorizado, pérdida o uso indebido. Conservamos tus datos durante el tiempo necesario para las finalidades descritas y los plazos legales aplicables. Solo compartimos información con terceros cuando es necesario para prestar el servicio (por ejemplo, la pasarela de pagos Wompi y la plataforma de gestión de contactos HubSpot, cuyos servidores pueden estar ubicados fuera de Colombia) o cuando una autoridad competente lo exija. No vendemos tus datos.</p>
         <h3>8. Vigencia y cambios</h3>
         <p>Esta política rige desde la fecha de su última actualización. Cualquier cambio sustancial se publicará en esta página.</p>
 
