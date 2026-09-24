@@ -8,6 +8,28 @@
 // Netlify (Site settings -> Environment variables). Esta funcion NO la trae
 // escrita en el codigo -- se lee del entorno en tiempo de ejecucion.
 
+// Avisa a Make que el caso ya tiene los hechos completos, para que genere y
+// envie el documento en ese momento (y no al aprobarse el pago, cuando el
+// formulario todavia esta vacio). La URL del webhook de Make se lee de la
+// variable de entorno MAKE_WEBHOOK_URL -- no va escrita en el codigo porque
+// el repositorio es publico. Si falla, no se bloquea el guardado del cliente.
+async function avisarAMake(email, referenciaPago) {
+  if (!process.env.MAKE_WEBHOOK_URL || !email) return false;
+  try {
+    const r = await fetch(process.env.MAKE_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        origen: 'formulario_completo',
+        data: { transaction: { status: 'APPROVED', customer_email: email, reference: referenciaPago } }
+      })
+    });
+    return r.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ ok: false, reason: 'method_not_allowed' }) };
@@ -54,7 +76,7 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
-        properties: ['hs_object_id']
+        properties: ['hs_object_id', 'email']
       })
     });
     const searchData = await searchRes.json();
@@ -90,7 +112,8 @@ exports.handler = async (event) => {
         const errText = await createRes.text();
         return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_create_failed', detail: errText }) };
       }
-      return { statusCode: 200, body: JSON.stringify({ ok: true, creadoComoRespaldo: true }) };
+      const avisoMakeRespaldo = await avisarAMake(correo, referenciaPago);
+      return { statusCode: 200, body: JSON.stringify({ ok: true, creadoComoRespaldo: true, avisoMake: avisoMakeRespaldo }) };
     }
 
     // 3. Actualizar el contacto con los campos del formulario + marcar hechos_completos.
@@ -114,7 +137,9 @@ exports.handler = async (event) => {
       return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
     }
 
-    return { statusCode: 200, body: JSON.stringify({ ok: true }) };
+    const emailContacto = correo || (contact.properties && contact.properties.email) || null;
+    const avisoMake = await avisarAMake(emailContacto, referenciaPago);
+    return { statusCode: 200, body: JSON.stringify({ ok: true, avisoMake }) };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ ok: false, reason: 'server_error', message: err.message }) };
   }
