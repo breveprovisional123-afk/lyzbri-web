@@ -985,7 +985,7 @@
   "@type": "LegalService",
   "name": "Lyzbri",
   "url": "https://lyzbri.com",
-  "description": "Plataforma legal digital especializada en finanzas, familia/TEA y emprendimiento.",
+  "description": "Plataforma legal digital especializada en finanzas, familia (TEA, discapacidad y cuota alimentaria) y emprendimiento.",
   "areaServed": "CO",
   "email": "contacto@lyzbri.com"
 }
@@ -1203,6 +1203,18 @@
               <li>Siguiente paso claro</li>
             </ul>
             <div class="cta-row"><a class="btn btn-primary" href="#contacto" onclick="startWizard('tea')">Evaluar el caso de mi hijo gratis</a></div>
+          </article>
+
+          <article class="card">
+            <span class="tag">Familia · Cuota alimentaria</span>
+            <h3><a href="?servicio=alimentos">Cuota alimentaria: fijación, aumento, disminución o exoneración</a></h3>
+            <p>Prepara tu solicitud de conciliación de alimentos para la Comisaría de Familia, el ICBF o un centro de conciliación, en un documento Word editable y listo para radicar.</p>
+            <ul class="service-includes">
+              <li>Formulario guiado según tu caso</li>
+              <li>Documento Word con anexos e instrucciones de radicación</li>
+              <li>Autogestión desde $49.000 o con revisión de abogada</li>
+            </ul>
+            <div class="cta-row"><a class="btn btn-primary" href="#contacto" onclick="startWizard('alimentos')">Preparar mi solicitud de alimentos</a></div>
           </article>
         </div>
       </div>
@@ -1571,6 +1583,11 @@
             <h3>TEA y discapacidad infantil</h3>
             <p>Salud, educación, deporte u otra condición del neurodesarrollo.</p>
           </article>
+          <article class="card selector-card" data-service="alimentos" onclick="startWizard('alimentos')">
+            <span class="tag">Servicio 5</span>
+            <h3>Cuota alimentaria</h3>
+            <p>Fijar, aumentar, disminuir o dejar de pagar una cuota.</p>
+          </article>
         </div>
 
         <!-- Wizard: una pregunta por pantalla, respuestas grandes, avance automático -->
@@ -1735,6 +1752,7 @@
           <a href="?servicio=deudas">Gestiona tu Deuda</a>
           <a href="?servicio=marca">Registro de marca</a>
           <a href="?servicio=tea">TEA y discapacidad</a>
+          <a href="?servicio=alimentos">Cuota alimentaria</a>
           <a href="#blog">Blog</a>
           <a href="#aviso-privacidad">Aviso de privacidad</a>
           <a href="#politica-datos">Política de tratamiento de datos</a>
@@ -1865,7 +1883,7 @@
     // =========================================================================
     var WOMPI_PUBLIC_KEY = "pub_test_TL847L1p5HtyqRkYPLPxIYWY9JQ3X95M"; // llave PÚBLICA de PRUEBAS (sandbox). Antes de vender de verdad, cambiar por la de producción (pub_prod_...).
 
-    function buildWompiLink(amountCOP, reference, servicio) {
+    function buildWompiLink(amountCOP, reference, servicio, extra) {
       var amountCents = Math.round(amountCOP * 100);
       // La URL de retorno lleva nuestra propia referencia y el servicio como
       // parámetros propios (no dependemos solo de lo que Wompi decida anexar,
@@ -1873,7 +1891,8 @@
       // siempre sabe qué caso y qué servicio mostrar al volver.
       var redirectUrl = window.location.href.split('#')[0].split('?')[0]
         + '?pago=ok&referencia=' + encodeURIComponent(reference)
-        + '&servicio=' + encodeURIComponent(servicio);
+        + '&servicio=' + encodeURIComponent(servicio)
+        + (extra && extra.tipo ? '&tipo=' + encodeURIComponent(extra.tipo) : '');
       var params = new URLSearchParams({
         'public-key': WOMPI_PUBLIC_KEY,
         'currency': 'COP',
@@ -1936,6 +1955,20 @@
           peticion_sin_respuesta: "Si la respuesta no resolvió el fondo, procede la acción de tutela por vulneración del derecho de petición.",
           tutela_incumplida: "Corresponde iniciar un incidente de desacato ante el juzgado que falló la tutela.",
           acoso_no_investigado: "Pon los hechos por escrito solicitando expresamente que se investiguen; puede valorarse una denuncia penal si son graves y reiterados.",
+        },
+      },
+      cuidado: {
+        titulo: "Derecho al cuidado (cuidador o asistencia personal)",
+        estados: [
+          {value:"sin_gestion", label:"Aún no he solicitado formalmente a la EPS la valoración o el servicio de cuidador"},
+          {value:"peticion_sin_respuesta", label:"Ya lo solicité a la EPS y no respondió o lo negó"},
+          {value:"tutela_incumplida", label:"Ya tengo una tutela a mi favor y no la están cumpliendo"},
+        ],
+        laws: "Ley 2297 de 2023 (personas con discapacidad, cuidadores y asistentes personales) y Sentencia T-260 de 2026 de la Corte Constitucional (derecho al cuidado)",
+        steps: {
+          sin_gestion: "Solicita por escrito a la EPS la valoración integral de la necesidad de cuidador para la persona dependiente, incluida la situación del cuidador principal (sobrecarga, salud y autocuidado).",
+          peticion_sin_respuesta: "Si la EPS no respondió de fondo o negó el servicio, procede la acción de tutela; la existencia de familiares no basta, por sí sola, para negar el servicio de cuidador.",
+          tutela_incumplida: "Corresponde iniciar un incidente de desacato ante el juzgado que falló la tutela.",
         },
       },
       otro: {
@@ -2019,6 +2052,14 @@
       'marca':       { A: 199000, B: 199000 },  // Registro de marca (autogestión)
       'tea':         { A: 149000, B: 420000 },  // Derecho de petición / Tutela por incumplimiento
     };
+    // Incidente de desacato (decisión de Liza, 24-sep-2026).
+    var PRECIOS_DESACATO = { autogestion: 99000, acompanamiento: 600000 };
+    // Alimentos (decisión de Liza, 24-sep-2026), por tipo de solicitud y modalidad.
+    var PRECIOS_ALIMENTOS = {
+      autogestion:    { fijacion: 49000,  aumento: 49000,  disminucion: 59000,  exoneracion: 59000 },
+      acompanamiento: { fijacion: 129000, aumento: 129000, disminucion: 149000, exoneracion: 149000 }
+    };
+    var NOMBRE_TIPO_ALIMENTOS = { fijacion: 'fijación', aumento: 'aumento', disminucion: 'disminución', exoneracion: 'exoneración' };
     // =========================================================================
     // CONFIGURACIÓN DE PASOS POR SERVICIO
     // Cada paso es 'choice' (botones grandes, avanzan solos) o 'text' (campo,
@@ -2069,16 +2110,50 @@
             { value: 'salud', label: 'Salud (EPS / IPS)' },
             { value: 'educacion', label: 'Educación (colegio)' },
             { value: 'deporte', label: 'Deporte o espacio público' },
+            { value: 'cuidado', label: 'Derecho al cuidado (cuidador o asistencia personal)' },
             { value: 'otro', label: 'Otra área, o varias a la vez' },
           ]},
         ];
+        // Discapacidad no visible: se distingue si es psicosocial u orgánica/sistémica,
+        // porque cambia la advertencia jurídica que se cita (Guía Jurídica, secc. 5).
+        if (a.tea_condicion === 'no_visible') {
+          steps.splice(1, 0, { id: 'tea_subtipo_nv', type: 'choice', q: '¿Qué tipo de discapacidad no visible es?', options: [
+            { value: 'psicosocial', label: 'Psicosocial (condición de salud mental con impacto funcional)' },
+            { value: 'organica_sistemica', label: 'Orgánica o sistémica (enfermedad crónica con impacto funcional)' },
+          ]});
+        }
         if (a.tea_condicion && a.tea_area && TEA_DATA[a.tea_area]) {
           steps.push({
             id: 'tea_estado', type: 'choice', q: '¿Qué ha pasado hasta ahora?',
             options: TEA_DATA[a.tea_area].estados.map(function (e) { return { value: e.value, label: e.label }; })
           });
         }
+        // Incidente de desacato: dos modalidades con precio distinto.
+        if (a.tea_estado === 'tutela_incumplida') {
+          steps.push({ id: 'tea_modalidad', type: 'choice', q: '¿Cómo quieres adelantar el incidente de desacato?', options: [
+            { value: 'autogestion', label: 'Autogestión: recibo el documento listo para radicar (desde ' + formatCOP(PRECIOS_DESACATO.autogestion) + ')' },
+            { value: 'acompanamiento', label: 'Con acompañamiento de abogada (desde ' + formatCOP(PRECIOS_DESACATO.acompanamiento) + ')' },
+          ]});
+        }
         return steps;
+      }
+      if (servicio === 'alimentos') {
+        return [
+          { id: 'ali_tipo', type: 'choice', q: '¿Qué necesitas hacer con la cuota alimentaria?', options: [
+            { value: 'fijacion', label: 'Fijar una cuota por primera vez' },
+            { value: 'aumento', label: 'Aumentar una cuota que ya existe' },
+            { value: 'disminucion', label: 'Disminuir una cuota que ya existe' },
+            { value: 'exoneracion', label: 'Dejar de pagar una cuota (exoneración)' },
+          ]},
+          { id: 'ali_rol', type: 'choice', q: '¿Quién eres en este caso?', options: [
+            { value: 'recibe', label: 'Recibo la cuota, o represento a quien la recibe' },
+            { value: 'paga', label: 'Pago la cuota (o me la están cobrando)' },
+          ]},
+          { id: 'ali_modalidad', type: 'choice', q: '¿Cómo quieres adelantar tu solicitud?', options: [
+            { value: 'autogestion', label: 'Autogestión: documento Word listo para radicar, con instrucciones paso a paso' },
+            { value: 'acompanamiento', label: 'Con acompañamiento: además, una abogada revisa tu documento antes de radicarlo' },
+          ]},
+        ];
       }
       return [];
     }
@@ -2119,12 +2194,25 @@
             desc += ' El Certificado Único de Trastorno del Neurodesarrollo es voluntario y su ausencia no puede ser una barrera para acceder a servicios de salud.';
           }
           if (c.revision) desc += ' ' + c.revision;
-          return { titulo: d.steps[a.tea_estado].replace('{NORMA}', c.cita),
-                    descripcion: desc,
-                    tier: nivel.tier };
+          var res = { titulo: d.steps[a.tea_estado].replace('{NORMA}', c.cita), descripcion: desc, tier: nivel.tier };
+          if (a.tea_estado === 'tutela_incumplida' && PRECIOS_DESACATO[a.tea_modalidad]) {
+            res.monto = PRECIOS_DESACATO[a.tea_modalidad];
+            res.descripcion += a.tea_modalidad === 'acompanamiento'
+              ? ' Modalidad: con acompañamiento de abogada.' : ' Modalidad: autogestión (documento listo para radicar).';
+          }
+          return res;
         }
         return { titulo: 'Con tu respuesta identificamos la ley aplicable y el primer paso a seguir.',
                   descripcion: '', tier: 'A' };
+      }
+      if (servicio === 'alimentos') {
+        var tipoA = a.ali_tipo, modA = a.ali_modalidad || 'autogestion';
+        var montoA = (PRECIOS_ALIMENTOS[modA] || {})[tipoA];
+        return { titulo: 'Preparamos tu solicitud de conciliación para la ' + (NOMBRE_TIPO_ALIMENTOS[tipoA] || '') + ' de la cuota alimentaria.',
+                 descripcion: 'Después del pago llenas un formulario guiado y recibes en tu correo un documento Word editable, con la solicitud completa, la lista de anexos y las instrucciones para radicarla ante la Comisaría de Familia, el ICBF o un centro de conciliación. '
+                   + (modA === 'acompanamiento' ? 'Incluye la revisión de una abogada antes de radicar.' : 'Modalidad de autogestión: tú radicas la solicitud.')
+                   + ' Lyzbri no envía citaciones ni reemplaza la audiencia de conciliación.',
+                 tier: 'A', monto: montoA };
       }
       return { titulo: '', descripcion: '', tier: 'A' };
     }
@@ -2210,8 +2298,9 @@
     function chooseAnswer(stepId, value) {
       wz.answers[stepId] = value;
       // Si cambia el área en TEA, se limpia el estado dependiente para no arrastrar una respuesta inválida.
-      if (stepId === 'tea_condicion') { delete wz.answers.tea_area; delete wz.answers.tea_estado; }
-      if (stepId === 'tea_area') { delete wz.answers.tea_estado; }
+      if (stepId === 'tea_condicion') { delete wz.answers.tea_subtipo_nv; delete wz.answers.tea_area; delete wz.answers.tea_estado; delete wz.answers.tea_modalidad; }
+      if (stepId === 'tea_area') { delete wz.answers.tea_estado; delete wz.answers.tea_modalidad; }
+      if (stepId === 'tea_estado') { delete wz.answers.tea_modalidad; }
       wz.stepIndex += 1;
       renderStep();
     }
@@ -2244,7 +2333,7 @@
     function mostrarResultado() {
       var resultado = getResultado(wz.servicio, wz.answers);
       var precios = PRECIOS[wz.servicio] || { A: 0, B: 0 };
-      var monto = precios[resultado.tier] || precios.A;
+      var monto = resultado.monto || precios[resultado.tier] || precios.A;
 
       document.getElementById('wizard-card').style.display = 'none';
       var conf = document.getElementById('form-confirmacion');
@@ -2255,6 +2344,11 @@
       document.getElementById('resultado-descripcion').textContent = resultado.descripcion;
 
       var reference = wz.servicio + '-' + Date.now();
+      // Servicio real (texto libre en HubSpot: servicio_lyzbri) y formulario post-pago.
+      var servicioLyzbri = SERVICIO_A_HUBSPOT[wz.servicio] || wz.servicio;
+      var servicioForm = wz.servicio;
+      if (wz.servicio === 'tea' && wz.answers.tea_estado === 'peticion_sin_respuesta') { servicioLyzbri = 'tutela'; servicioForm = 'tea-tutela'; }
+      if (wz.servicio === 'tea' && wz.answers.tea_estado === 'tutela_incumplida') { servicioLyzbri = 'desacato'; servicioForm = 'tea-desacato'; }
 
       // Guardamos el caso localmente ANTES de salir a Wompi, porque al volver
       // (redirect-url) esta página se recarga desde cero y se pierde wz.answers
@@ -2262,7 +2356,7 @@
       // en la URL de retorno — cubre el caso de que se abra en otra pestaña/dispositivo.
       try {
         localStorage.setItem('lyzbri_caso_' + reference, JSON.stringify({
-          servicio: wz.servicio, answers: wz.answers, referencia: reference, monto: monto
+          servicio: servicioForm, answers: wz.answers, referencia: reference, monto: monto
         }));
       } catch (e) { /* localStorage puede fallar en modo privado — no es bloqueante */ }
 
@@ -2281,15 +2375,24 @@
       // hace que HubSpot rechace el caso completo, así que se traducen aquí.
       var CONDICION_A_HUBSPOT = { tea: 'tea', neuro: 'otro_neurodesarrollo', intelectual: 'down_intelectual',
         fisica: 'fisica_motora', visual: 'otra', sordera: 'sordera', mudez: 'mudez', no_visible: 'no_visible' };
-      var AREA_A_HUBSPOT = { salud: 'salud', educacion: 'educacion', deporte: 'deporte', otro: 'otra_area' };
+      var AREA_A_HUBSPOT = { salud: 'salud', educacion: 'educacion', deporte: 'deporte', cuidado: 'otra_area', otro: 'otra_area' };
+      var AREA_TEXTO = { salud: 'salud', educacion: 'educacion', deporte: 'deporte', cuidado: 'derecho_cuidado', otro: 'otra_area' };
       if ('tea_condicion' in respuestasParaHubspot) {
         respuestasParaHubspot.categoria_condicion_tea = CONDICION_A_HUBSPOT[respuestasParaHubspot.tea_condicion] || 'otra';
         delete respuestasParaHubspot.tea_condicion;
       }
       if ('tea_area' in respuestasParaHubspot) {
+        respuestasParaHubspot.area_caso_tea_texto = AREA_TEXTO[respuestasParaHubspot.tea_area] || 'otra_area';
         respuestasParaHubspot.area_caso_tea = AREA_A_HUBSPOT[respuestasParaHubspot.tea_area] || 'otra_area';
         delete respuestasParaHubspot.tea_area;
       }
+      if (respuestasParaHubspot.tea_subtipo_nv) { respuestasParaHubspot.subtipo_no_visible_tea = respuestasParaHubspot.tea_subtipo_nv; }
+      if (respuestasParaHubspot.tea_modalidad) { respuestasParaHubspot.modalidad_servicio = respuestasParaHubspot.tea_modalidad; }
+      if (wz.servicio === 'alimentos') {
+        respuestasParaHubspot.tipo_solicitud_alimentos = wz.answers.ali_tipo;
+        respuestasParaHubspot.modalidad_servicio = wz.answers.ali_modalidad || 'autogestion';
+      }
+      ['tea_subtipo_nv', 'tea_modalidad', 'ali_tipo', 'ali_rol', 'ali_modalidad'].forEach(function (k) { delete respuestasParaHubspot[k]; });
       // Sub-caso de Hábeas Data: es el que decide qué plantilla usa Make.
       if (wz.servicio === 'habeas-data') {
         if (wz.answers.hd_problema === 'pago') respuestasParaHubspot.sub_caso = 'pago_historico';
@@ -2305,6 +2408,7 @@
           whatsapp: wz.answers.whatsapp,
           correo: wz.answers.correo || null,
           servicio: SERVICIO_A_HUBSPOT[wz.servicio] || wz.servicio,
+          servicioLyzbri: servicioLyzbri,
           referenciaPago: reference,
           respuestasWizard: respuestasParaHubspot
         })
@@ -2312,7 +2416,7 @@
 
       var payBtn = document.getElementById('resultado-pago');
       payBtn.textContent = 'Continuar al pago — ' + formatCOP(monto);
-      payBtn.href = buildWompiLink(monto, reference, wz.servicio);
+      payBtn.href = buildWompiLink(monto, reference, servicioForm, wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : null);
 
       conf.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -2356,6 +2460,14 @@
         copy: 'Ordena tus obligaciones, entiende tu situación frente a la cobranza y conoce qué alternativas jurídicas pueden existir antes de tomar decisiones.',
         cta: 'Revisar estado de mis deudas'
       },
+      'alimentos': {
+        title: 'Cuota alimentaria en Colombia: fijar, aumentar, disminuir o exonerar | Lyzbri',
+        desc: 'Solicitud de conciliación de cuota alimentaria en Colombia: fijación, aumento, disminución o exoneración. Documento Word listo para radicar en Comisaría de Familia, ICBF o centro de conciliación, desde $49.000.',
+        eyebrow: 'Familia · Cuota alimentaria',
+        h1: 'Cuota alimentaria: fija, aumenta, disminuye o exonera con una solicitud lista para radicar',
+        copy: 'Responde unas preguntas guiadas y recibe tu solicitud de conciliación en Word, con anexos e instrucciones para radicarla ante la Comisaría de Familia, el ICBF o un centro de conciliación. Sin promesas de resultado.',
+        cta: 'Preparar mi solicitud de alimentos'
+      },
       'marca': {
         title: 'Registro de marca y logo ante la Superintendencia (SIC) | Lyzbri',
         desc: 'Registro de marca y logo ante la Superintendencia de Industria y Comercio en Colombia. Consulta gratis la viabilidad de tu marca antes de iniciar el trámite. Tasas oficiales aparte.',
@@ -2370,7 +2482,8 @@
       'habeas-data': 'habeas-data',
       'tea-discapacidad': 'tea',
       'gestiona-deuda': 'deudas',
-      'registro-marca': 'marca'
+      'registro-marca': 'marca',
+      'cuota-alimentaria': 'alimentos'
     };
 
     function aplicarVertical(svc) {
@@ -2432,6 +2545,48 @@
         { id: 'razon_social', label: 'Razón social', type: 'text', optional: true, condSobre: 'titular_tipo', condValor: 'persona_juridica' },
         { id: 'nit_titular', label: 'NIT', type: 'text', optional: true, condSobre: 'titular_tipo', condValor: 'persona_juridica' }
       ],
+      'alimentos': [
+        { id: 'tipo_solicitud_alimentos', label: 'Tipo de solicitud', type: 'select', options: [{v:'fijacion',l:'Fijación de cuota'}, {v:'aumento',l:'Aumento de cuota'}, {v:'disminucion',l:'Disminución de cuota'}, {v:'exoneracion',l:'Exoneración (dejar de pagar)'}] },
+        { id: 'correo_entrega', label: 'Correo donde quieres recibir tu documento Word', type: 'text' },
+        { id: 'tipo_documento', label: 'Tu tipo de documento', type: 'select', options: [{v:'cc',l:'C.C.'}, {v:'ce',l:'C.E.'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}, {v:'pep',l:'PEP'}] },
+        { id: 'numero_documento', label: 'Tu N° de documento', type: 'text' },
+        { id: 'calidad_solicitante_alimentos', label: '¿En qué calidad presentas la solicitud?', type: 'select', options: [{v:'madre',l:'Madre del alimentario(a)'}, {v:'padre',l:'Padre del alimentario(a)'}, {v:'representante',l:'Representante legal o persona a cargo'}, {v:'alimentario',l:'Soy el alimentario(a) y soy mayor de edad'}, {v:'obligado',l:'Soy quien paga la cuota'}] },
+        { id: 'autoridad_destino', label: '¿Dónde vas a radicar la solicitud?', type: 'select', options: [{v:'comisaria',l:'Comisaría de Familia'}, {v:'icbf',l:'ICBF (Defensoría de Familia)'}, {v:'centro',l:'Centro de conciliación'}] },
+        { id: 'municipio_autoridad', label: 'Municipio donde vas a radicar', type: 'text' },
+        { id: 'nombre_alimentario', label: 'Nombre completo de quien recibe (o debe recibir) la cuota', type: 'text' },
+        { id: 'documento_alimentario', label: 'Documento de quien recibe la cuota (si lo tienes)', type: 'text', optional: true },
+        { id: 'fecha_nacimiento_alimentario', label: 'Fecha de nacimiento de quien recibe la cuota (si la tienes)', type: 'date', optional: true },
+        { id: 'nombre_otra_parte', label: 'Nombre completo de la otra parte (a quien se cita a conciliar)', type: 'text' },
+        { id: 'parentesco_otra_parte', label: '¿Qué es la otra parte respecto de quien recibe la cuota?', type: 'select', optional: true, options: [{v:'padre',l:'El padre'}, {v:'madre',l:'La madre'}, {v:'conyuge',l:'Cónyuge o compañero(a) permanente'}, {v:'hijo',l:'Hijo(a)'}, {v:'otro',l:'Otro pariente'}] },
+        { id: 'documento_otra_parte', label: 'Documento de la otra parte (si lo sabes)', type: 'text', optional: true },
+        { id: 'direccion_otra_parte', label: 'Dirección de la otra parte (si la sabes)', type: 'text', optional: true },
+        { id: 'telefono_otra_parte', label: 'Teléfono de la otra parte (si lo sabes)', type: 'text', optional: true },
+        { id: 'correo_otra_parte', label: 'Correo de la otra parte (si lo sabes)', type: 'text', optional: true },
+        { id: 'trabajo_otra_parte', label: 'Dónde trabaja la otra parte (si lo sabes)', type: 'text', optional: true },
+        { id: 'aporte_estado', label: '¿Cómo aporta hoy la otra parte?', type: 'select', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion', options: [{v:'no_aporta',l:'No aporta nada'}, {v:'insuficiente',l:'Aporta, pero no alcanza'}, {v:'irregular',l:'Aporta de forma irregular'}] },
+        { id: 'aporte_desde', label: '¿Desde cuándo? (mes y año)', type: 'text', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion' },
+        { id: 'aporte_valor', label: 'Si aporta algo, ¿cuánto al mes?', type: 'number', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion' },
+        { id: 'ingresos_conocidos', label: '¿Conoces los ingresos de la otra parte?', type: 'select', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion', options: [{v:'si',l:'Sí'}, {v:'no',l:'No'}] },
+        { id: 'ingresos_valor', label: 'Ingresos mensuales aproximados de la otra parte', type: 'number', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion' },
+        { id: 'documento_fijacion', label: '¿Cómo se fijó la cuota actual?', type: 'select', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'aumento|disminucion|exoneracion', options: [{v:'acta',l:'Acta de conciliación'}, {v:'sentencia',l:'Sentencia judicial'}] },
+        { id: 'fecha_fijacion', label: 'Fecha del acta o de la sentencia', type: 'date', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'aumento|disminucion|exoneracion' },
+        { id: 'autoridad_que_fijo', label: 'Entidad o juzgado que fijó la cuota', type: 'text', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'aumento|disminucion|exoneracion' },
+        { id: 'cuota_vigente', label: 'Valor mensual de la cuota actual', type: 'number', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'aumento|disminucion|exoneracion' },
+        { id: 'gasto_vivienda', label: 'Gasto mensual en vivienda (arriendo y servicios)', type: 'number', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion|aumento' },
+        { id: 'gasto_alimentacion', label: 'Gasto mensual en alimentación', type: 'number', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion|aumento' },
+        { id: 'gasto_educacion', label: 'Gasto mensual en educación (matrícula, útiles, transporte)', type: 'number', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion|aumento' },
+        { id: 'gasto_salud', label: 'Gasto mensual en salud (copagos, medicamentos)', type: 'number', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion|aumento' },
+        { id: 'gasto_vestuario_recreacion', label: 'Gasto mensual en vestuario y recreación', type: 'number', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion|aumento' },
+        { id: 'gasto_otros', label: 'Otros gastos mensuales', type: 'number', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion|aumento' },
+        { id: 'motivos_aumento', label: '¿Por qué aumentaron las necesidades? (nuevo colegio, salud, terapias, etc.)', type: 'textarea', maxLength: 800, optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'aumento' },
+        { id: 'mejora_patrimonial', label: '¿La otra parte mejoró sus ingresos? Cuéntanos (si lo sabes)', type: 'textarea', maxLength: 500, optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'aumento' },
+        { id: 'causa_disminucion', label: '¿Por qué se debe disminuir la cuota?', type: 'select', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'disminucion', options: [{v:'perdida_ingresos',l:'Perdí el empleo o bajaron mis ingresos'}, {v:'nuevas_cargas',l:'Tengo nuevas cargas familiares'}, {v:'enfermedad',l:'Enfermedad o incapacidad'}, {v:'menores_gastos',l:'Bajaron los gastos de quien recibe la cuota'}, {v:'ingresos_propios',l:'Quien recibe la cuota ya tiene ingresos propios'}] },
+        { id: 'motivos_disminucion', label: 'Explica brevemente la situación', type: 'textarea', maxLength: 800, optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'disminucion' },
+        { id: 'causal_exoneracion', label: '¿Por qué debe terminar la obligación?', type: 'select', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'exoneracion', options: [{v:'mayor_sin_estudio',l:'Es mayor de edad, no estudia y puede trabajar'}, {v:'cumplio_25',l:'Cumplió 25 años'}, {v:'titulo',l:'Obtuvo un título que le permite trabajar'}, {v:'capacidad_recuperada',l:'Recuperó su capacidad de sostenerse'}, {v:'mejora_economica',l:'Mejoró mucho su situación económica'}, {v:'maltrato',l:'Soy hijo(a) y mi padre o madre me maltrató (Ley 2388 de 2024)'}] },
+        { id: 'motivos_exoneracion', label: 'Explica brevemente los hechos', type: 'textarea', maxLength: 800, optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'exoneracion' },
+        { id: 'cuota_solicitada', label: 'Valor mensual que propones para la cuota (opcional)', type: 'number', optional: true, condSobre: 'tipo_solicitud_alimentos', condValor: 'fijacion|aumento|disminucion' },
+        { id: 'hechos_adicionales', label: 'Hechos adicionales que quieras incluir', type: 'textarea', maxLength: 800, optional: true }
+      ],
       'tea': [
         { id: 'tipo_documento', label: 'Tu tipo de documento (quien solicita)', type: 'select', options: [{v:'cc',l:'C.C.'}, {v:'ce',l:'C.E.'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}, {v:'pep',l:'PEP'}] },
         { id: 'numero_documento', label: 'Tu N° de documento', type: 'text' },
@@ -2452,7 +2607,22 @@
       { id: 'state', label: 'Departamento', type: 'text' }
     ];
 
-    var NOMBRE_SERVICIO = { 'habeas-data': 'Hábeas Data', 'deudas': 'Gestiona tu Deuda', 'marca': 'Registro de marca', 'tea': 'TEA y discapacidad' };
+    // Tutela y desacato usan los mismos campos de TEA más los datos propios de cada actuación.
+    CAMPOS_DETALLADOS['tea-tutela'] = CAMPOS_DETALLADOS['tea'].concat([
+      { id: 'fecha_envio_dpeticion_tea', label: 'Fecha en que enviaste el derecho de petición', type: 'date' }
+    ]);
+    CAMPOS_DETALLADOS['tea-desacato'] = CAMPOS_DETALLADOS['tea'].concat([
+      { id: 'juzgado_fallo_tea', label: 'Juzgado que falló la tutela', type: 'text' },
+      { id: 'radicado_tutela_tea', label: 'Número de radicado de la tutela', type: 'text' },
+      { id: 'fecha_fallo_tutela', label: 'Fecha del fallo de tutela', type: 'date' },
+      { id: 'fecha_notificacion_fallo_tea', label: 'Fecha en que se notificó el fallo a la entidad', type: 'date', optional: true },
+      { id: 'plazo_cumplimiento_fallo_tea', label: 'Fecha límite que dio el juez para cumplir', type: 'date', optional: true },
+      { id: 'orden_incumplida_tea', label: '¿Qué ordenó el juez y no se ha cumplido?', type: 'textarea', maxLength: 800 },
+      { id: 'evidencia_incumplimiento_tea', label: 'Hechos y pruebas del incumplimiento', type: 'textarea', maxLength: 1000 }
+    ]);
+
+    var NOMBRE_SERVICIO = { 'habeas-data': 'Hábeas Data', 'deudas': 'Gestiona tu Deuda', 'marca': 'Registro de marca', 'tea': 'TEA y discapacidad',
+      'tea-tutela': 'TEA y discapacidad — acción de tutela', 'tea-desacato': 'TEA y discapacidad — incidente de desacato', 'alimentos': 'Cuota alimentaria' };
 
     // El wizard usa sus propios códigos cortos ('habeas-data', 'marca', 'tea'),
     // pero el dropdown servicio_comprado en HubSpot tiene sus propios valores
@@ -2460,7 +2630,8 @@
     // tea_discapacidad) -- no coinciden en 2 de los 4 casos, así que hay que
     // traducir en ambas direcciones antes de leer o escribir esa propiedad.
     var SERVICIO_A_HUBSPOT = { 'habeas-data': 'habeas_data', 'deudas': 'deudas', 'marca': 'registro_marca', 'tea': 'tea_discapacidad' };
-    var SERVICIO_DESDE_HUBSPOT = { 'habeas_data': 'habeas-data', 'deudas': 'deudas', 'registro_marca': 'marca', 'tea_discapacidad': 'tea' };
+    var SERVICIO_DESDE_HUBSPOT = { 'habeas_data': 'habeas-data', 'deudas': 'deudas', 'registro_marca': 'marca', 'tea_discapacidad': 'tea',
+      'tutela': 'tea-tutela', 'desacato': 'tea-desacato', 'alimentos': 'alimentos' };
 
     function campoHtml(c) {
       var req = c.optional ? '' : 'required';
@@ -2502,14 +2673,14 @@
         var origen = document.getElementById('fd_' + div.getAttribute('data-cond-sobre'));
         if (!origen) return;
         var actualizar = function () {
-          div.style.display = (origen.value === div.getAttribute('data-cond-valor')) ? 'block' : 'none';
+          div.style.display = (div.getAttribute('data-cond-valor').split('|').indexOf(origen.value) !== -1) ? 'block' : 'none';
         };
         origen.addEventListener('change', actualizar);
         actualizar();
       });
     }
 
-    function mostrarFormularioDetallado(servicio, referencia) {
+    function mostrarFormularioDetallado(servicio, referencia, tipoAlimentos) {
       var campos = CAMPOS_DETALLADOS[servicio] ? CAMPOS_DETALLADOS[servicio].concat(CAMPOS_COMUNES) : null;
       var cont = document.getElementById('formulario-detallado-container');
       if (!campos || !cont) return;
@@ -2523,6 +2694,14 @@
         + '<p class="fine-print" id="fd_estado"></p></form>';
       cont.innerHTML = html;
       cont.style.display = 'block';
+      if (servicio === 'alimentos') {
+        var tipoPre = tipoAlimentos;
+        if (!tipoPre) {
+          try { var casoA = JSON.parse(localStorage.getItem('lyzbri_caso_' + referencia) || 'null'); tipoPre = casoA && casoA.answers && casoA.answers.ali_tipo; } catch (e) {}
+        }
+        var selTipo = document.getElementById('fd_tipo_solicitud_alimentos');
+        if (selTipo && tipoPre) selTipo.value = tipoPre;
+      }
       aplicarCondicionales(cont);
 
       document.getElementById('fd_form').addEventListener('submit', function (ev) {
@@ -2557,15 +2736,27 @@
         var estado = document.getElementById('fd_estado');
         estado.textContent = 'Enviando…';
 
-        fetch('/.netlify/functions/guardar-formulario', {
+        var endpoint = servicio === 'alimentos' ? '/.netlify/functions/enviar-alimentos' : '/.netlify/functions/guardar-formulario';
+        fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ referenciaPago: referencia, servicio: servicio, campos: datos })
         }).then(function (res) {
-          if (!res.ok) throw new Error('guardar-formulario respondió ' + res.status);
+          if (res.status === 400) {
+            return res.json().then(function (r) {
+              if (r && r.faltantes && r.faltantes.length) {
+                var nombres = r.faltantes.map(function (id) { var c = campos.filter(function (x) { return x.id === id; })[0]; return c ? c.label : id; });
+                estado.textContent = 'Por favor completa: ' + nombres.join('; ') + '.';
+                var e = new Error('faltantes'); e.manejado = true; throw e;
+              }
+              throw new Error('respuesta 400');
+            });
+          }
+          if (!res.ok) throw new Error(endpoint + ' respondió ' + res.status);
           estado.textContent = 'Listo. Recibimos tu información y en breve te enviaremos el documento a tu correo.';
           document.getElementById('fd_form').querySelectorAll('input,select,textarea,button').forEach(function (el) { el.disabled = true; });
         }).catch(function (err) {
+          if (err && err.manejado) return;
           // El endpoint de guardado (Netlify Function) todavía no está desplegado en
           // producción -- se deja la información guardada localmente como respaldo,
           // sin perderla, mientras esa pieza se conecta.
@@ -2615,7 +2806,7 @@
                 // ("tea"). Si HubSpot no devolvió servicio (advertencia de token
                 // no configurado), se usa el que ya traía la URL como respaldo.
                 var svcFinal = (data.servicio && SERVICIO_DESDE_HUBSPOT[data.servicio]) || servicio;
-                mostrarFormularioDetallado(svcFinal, data.referenciaPago || referencia || 'sin-referencia');
+                mostrarFormularioDetallado(svcFinal, data.referenciaPago || referencia || 'sin-referencia', data.tipoAlimentos || params.get('tipo'));
               } else if (contVal) {
                 contVal.innerHTML = '<p>No pudimos verificar tu pago. Si ya pagaste, escríbenos por WhatsApp con tu referencia (' + (referencia || '') + ').</p>';
               }
@@ -2624,13 +2815,13 @@
               // La función de validación todavía no está desplegada / no responde:
               // se cae al modo de confianza en la URL, igual que antes de tener
               // el backend conectado, para no dejar al cliente sin formulario.
-              mostrarFormularioDetallado(servicio, referencia || 'sin-referencia');
+              mostrarFormularioDetallado(servicio, referencia || 'sin-referencia', params.get('tipo'));
             });
         } else {
           // Sin ?id=: no viene de un pago real de Wompi -- es una visita de prueba
           // (?pago=ok&servicio=...&referencia=...) para maquetar/probar la interfaz,
           // tal como se definió. Se muestra directo, sin llamar al backend.
-          mostrarFormularioDetallado(servicio, referencia || 'sin-referencia');
+          mostrarFormularioDetallado(servicio, referencia || 'sin-referencia', params.get('tipo'));
         }
       }
       var svc = params.get('servicio');
