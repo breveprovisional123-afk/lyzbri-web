@@ -47,7 +47,7 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
-        properties: ['servicio_comprado', 'hechos_completos']
+        properties: ['servicio_comprado', 'servicio_lyzbri', 'hechos_completos', 'tipo_solicitud_alimentos']
       })
     });
     const hsData = await hsRes.json();
@@ -62,7 +62,8 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         valid: true,
         referenciaPago,
-        servicio: contact.properties.servicio_comprado,
+        servicio: contact.properties.servicio_lyzbri || contact.properties.servicio_comprado,
+        tipoAlimentos: contact.properties.tipo_solicitud_alimentos || null,
         hechosCompletos: contact.properties.hechos_completos === 'true'
       })
     };
