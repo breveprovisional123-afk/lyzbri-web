@@ -1930,7 +1930,7 @@
           {value:"tutela_incumplida", label:"Ya tengo una tutela a mi favor y no la están cumpliendo"},
           {value:"acoso_no_investigado", label:"Mi hijo/a ha sido objeto de burlas o exclusión, y no se ha investigado"},
         ],
-        laws: "Ley 1618 de 2013",
+        laws: "Ley 1618 de 2013, Ley 181 de 1995 (acceso a instalaciones y escenarios deportivos) y Sentencias T-006 de 2025 y T-286 de 2025 de la Corte Constitucional",
         steps: {
           sin_gestion: "Solicita por escrito que se evalúen ajustes razonables dentro de la misma actividad, antes de la reubicación o el retiro.",
           peticion_sin_respuesta: "Si la respuesta no resolvió el fondo, procede la acción de tutela por vulneración del derecho de petición.",
@@ -2276,14 +2276,27 @@
       // nombre: categoria_condicion_tea / area_caso_tea. Se traduce aquí,
       // justo antes de enviar, sin tocar la lógica interna del wizard.
       var respuestasParaHubspot = Object.assign({}, wz.answers);
+      // Los códigos cortos del wizard no siempre coinciden con los valores
+      // internos de las listas de HubSpot; un valor que no exista en la lista
+      // hace que HubSpot rechace el caso completo, así que se traducen aquí.
+      var CONDICION_A_HUBSPOT = { tea: 'tea', neuro: 'otro_neurodesarrollo', intelectual: 'down_intelectual',
+        fisica: 'fisica_motora', visual: 'otra', sordera: 'sordera', mudez: 'mudez', no_visible: 'no_visible' };
+      var AREA_A_HUBSPOT = { salud: 'salud', educacion: 'educacion', deporte: 'deporte', otro: 'otra_area' };
       if ('tea_condicion' in respuestasParaHubspot) {
-        respuestasParaHubspot.categoria_condicion_tea = respuestasParaHubspot.tea_condicion;
+        respuestasParaHubspot.categoria_condicion_tea = CONDICION_A_HUBSPOT[respuestasParaHubspot.tea_condicion] || 'otra';
         delete respuestasParaHubspot.tea_condicion;
       }
       if ('tea_area' in respuestasParaHubspot) {
-        respuestasParaHubspot.area_caso_tea = respuestasParaHubspot.tea_area;
+        respuestasParaHubspot.area_caso_tea = AREA_A_HUBSPOT[respuestasParaHubspot.tea_area] || 'otra_area';
         delete respuestasParaHubspot.tea_area;
       }
+      // Sub-caso de Hábeas Data: es el que decide qué plantilla usa Make.
+      if (wz.servicio === 'habeas-data') {
+        if (wz.answers.hd_problema === 'pago') respuestasParaHubspot.sub_caso = 'pago_historico';
+        else if (wz.answers.hd_problema === 'suplantacion') respuestasParaHubspot.sub_caso = 'suplantacion_identidad';
+      }
+      // Nombre completo: es el campo que usan los documentos generados.
+      if (wz.answers.nombre) respuestasParaHubspot.nombre_completo = wz.answers.nombre;
       fetch('/.netlify/functions/crear-caso', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2413,12 +2426,15 @@
         { id: 'denominacion_signo', label: 'Denominación del signo (palabra/nombre, si aplica)', type: 'text', optional: true },
         { id: 'tipo_signo_especial', label: '¿Es un signo sonoro o tridimensional?', type: 'select', options: [{v:'no_especial',l:'No'}, {v:'sonoro',l:'Sonoro'}, {v:'tridimensional',l:'Tridimensional'}] },
         { id: 'incluye_elementos_graficos', label: '¿La marca incluye elementos gráficos?', type: 'select', options: [{v:'si_elementos',l:'Sí'}, {v:'no_elementos',l:'No'}] },
+        { id: 'archivo_logo_url', label: 'Enlace a tu logo (Google Drive, Dropbox u otro enlace que podamos abrir)', type: 'text', optional: true, condSobre: 'incluye_elementos_graficos', condValor: 'si_elementos', hint: 'Recomendación: imagen PNG o JPG nítida, idealmente de 300 DPI. No es un requisito para continuar.' },
         { id: 'descripcion_productos_servicios', label: 'Descripción de productos/servicios a proteger', type: 'textarea', maxLength: 500 },
         { id: 'titular_tipo', label: 'Titular', type: 'select', options: [{v:'persona_natural', l:'Persona natural'}, {v:'persona_juridica', l:'Persona jurídica'}] },
         { id: 'razon_social', label: 'Razón social', type: 'text', optional: true, condSobre: 'titular_tipo', condValor: 'persona_juridica' },
         { id: 'nit_titular', label: 'NIT', type: 'text', optional: true, condSobre: 'titular_tipo', condValor: 'persona_juridica' }
       ],
       'tea': [
+        { id: 'tipo_documento', label: 'Tu tipo de documento (quien solicita)', type: 'select', options: [{v:'cc',l:'C.C.'}, {v:'ce',l:'C.E.'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}, {v:'pep',l:'PEP'}] },
+        { id: 'numero_documento', label: 'Tu N° de documento', type: 'text' },
         { id: 'entidad_involucrada_tea', label: 'Entidad involucrada (colegio, EPS, club, etc.)', type: 'text' },
         { id: 'nombre_beneficiario_tea', label: 'Nombre del beneficiario (si es distinto a quien paga, ej. hijo/a)', type: 'text' },
         { id: 'tipo_documento_beneficiario_tea', label: 'Tipo de documento del beneficiario', type: 'select', options: [{v:'ti',l:'T.I.'}, {v:'cc',l:'C.C.'}, {v:'rc_menor',l:'Registro Civil / Otro (menor sin cédula)'}] },
@@ -2427,6 +2443,14 @@
         { id: 'hechos_incumplimiento_tea', label: 'Hechos — qué pasó y por qué considera que no se ha resuelto', type: 'textarea', maxLength: 1000 }
       ]
     };
+
+    // Datos de notificación que todos los documentos necesitan (dirección,
+    // ciudad y departamento del solicitante). Son propiedades estándar de HubSpot.
+    var CAMPOS_COMUNES = [
+      { id: 'address', label: 'Dirección de notificación', type: 'text' },
+      { id: 'city', label: 'Ciudad', type: 'text' },
+      { id: 'state', label: 'Departamento', type: 'text' }
+    ];
 
     var NOMBRE_SERVICIO = { 'habeas-data': 'Hábeas Data', 'deudas': 'Gestiona tu Deuda', 'marca': 'Registro de marca', 'tea': 'TEA y discapacidad' };
 
@@ -2441,6 +2465,7 @@
     function campoHtml(c) {
       var req = c.optional ? '' : 'required';
       var label = '<label style="display:block;margin-top:14px;font-weight:600;">' + c.label + (c.optional ? ' <span class="fine-print">(opcional)</span>' : '') + '</label>';
+      if (c.hint) label += '<p class="fine-print" style="margin:4px 0 0;">' + c.hint + '</p>';
       var attrs = 'id="fd_' + c.id + '" name="' + c.id + '" ' + req + ' style="width:100%;padding:10px;margin-top:6px;border-radius:8px;border:1px solid #ccc;"';
       var input;
       if (c.type === 'select') {
@@ -2485,7 +2510,7 @@
     }
 
     function mostrarFormularioDetallado(servicio, referencia) {
-      var campos = CAMPOS_DETALLADOS[servicio];
+      var campos = CAMPOS_DETALLADOS[servicio] ? CAMPOS_DETALLADOS[servicio].concat(CAMPOS_COMUNES) : null;
       var cont = document.getElementById('formulario-detallado-container');
       if (!campos || !cont) return;
 
