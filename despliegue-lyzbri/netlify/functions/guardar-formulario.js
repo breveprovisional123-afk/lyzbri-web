@@ -114,7 +114,7 @@ exports.handler = async (event) => {
           'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ properties: { email: correo, referencia_pago: referenciaPago, ...campos, hechos_completos: 'true', fecha_hechos_completos: new Date().toISOString() } })
+        body: JSON.stringify({ properties: { email: correo, referencia_pago: referenciaPago, ...campos, hechos_completos: 'true', fecha_hechos_completos: new Date().toISOString().slice(0, 10) } })
       });
       if (!createRes.ok) {
         const errText = await createRes.text();
@@ -135,7 +135,7 @@ exports.handler = async (event) => {
         properties: {
           ...campos,
           hechos_completos: 'true',
-          fecha_hechos_completos: new Date().toISOString()
+          fecha_hechos_completos: new Date().toISOString().slice(0, 10)
         }
       })
     });
