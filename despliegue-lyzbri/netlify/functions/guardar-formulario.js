@@ -30,6 +30,14 @@ async function avisarAMake(email, referenciaPago) {
   }
 }
 
+// MODO PRUEBA (solo Deploy Preview de Netlify): permite probar la cadena completa
+// sin cobrar. Exige LYZBRI_MODO_PRUEBA=true (variable definida SOLO para el
+// contexto deploy-preview) y que la petición NO venga del dominio de producción.
+function modoPrueba(event) {
+  const host = String((event && event.headers && (event.headers.host || event.headers.Host)) || '');
+  return process.env.LYZBRI_MODO_PRUEBA === 'true' && process.env.CONTEXT !== 'production' && host.indexOf('lyzbri.com') === -1;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ ok: false, reason: 'method_not_allowed' }) };
@@ -55,7 +63,7 @@ exports.handler = async (event) => {
     // 1. Verificar de nuevo, del lado del servidor, que el pago con esa
     //    referencia SI esta aprobado en Wompi -- nunca confiar en que quien
     //    llama a este endpoint ya paso por validar-formulario.js.
-    const wompiCheck = await fetch(`https://production.wompi.co/v1/transactions?reference=${encodeURIComponent(referenciaPago)}`);
+    const wompiCheck = modoPrueba(event) ? { ok: false } : await fetch(`https://production.wompi.co/v1/transactions?reference=${encodeURIComponent(referenciaPago)}`);
     if (wompiCheck.ok) {
       const wompiData = await wompiCheck.json();
       const tx = wompiData.data && wompiData.data[0];

@@ -176,6 +176,14 @@ function faltantes(tipo, c) {
   return req.filter(function (k) { return !c[k] || String(c[k]).trim() === ''; });
 }
 
+// MODO PRUEBA (solo Deploy Preview de Netlify): permite probar la cadena completa
+// sin cobrar. Exige LYZBRI_MODO_PRUEBA=true (variable definida SOLO para el
+// contexto deploy-preview) y que la petición NO venga del dominio de producción.
+function modoPrueba(event) {
+  const host = String((event && event.headers && (event.headers.host || event.headers.Host)) || '');
+  return process.env.LYZBRI_MODO_PRUEBA === 'true' && process.env.CONTEXT !== 'production' && host.indexOf('lyzbri.com') === -1;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ ok: false, reason: 'method_not_allowed' }) };
@@ -195,7 +203,7 @@ exports.handler = async (event) => {
 
   try {
     // 1. El pago con esa referencia debe estar aprobado en Wompi.
-    const wompiCheck = await fetch(`https://production.wompi.co/v1/transactions?reference=${encodeURIComponent(referenciaPago)}`);
+    const wompiCheck = modoPrueba(event) ? { ok: false } : await fetch(`https://production.wompi.co/v1/transactions?reference=${encodeURIComponent(referenciaPago)}`);
     if (wompiCheck.ok) {
       const w = await wompiCheck.json();
       const tx = w.data && w.data[0];
