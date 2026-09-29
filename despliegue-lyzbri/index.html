@@ -1999,8 +1999,8 @@
 
     // =========================================================================
     // CONDICIÓN (matriz normativa TEA y discapacidad, corte sept-2026)
-    // Cada categoría trae su norma especial. "revision" = la ruta la define la
-    // abogada; no se automatiza sin revisión previa.
+    // Cada categoría trae su norma especial. "nota" = texto informativo para el
+    // cliente en el resultado; NO cambia la ruta (todo es Zero-Touch).
     // =========================================================================
     var TEA_CONDICION = {
       tea: { label: 'Trastorno del espectro autista (TEA)',
@@ -2024,11 +2024,11 @@
       mudez: { label: 'Mudez',
                norma: 'Ley 1618 de 2013, de forma provisional según la causa',
                cita: 'la Ley 1618 de 2013',
-               revision: 'Por la particularidad de esta condición, la ruta jurídica la define la abogada tras revisar tu caso; no se resuelve de forma automática.' },
+               nota: 'La mudez y las barreras de comunicación están protegidas por la Convención sobre los Derechos de las Personas con Discapacidad (Ley 1346 de 2009) y la Ley 1618 de 2013. El documento exige los apoyos y ajustes razonables de comunicación que se requieren.' },
       no_visible: { label: 'Discapacidad no visible (psicosocial, orgánica o crónica)',
                     norma: 'Ley 1618 de 2013 y Ley 1751 de 2015',
                     cita: 'la Ley 1618 de 2013 y la Ley 1751 de 2015',
-                    revision: 'No toda condición crónica o psiquiátrica equivale jurídicamente a una discapacidad; la abogada revisa tu caso antes de definir la ruta.' }
+                    nota: 'Las discapacidades no visibles (psicosociales, orgánicas o crónicas) tienen la misma protección que cualquier otra discapacidad. El documento exige los ajustes razonables que corresponden a la afectación concreta.' }
     };
     // Ley 2628 de 2026: el Certificado Único de Trastorno del Neurodesarrollo es voluntario y su
     // ausencia no puede ser barrera de acceso a servicios de salud.
@@ -2038,12 +2038,12 @@
     // Nivel de servicio recomendado y nivel de tarifa (A = gestión administrativa,
     // B = representación en tutela / desacato / denuncia penal) según el estado del caso.
     var TEA_NIVEL = {
-      sin_gestion: { tier: 'A', nombre: "Evaluación + derecho de petición" },
+      sin_gestion: { tier: 'A', nombre: "Derecho de petición" },
       peticion_sin_respuesta: { tier: 'B', nombre: "Evaluación + acción de tutela" },
-      tutela_incumplida: { tier: 'B', nombre: "Evaluación + incidente de desacato" },
-      exclusion_directa: { tier: 'A', nombre: "Evaluación + derecho de petición" },
+      tutela_incumplida: { tier: 'B', nombre: "Incidente de desacato" },  // con acompañamiento: "Evaluación + incidente de desacato" (ver abajo)
+      exclusion_directa: { tier: 'A', nombre: "Derecho de petición" },
       acoso_no_investigado: { tier: 'B', nombre: "Escrito de denuncia" },
-      varias_areas: { tier: 'A', nombre: "Evaluación + derecho de petición" },
+      varias_areas: { tier: 'A', nombre: "Derecho de petición" },
     };
 
     // =========================================================================
@@ -2167,13 +2167,6 @@
         clave = 'ALIMENTOS|' + a.ali_tipo.toUpperCase() + '_' + (a.ali_modalidad || 'autogestion').toUpperCase();
       }
       var p = clave && CATALOGO[clave] ? Object.assign({ clave: clave }, CATALOGO[clave]) : null;
-      // TEA: las condiciones marcadas "revision" (la página dice que la ruta la define
-      // la abogada) NO reciben documento automático: van a revisión manual con alerta.
-      if (p && servicio === 'tea' && TEA_CONDICION[a.tea_condicion] && TEA_CONDICION[a.tea_condicion].revision) {
-        p.processing_mode = 'DOCUMENTO_CON_REVISION';
-        p.delivery_type = 'REVISION_MANUAL_ABOGADA';
-        p.make_route = 'MANUAL_REVIEW';
-      }
       return p;
     }
     function validarProducto(p) {
@@ -2318,14 +2311,17 @@
       }
       if (servicio === 'tea') {
         var d = TEA_DATA[a.tea_area];
-        var nivel = TEA_NIVEL[a.tea_estado] || { tier: 'A', nombre: 'Evaluación + derecho de petición' };
+        var nivel = TEA_NIVEL[a.tea_estado] || { tier: 'A', nombre: 'Derecho de petición' };
+        // Regla de Liza (29-sep): solo la tutela y el desacato con acompañamiento son
+        // "Evaluación + producto"; todo lo demás se nombra solo por el producto.
+        if (a.tea_estado === 'tutela_incumplida' && a.tea_modalidad === 'acompanamiento') nivel = { tier: nivel.tier, nombre: 'Evaluación + incidente de desacato' };
         var c = TEA_CONDICION[a.tea_condicion];
         if (c && d && a.tea_estado && d.steps[a.tea_estado]) {
           var desc = 'Condición: ' + c.label + '. Área: ' + d.titulo + '. Normativa aplicable: ' + c.norma + '; ' + d.laws + '. ' + TEA_TRANSVERSAL + ' Servicio recomendado: ' + nivel.nombre + '.';
           if (a.tea_area === 'salud' && TEA_CATEGORIAS_2628.indexOf(a.tea_condicion) >= 0) {
             desc += ' El Certificado Único de Trastorno del Neurodesarrollo es voluntario y su ausencia no puede ser una barrera para acceder a servicios de salud.';
           }
-          if (c.revision) desc += ' ' + c.revision;
+          if (c.nota) desc += ' ' + c.nota;
           var res = { titulo: d.steps[a.tea_estado].replace('{NORMA}', c.cita), descripcion: desc, tier: nivel.tier };
           if (a.tea_estado === 'tutela_incumplida' && PRECIOS_DESACATO[a.tea_modalidad]) {
             res.monto = PRECIOS_DESACATO[a.tea_modalidad];
