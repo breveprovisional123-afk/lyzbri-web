@@ -352,6 +352,8 @@ async function buscarCaso(H, referenciaPago, correos, propiedades) {
   return null;
 }
 
+const { verificarPago } = require('./lib/bold-pago');
+
 // MODO PRUEBA (solo Deploy Preview de Netlify): permite probar la cadena completa
 // sin cobrar. Exige LYZBRI_MODO_PRUEBA=true (variable definida SOLO para el
 // contexto deploy-preview) y que la petición NO venga del dominio de producción.
@@ -379,13 +381,12 @@ exports.handler = async (event) => {
   const notificar = process.env.LYZBRI_NOTIFY_EMAIL || 'contacto@lyzbri.com';
 
   try {
-    // 1. Pago aprobado para esa referencia (Wompi; pendiente migrar a Bold — tarea aparte).
-    const wompiCheck = modoPrueba(event) ? { ok: false } : await fetch(`https://production.wompi.co/v1/transactions?reference=${encodeURIComponent(referenciaPago)}`);
-    if (wompiCheck.ok) {
-      const w = await wompiCheck.json();
-      const tx = w.data && w.data[0];
-      if (!tx || tx.status !== 'APPROVED') {
-        return { statusCode: 403, body: JSON.stringify({ ok: false, reason: 'payment_not_approved_for_reference' }) };
+    // 1. Pago aprobado en Bold para esa referencia, por el valor del producto.
+    if (!modoPrueba(event)) {
+      const pago = await verificarPago(referenciaPago, `${serviceCode}|${caseType}`);
+      if (!pago.aprobado) {
+        const code = (pago.reason === 'bold_unreachable' || pago.reason === 'bold_no_configurado') ? 502 : 403;
+        return { statusCode: code, body: JSON.stringify({ ok: false, reason: pago.reason || 'payment_not_approved_for_reference' }) };
       }
     }
 

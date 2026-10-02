@@ -13,6 +13,8 @@
 // formulario todavia esta vacio). La URL del webhook de Make se lee de la
 // variable de entorno MAKE_WEBHOOK_URL -- no va escrita en el codigo porque
 // el repositorio es publico. Si falla, no se bloquea el guardado del cliente.
+const { verificarPago, PRECIOS } = require('./lib/bold-pago');
+
 async function avisarAMake(email, referenciaPago) {
   if (!process.env.MAKE_WEBHOOK_URL || !email) return false;
   try {
@@ -77,19 +79,20 @@ exports.handler = async (event) => {
 
   try {
     // 1. Verificar de nuevo, del lado del servidor, que el pago con esa
-    //    referencia SI esta aprobado en Wompi -- nunca confiar en que quien
+    //    referencia SI esta aprobado en Bold -- nunca confiar en que quien
     //    llama a este endpoint ya paso por validar-formulario.js.
-    const wompiCheck = modoPrueba(event) ? { ok: false } : await fetch(`https://production.wompi.co/v1/transactions?reference=${encodeURIComponent(referenciaPago)}`);
-    if (wompiCheck.ok) {
-      const wompiData = await wompiCheck.json();
-      const tx = wompiData.data && wompiData.data[0];
-      if (!tx || tx.status !== 'APPROVED') {
-        return { statusCode: 403, body: JSON.stringify({ ok: false, reason: 'payment_not_approved_for_reference' }) };
+    let pago = null;
+    if (!modoPrueba(event)) {
+      pago = await verificarPago(referenciaPago, null);
+      if (!pago.aprobado) {
+        if (pago.reason === 'bold_unreachable' || pago.reason === 'bold_no_configurado') {
+          const alertaEnviada = await alertarRevision(referenciaPago, payload.servicio,
+            'Formulario recibido pero no se pudo confirmar el pago en Bold (' + pago.reason + '). Revisar el pago y contactar al cliente.');
+          return { statusCode: 502, body: JSON.stringify({ ok: false, reason: pago.reason, alertaEnviada }) };
+        }
+        return { statusCode: 403, body: JSON.stringify({ ok: false, reason: pago.reason || 'payment_not_approved_for_reference' }) };
       }
     }
-    // Si la busqueda por referencia no esta disponible en esta cuenta de Wompi,
-    // no se bloquea el guardado -- pero queda anotado como punto a reforzar
-    // (ver "pendiente_de_endurecer" en la respuesta de error si aplica).
 
     // 2. Buscar el contacto por referencia_pago (mismo caso ya creado antes del pago).
     // La búsqueda de HubSpot es eventualmente consistente (un contacto recién
@@ -105,7 +108,7 @@ exports.handler = async (event) => {
         },
         body: JSON.stringify({
           filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
-          properties: ['hs_object_id', 'email']
+          properties: ['hs_object_id', 'email', 'lyzbri_service_code', 'lyzbri_case_type']
         })
       });
       const searchData = await searchRes.json();
@@ -118,7 +121,7 @@ exports.handler = async (event) => {
     //     el contacto aquí mismo en vez de perder la información del cliente.
     if (!contact && correo) {
       const byEmailRes = await fetch(
-        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email`,
+        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email&properties=email,lyzbri_service_code,lyzbri_case_type`,
         { headers: { 'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}` } }
       );
       if (byEmailRes.ok) {
@@ -147,6 +150,15 @@ exports.handler = async (event) => {
       }
       const avisoMakeRespaldo = await avisarAMake(correo, referenciaPago);
       return { statusCode: 200, body: JSON.stringify({ ok: true, creadoComoRespaldo: true, avisoMake: avisoMakeRespaldo }) };
+    }
+
+    // 2c. El valor pagado en Bold debe corresponder al producto registrado en el caso.
+    const pc = contact.properties || {};
+    const clave = pc.lyzbri_service_code && pc.lyzbri_case_type ? `${pc.lyzbri_service_code}|${pc.lyzbri_case_type}` : null;
+    if (pago && clave && PRECIOS[clave] && !(pago.total >= PRECIOS[clave])) {
+      const alertaEnviada = await alertarRevision(referenciaPago, payload.servicio,
+        'El valor pagado en Bold (' + pago.total + ') no corresponde al producto del caso ' + clave + ' (' + PRECIOS[clave] + '). Revisar antes de entregar.');
+      return { statusCode: 403, body: JSON.stringify({ ok: false, reason: 'monto_no_coincide', alertaEnviada }) };
     }
 
     // 3. Actualizar el contacto con los campos del formulario + marcar hechos_completos.

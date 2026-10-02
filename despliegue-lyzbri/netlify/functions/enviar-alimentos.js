@@ -209,6 +209,8 @@ async function buscarCaso(H, referenciaPago, correos, propiedades) {
   return null;
 }
 
+const { verificarPago, PRECIOS } = require('./lib/bold-pago');
+
 // MODO PRUEBA (solo Deploy Preview de Netlify): permite probar la cadena completa
 // sin cobrar. Exige LYZBRI_MODO_PRUEBA=true (variable definida SOLO para el
 // contexto deploy-preview) y que la petición NO venga del dominio de producción.
@@ -235,13 +237,13 @@ exports.handler = async (event) => {
   const H = { 'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`, 'Content-Type': 'application/json' };
 
   try {
-    // 1. El pago con esa referencia debe estar aprobado en Wompi.
-    const wompiCheck = modoPrueba(event) ? { ok: false } : await fetch(`https://production.wompi.co/v1/transactions?reference=${encodeURIComponent(referenciaPago)}`);
-    if (wompiCheck.ok) {
-      const w = await wompiCheck.json();
-      const tx = w.data && w.data[0];
-      if (!tx || tx.status !== 'APPROVED') {
-        return { statusCode: 403, body: JSON.stringify({ ok: false, reason: 'payment_not_approved_for_reference' }) };
+    // 1. El pago con esa referencia debe estar aprobado en Bold.
+    let pago = null;
+    if (!modoPrueba(event)) {
+      pago = await verificarPago(referenciaPago, null);
+      if (!pago.aprobado) {
+        const code = (pago.reason === 'bold_unreachable' || pago.reason === 'bold_no_configurado') ? 502 : 403;
+        return { statusCode: code, body: JSON.stringify({ ok: false, reason: pago.reason || 'payment_not_approved_for_reference' }) };
       }
     }
 
@@ -282,6 +284,11 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ ok: false, reason: 'sin_correo', faltantes: ['correo_entrega'] }) };
     }
     const modalidad = p.modalidad_servicio || 'autogestion';
+    // El valor pagado en Bold debe corresponder al tipo y modalidad del caso.
+    const claveAli = 'ALIMENTOS|' + String(tipo).toUpperCase() + '_' + String(modalidad).toUpperCase();
+    if (pago && PRECIOS[claveAli] && !(pago.total >= PRECIOS[claveAli])) {
+      return { statusCode: 403, body: JSON.stringify({ ok: false, reason: 'monto_no_coincide' }) };
+    }
     const cliente = { nombre: p.nombre_completo || p.firstname, correo: correo, telefono: p.phone };
     const radicado = 'LYZBRI-ALI-' + contact.id;
     const doc = construirDocumento(tipo, campos, cliente, radicado, modalidad);
