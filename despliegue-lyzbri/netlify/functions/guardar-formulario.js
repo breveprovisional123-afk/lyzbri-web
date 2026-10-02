@@ -30,6 +30,30 @@ async function avisarAMake(email, referenciaPago) {
   }
 }
 
+// Alerta a Liza (ruta MANUAL_REVIEW del escenario de documentos de Make: solo
+// correo de alerta, nunca genera documento) cuando un caso pagado no se puede ubicar.
+async function alertarRevision(referenciaPago, servicio, error) {
+  const url = process.env.MAKE_DOCUMENTOS_WEBHOOK_URL || process.env.MAKE_ALIMENTOS_WEBHOOK_URL;
+  if (!url) return false;
+  try {
+    const r = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ruta: 'MANUAL_REVIEW', service_code: String(servicio || ''), referencia: referenciaPago, error: error })
+    });
+    return r.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+// MODO PRUEBA (solo Deploy Preview de Netlify): permite probar la cadena completa
+// sin cobrar. Exige LYZBRI_MODO_PRUEBA=true (variable definida SOLO para el
+// contexto deploy-preview) y que la petición NO venga del dominio de producción.
+function modoPrueba(event) {
+  const host = String((event && event.headers && (event.headers.host || event.headers.Host)) || '');
+  return process.env.LYZBRI_MODO_PRUEBA === 'true' && process.env.CONTEXT !== 'production' && host.indexOf('lyzbri.com') === -1;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ ok: false, reason: 'method_not_allowed' }) };
@@ -55,7 +79,7 @@ exports.handler = async (event) => {
     // 1. Verificar de nuevo, del lado del servidor, que el pago con esa
     //    referencia SI esta aprobado en Wompi -- nunca confiar en que quien
     //    llama a este endpoint ya paso por validar-formulario.js.
-    const wompiCheck = await fetch(`https://production.wompi.co/v1/transactions?reference=${encodeURIComponent(referenciaPago)}`);
+    const wompiCheck = modoPrueba(event) ? { ok: false } : await fetch(`https://production.wompi.co/v1/transactions?reference=${encodeURIComponent(referenciaPago)}`);
     if (wompiCheck.ok) {
       const wompiData = await wompiCheck.json();
       const tx = wompiData.data && wompiData.data[0];
@@ -68,19 +92,25 @@ exports.handler = async (event) => {
     // (ver "pendiente_de_endurecer" en la respuesta de error si aplica).
 
     // 2. Buscar el contacto por referencia_pago (mismo caso ya creado antes del pago).
-    const searchRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
-        properties: ['hs_object_id', 'email']
-      })
-    });
-    const searchData = await searchRes.json();
-    var contact = searchData.results && searchData.results[0];
+    // La búsqueda de HubSpot es eventualmente consistente (un contacto recién
+    // creado puede tardar en aparecer): se reintenta antes de rendirse.
+    var contact = null;
+    for (var intento = 0; intento < 3 && !contact; intento++) {
+      if (intento) await new Promise(function (r) { setTimeout(r, 1500); });
+      const searchRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
+          properties: ['hs_object_id', 'email']
+        })
+      });
+      const searchData = await searchRes.json();
+      contact = searchData.results && searchData.results[0];
+    }
 
     // 2b. Respaldo: si no se encontró por referencia_pago (p. ej. crear-caso.js
     //     falló antes del pago, o es un caso previo a esta integración), se
@@ -98,7 +128,10 @@ exports.handler = async (event) => {
 
     if (!contact) {
       if (!correo) {
-        return { statusCode: 404, body: JSON.stringify({ ok: false, reason: 'case_not_found_in_hubspot_and_no_email' }) };
+        // Caso pagado que no aparece y sin correo para respaldo: NUNCA en silencio.
+        const alertaEnviada = await alertarRevision(referenciaPago, payload.servicio,
+          'Formulario recibido pero el caso no se encontró en HubSpot y no llegó correo para respaldo. Contactar al cliente (datos del formulario no guardados).');
+        return { statusCode: 404, body: JSON.stringify({ ok: false, reason: 'case_not_found_in_hubspot_and_no_email', alertaEnviada }) };
       }
       const createRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
         method: 'POST',
@@ -106,7 +139,7 @@ exports.handler = async (event) => {
           'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ properties: { email: correo, referencia_pago: referenciaPago, ...campos, hechos_completos: 'true', fecha_hechos_completos: new Date().toISOString() } })
+        body: JSON.stringify({ properties: { email: correo, referencia_pago: referenciaPago, ...campos, hechos_completos: 'true', fecha_hechos_completos: new Date().toISOString().slice(0, 10) } })
       });
       if (!createRes.ok) {
         const errText = await createRes.text();
@@ -127,7 +160,7 @@ exports.handler = async (event) => {
         properties: {
           ...campos,
           hechos_completos: 'true',
-          fecha_hechos_completos: new Date().toISOString()
+          fecha_hechos_completos: new Date().toISOString().slice(0, 10)
         }
       })
     });

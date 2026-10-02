@@ -47,7 +47,8 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
-        properties: ['servicio_comprado', 'servicio_lyzbri', 'hechos_completos', 'tipo_solicitud_alimentos']
+        properties: ['servicio_comprado', 'servicio_lyzbri', 'hechos_completos', 'tipo_solicitud_alimentos',
+          'lyzbri_service_code', 'lyzbri_case_type']
       })
     });
     const hsData = await hsRes.json();
@@ -64,6 +65,9 @@ exports.handler = async (event) => {
         referenciaPago,
         servicio: contact.properties.servicio_lyzbri || contact.properties.servicio_comprado,
         tipoAlimentos: contact.properties.tipo_solicitud_alimentos || null,
+        // Identificador estable del producto pagado: decide qué formulario se muestra.
+        serviceCode: contact.properties.lyzbri_service_code || null,
+        caseType: contact.properties.lyzbri_case_type || null,
         hechosCompletos: contact.properties.hechos_completos === 'true'
       })
     };

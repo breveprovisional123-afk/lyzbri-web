@@ -1170,7 +1170,7 @@
           </article>
 
           <article class="card">
-            <span class="tag">Evaluación + estrategia</span>
+            <span class="tag">Carta de negociación</span>
             <h3><a href="?servicio=deudas">Gestiona tu Deuda: asesoría legal en deudas y cobranza</a></h3>
             <p>Ordena la información de tus obligaciones para identificar qué datos harán falta antes de una evaluación jurídica.</p>
             <ul class="service-includes">
@@ -1259,7 +1259,7 @@
         <div class="section-head">
           <div>
             <span class="tag">Servicio 1 · Reportes negativos</span>
-            <h2>Evaluación Hábeas Data + Ruta de Acción</h2>
+            <h2>Reclamo de Hábeas Data</h2>
             <p>Revisamos tu reporte crediticio y los documentos aportados para saber si existe base jurídica para reclamar.</p>
           </div>
         </div>
@@ -1275,7 +1275,7 @@
         <div class="grid-2">
           <article class="card">
             <span class="tag">Incluye</span>
-            <h3>Evaluación + ruta operativa</h3>
+            <h3>Reclamación</h3>
             <ul>
               <li>Revisión de reporte o soportes aportados</li>
               <li>Análisis de posibles inconsistencias</li>
@@ -1356,7 +1356,7 @@
 
           <article class="card price-card featured">
             <span class="price-label">Más vendido</span>
-            <h3>Evaluación + reclamación</h3>
+            <h3>Reclamación</h3>
             <div class="price">COP 229.000 <small>desde</small></div>
             <ul class="price-list">
               <li>Evaluación completa</li>
@@ -1407,8 +1407,8 @@
       <div class="shell section-box">
         <div class="section-head">
           <div>
-            <span class="tag">Servicio 2 · Evaluación + estrategia</span>
-            <h2>Evaluación de deudas y ruta jurídica</h2>
+            <span class="tag">Servicio 2 · Carta de negociación</span>
+            <h2>Carta de negociación de deudas</h2>
             <p>Entiende tu situación y las alternativas jurídicas disponibles antes de tomar decisiones.</p>
           </div>
         </div>
@@ -1455,8 +1455,8 @@
 
         <div class="grid-2">
           <article class="card price-card">
-            <span class="price-label">Evaluación</span>
-            <h3>Evaluación de deudas</h3>
+            <span class="price-label">Carta de negociación</span>
+            <h3>Carta de negociación de deudas</h3>
             <div class="price">COP 129.000 <small>desde</small></div>
             <ul class="price-list">
               <li>Revisión de tus obligaciones</li>
@@ -1999,8 +1999,8 @@
 
     // =========================================================================
     // CONDICIÓN (matriz normativa TEA y discapacidad, corte sept-2026)
-    // Cada categoría trae su norma especial. "revision" = la ruta la define la
-    // abogada; no se automatiza sin revisión previa.
+    // Cada categoría trae su norma especial. "nota" = texto informativo para el
+    // cliente en el resultado; NO cambia la ruta (todo es Zero-Touch).
     // =========================================================================
     var TEA_CONDICION = {
       tea: { label: 'Trastorno del espectro autista (TEA)',
@@ -2024,11 +2024,11 @@
       mudez: { label: 'Mudez',
                norma: 'Ley 1618 de 2013, de forma provisional según la causa',
                cita: 'la Ley 1618 de 2013',
-               revision: 'Por la particularidad de esta condición, la ruta jurídica la define la abogada tras revisar tu caso; no se resuelve de forma automática.' },
+               nota: 'La mudez y las barreras de comunicación están protegidas por la Convención sobre los Derechos de las Personas con Discapacidad (Ley 1346 de 2009) y la Ley 1618 de 2013. El documento exige los apoyos y ajustes razonables de comunicación que se requieren.' },
       no_visible: { label: 'Discapacidad no visible (psicosocial, orgánica o crónica)',
                     norma: 'Ley 1618 de 2013 y Ley 1751 de 2015',
                     cita: 'la Ley 1618 de 2013 y la Ley 1751 de 2015',
-                    revision: 'No toda condición crónica o psiquiátrica equivale jurídicamente a una discapacidad; la abogada revisa tu caso antes de definir la ruta.' }
+                    nota: 'Las discapacidades no visibles (psicosociales, orgánicas o crónicas) tienen la misma protección que cualquier otra discapacidad. El documento exige los ajustes razonables que corresponden a la afectación concreta.' }
     };
     // Ley 2628 de 2026: el Certificado Único de Trastorno del Neurodesarrollo es voluntario y su
     // ausencia no puede ser barrera de acceso a servicios de salud.
@@ -2038,12 +2038,12 @@
     // Nivel de servicio recomendado y nivel de tarifa (A = gestión administrativa,
     // B = representación en tutela / desacato / denuncia penal) según el estado del caso.
     var TEA_NIVEL = {
-      sin_gestion: { tier: 'A', nombre: "Evaluación + derecho de petición" },
+      sin_gestion: { tier: 'A', nombre: "Derecho de petición" },
       peticion_sin_respuesta: { tier: 'B', nombre: "Evaluación + acción de tutela" },
-      tutela_incumplida: { tier: 'B', nombre: "Evaluación + incidente de desacato" },
-      exclusion_directa: { tier: 'A', nombre: "Evaluación + derecho de petición" },
-      acoso_no_investigado: { tier: 'B', nombre: "Evaluación + escrito de denuncia" },
-      varias_areas: { tier: 'A', nombre: "Evaluación + derecho de petición" },
+      tutela_incumplida: { tier: 'B', nombre: "Incidente de desacato" },  // con acompañamiento: "Evaluación + incidente de desacato" (ver abajo)
+      exclusion_directa: { tier: 'A', nombre: "Derecho de petición" },
+      acoso_no_investigado: { tier: 'B', nombre: "Escrito de denuncia" },
+      varias_areas: { tier: 'A', nombre: "Derecho de petición" },
     };
 
     // =========================================================================
@@ -2055,7 +2055,7 @@
     // aparte con la abogada y NO tienen botón de pago en la landing.
     // =========================================================================
     var PRECIOS = {
-      'habeas-data': { A: 99000,  B: 229000 },  // Evaluación / Evaluación + reclamación
+      'habeas-data': { A: 229000, B: 229000 },  // Precio único de todos los reclamos (decisión de Liza, 27-sep-2026)
       'deudas':      { A: 129000, B: 129000 },  // Evaluación de deudas (entrada)
       'marca':       { A: 199000, B: 199000 },  // Registro de marca (autogestión)
       'tea':         { A: 149000, B: 420000 },  // Derecho de petición / Tutela por incumplimiento
@@ -2068,6 +2068,134 @@
       acompanamiento: { fijacion: 129000, aumento: 129000, disminucion: 149000, exoneracion: 149000 }
     };
     var NOMBRE_TIPO_ALIMENTOS = { fijacion: 'fijación', aumento: 'aumento', disminucion: 'disminución', exoneracion: 'exoneración' };
+    // =========================================================================
+    // CATÁLOGO DE PRODUCTOS COBRABLES (Corrección crítica de arquitectura, 27-sep-2026)
+    // -------------------------------------------------------------------------
+    // REGLA: toda opción que pueda generar un resultado pagado debe tener aquí
+    // service_code, case_type, price, processing_mode, delivery_type y make_route
+    // ANTES de poder mostrarse como cobrable. Si falta algo, validarProducto()
+    // bloquea el botón de pago (no se publica como producto cobrable) y el caso
+    // queda en HubSpot como REQUIERE_DEFINICION.
+    // make_route es la ruta EXACTA que Make usa; no existe ruta "parecida".
+    // =========================================================================
+    var MODOS_PROCESAMIENTO = ['DOCUMENTO_AUTOMATICO', 'EVALUACION_HUMANA', 'DOCUMENTO_CON_REVISION', 'SERVICIO_MIXTO'];
+    // Ruta de Make -> escenario que la procesa. Una ruta que no esté aquí no es cobrable.
+    var RUTAS_MAKE = {
+      DEUDAS: 'Lyzbri principal (6374004)', HD_PAGO_HISTORICO: 'Lyzbri principal (6374004)', MARCA: 'Lyzbri principal (6374004)',
+      TEA_PETICION: 'Lyzbri principal (6374004)', TEA_TUTELA: 'Lyzbri principal (6374004)', TEA_DESACATO: 'Lyzbri principal (6374004)',
+      DOC_HD_SUPLANTACION: 'Documentos directos', DOC_HD_DATOS_INCORRECTOS: 'Documentos directos',
+      DOC_HD_OBLIGACION_NO_RECONOCIDA: 'Documentos directos', DOC_HD_CASO_INCIERTO: 'Documentos directos',
+      DOC_TEA_DENUNCIA_DEPORTIVA: 'Documentos directos',
+      ALIMENTOS: 'Alimentos (6385260)',
+      MANUAL_REVIEW: 'Revisión manual de la abogada (alerta, sin documento automático)'
+    };
+    var ENVIOS_FORMULARIO = ['guardar-formulario', 'enviar-alimentos', 'enviar-documento'];
+    var CATALOGO = {
+      'HABEAS_DATA|PAGO_HISTORICO': { nombre: 'Reclamo por actualización de reporte negativo', price: 229000,
+        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'HD_PAGO_HISTORICO',
+        form_key: 'habeas-data', submit: 'guardar-formulario', servicio_lyzbri: 'habeas_data', sub_caso: 'pago_historico',
+        cta: 'Continuar con el pago y generar mi reclamo' },
+      'HABEAS_DATA|SUPLANTACION': { nombre: 'Reclamo por suplantación de identidad', price: 229000,
+        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'WORD_ADJUNTO_EMAIL', make_route: 'DOC_HD_SUPLANTACION',
+        form_key: 'hd-suplantacion', submit: 'enviar-documento', servicio_lyzbri: 'habeas_data', sub_caso: 'suplantacion_identidad',
+        cta: 'Continuar con el pago y generar mi reclamo' },
+      'HABEAS_DATA|DATOS_INCORRECTOS': { nombre: 'Reclamo por datos, fechas o saldos incorrectos', price: 229000,
+        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'WORD_ADJUNTO_EMAIL + ANEXO', make_route: 'DOC_HD_DATOS_INCORRECTOS',
+        form_key: 'hd-datos-incorrectos', submit: 'enviar-documento', servicio_lyzbri: 'habeas_data',
+        cta: 'Continuar con el pago y generar mi reclamo' },
+      'HABEAS_DATA|OBLIGACION_NO_RECONOCIDA': { nombre: 'Reclamo por obligación no reconocida', price: 229000,
+        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'WORD_ADJUNTO_EMAIL + ANEXO', make_route: 'DOC_HD_OBLIGACION_NO_RECONOCIDA',
+        form_key: 'hd-no-reconocida', submit: 'enviar-documento', servicio_lyzbri: 'habeas_data',
+        cta: 'Continuar con el pago y generar mi reclamo' },
+      'HABEAS_DATA|CASO_INCIERTO': { nombre: 'Solicitud de verificación de obligación', price: 229000,
+        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'WORD_ADJUNTO_EMAIL + ANEXO', make_route: 'DOC_HD_CASO_INCIERTO',
+        form_key: 'hd-caso-incierto', submit: 'enviar-documento', servicio_lyzbri: 'habeas_data',
+        cta: 'Continuar con el pago y generar mi solicitud' },
+      'DEUDAS|CARTA_NEGOCIACION': { nombre: 'Carta de negociación de deudas', price: 129000,
+        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'DEUDAS',
+        form_key: 'deudas', submit: 'guardar-formulario', servicio_lyzbri: 'deudas' },
+      'MARCA|FORMULARIO_REGISTRO': { nombre: 'Formulario de registro de marca (autogestión)', price: 199000,
+        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'MARCA',
+        form_key: 'marca', submit: 'guardar-formulario', servicio_lyzbri: 'registro_marca' },
+      'TEA|DERECHO_PETICION': { nombre: 'Derecho de petición', price: 149000,
+        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'TEA_PETICION',
+        form_key: 'tea', submit: 'guardar-formulario', servicio_lyzbri: 'tea_discapacidad' },
+      'TEA|TUTELA': { nombre: 'Acción de tutela', price: 420000,
+        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'TEA_TUTELA',
+        form_key: 'tea-tutela', submit: 'guardar-formulario', servicio_lyzbri: 'tutela' },
+      'TEA|DESACATO_AUTOGESTION': { nombre: 'Incidente de desacato (autogestión)', price: 99000,
+        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'TEA_DESACATO',
+        form_key: 'tea-desacato', submit: 'guardar-formulario', servicio_lyzbri: 'desacato' },
+      'TEA|DESACATO_ACOMPANAMIENTO': { nombre: 'Incidente de desacato con acompañamiento de abogada', price: 600000,
+        processing_mode: 'SERVICIO_MIXTO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL + AVISO_ABOGADA', make_route: 'TEA_DESACATO',
+        form_key: 'tea-desacato', submit: 'guardar-formulario', servicio_lyzbri: 'desacato' },
+      'TEA|DENUNCIA_DEPORTIVA': { nombre: 'Escrito de denuncia', price: 229000,
+        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'WORD_ADJUNTO_EMAIL + ANEXO', make_route: 'DOC_TEA_DENUNCIA_DEPORTIVA',
+        form_key: 'tea-denuncia-deportiva', submit: 'enviar-documento', servicio_lyzbri: 'tea_discapacidad' }
+    };
+    ['fijacion', 'aumento', 'disminucion', 'exoneracion'].forEach(function (t) {
+      ['autogestion', 'acompanamiento'].forEach(function (m) {
+        CATALOGO['ALIMENTOS|' + t.toUpperCase() + '_' + m.toUpperCase()] = {
+          nombre: 'Solicitud de conciliación — ' + t + (m === 'acompanamiento' ? ' (con acompañamiento)' : ' (autogestión)'),
+          price: PRECIOS_ALIMENTOS[m][t],
+          processing_mode: m === 'acompanamiento' ? 'SERVICIO_MIXTO' : 'DOCUMENTO_AUTOMATICO',
+          delivery_type: m === 'acompanamiento' ? 'WORD_ADJUNTO_EMAIL + AVISO_ABOGADA' : 'WORD_ADJUNTO_EMAIL',
+          make_route: 'ALIMENTOS', form_key: 'alimentos', submit: 'enviar-alimentos', servicio_lyzbri: 'alimentos'
+        };
+      });
+    });
+    Object.keys(CATALOGO).forEach(function (k) {
+      CATALOGO[k].service_code = k.split('|')[0];
+      CATALOGO[k].case_type = k.split('|')[1];
+    });
+
+    // Opción del wizard -> producto del catálogo. null = opción sin producto definido.
+    var HD_CASE_TYPE = { 'pago': 'PAGO_HISTORICO', 'suplantacion': 'SUPLANTACION', 'datos': 'DATOS_INCORRECTOS',
+      'no-reconoce': 'OBLIGACION_NO_RECONOCIDA', 'otro': 'CASO_INCIERTO' };
+    var TEA_CASE_TYPE = { sin_gestion: 'DERECHO_PETICION', exclusion_directa: 'DERECHO_PETICION', varias_areas: 'DERECHO_PETICION',
+      peticion_sin_respuesta: 'TUTELA', acoso_no_investigado: 'DENUNCIA_DEPORTIVA' };
+    function resolverProducto(servicio, a) {
+      var clave = null;
+      if (servicio === 'habeas-data' && HD_CASE_TYPE[a.hd_problema]) clave = 'HABEAS_DATA|' + HD_CASE_TYPE[a.hd_problema];
+      else if (servicio === 'deudas') clave = 'DEUDAS|CARTA_NEGOCIACION';
+      else if (servicio === 'marca') clave = 'MARCA|FORMULARIO_REGISTRO';
+      else if (servicio === 'tea') {
+        if (a.tea_estado === 'tutela_incumplida') {
+          if (a.tea_modalidad) clave = 'TEA|DESACATO_' + a.tea_modalidad.toUpperCase();
+        } else if (TEA_CASE_TYPE[a.tea_estado]) clave = 'TEA|' + TEA_CASE_TYPE[a.tea_estado];
+      } else if (servicio === 'alimentos' && a.ali_tipo) {
+        clave = 'ALIMENTOS|' + a.ali_tipo.toUpperCase() + '_' + (a.ali_modalidad || 'autogestion').toUpperCase();
+      }
+      var p = clave && CATALOGO[clave] ? Object.assign({ clave: clave }, CATALOGO[clave]) : null;
+      return p;
+    }
+    function validarProducto(p) {
+      var errores = [];
+      if (!p) return { ok: false, errores: ['opción sin producto en el catálogo'] };
+      ['service_code', 'case_type', 'processing_mode', 'delivery_type', 'make_route', 'form_key', 'submit'].forEach(function (k) {
+        if (!p[k]) errores.push('falta ' + k);
+      });
+      if (!(typeof p.price === 'number' && p.price > 0)) errores.push('precio inválido');
+      if (p.processing_mode && MODOS_PROCESAMIENTO.indexOf(p.processing_mode) === -1) errores.push('modo inválido');
+      if (p.make_route && !RUTAS_MAKE[p.make_route]) errores.push('ruta de Make inexistente: ' + p.make_route);
+      if (p.form_key && !CAMPOS_DETALLADOS[p.form_key]) errores.push('formulario inexistente: ' + p.form_key);
+      if (p.submit && ENVIOS_FORMULARIO.indexOf(p.submit) === -1) errores.push('envío inexistente: ' + p.submit);
+      return { ok: errores.length === 0, errores: errores };
+    }
+    function productoPorForm(formKey) {
+      var k = Object.keys(CATALOGO).filter(function (x) { return CATALOGO[x].form_key === formKey; })[0];
+      return k ? CATALOGO[k] : null;
+    }
+
+    // Textos de resultado de Hábeas Data (instrucción de Liza, 27-sep-2026;
+    // art. 15 -> art. 6 de la Ley 1266 de 2008 por decisión de Liza).
+    var HD_RESULTADOS = {
+      PAGO_HISTORICO: 'Tu caso corresponde a un reclamo por actualización de reporte negativo después de pago. Tienes derecho a exigir que la entidad actualice la información y refleje la fecha real de pago en tu reporte de centrales de riesgo.\n\nRuta legal recomendada:\n1. Presentar reclamo ante la entidad que reportó (no ante Datacrédito).\n2. La entidad tiene 15 días hábiles para responder (prorrogables a 8 días adicionales).\n3. Si no responden o niegan injustificadamente, puedes acudir a la Superintendencia de Industria y Comercio (SIC).\n\nNorma que te protege: Artículo 16 de la Ley 1266 de 2008 (procedimiento de reclamos) y Ley 2157 de 2021 (reglas de permanencia del dato negativo).\n\nDocumento disponible: Reclamo por actualización de reporte negativo — $229.000',
+      SUPLANTACION: 'Tu caso corresponde a un reclamo por posible suplantación de identidad. Tienes derecho a exigir la suspensión de cobros, corrección del reporte negativo y la marcación "Víctima de Falsedad Personal" en tu historial crediticio.\n\nRuta legal recomendada:\n1. Presentar denuncia penal por falsedad personal ante la Fiscalía (dentro de los 20 días hábiles).\n2. Presentar reclamo ante la entidad reportante adjuntando la denuncia.\n3. La entidad debe suspender cobros y corregir el reporte dentro de los 10 días hábiles siguientes.\n4. Si no responden, aplica el silencio administrativo positivo (se entiende aprobado tu reclamo).\n\nNorma que te protege: Ley 2573 de 2026 (protección a víctimas de suplantación) y artículo 16 de la Ley 1266 de 2008 (reclamos y silencio administrativo).\n\nDocumento disponible: Reclamo por suplantación de identidad — $229.000',
+      DATOS_INCORRECTOS: 'Tu caso corresponde a un reclamo por información incorrecta en reporte de centrales de riesgo. Tienes derecho a exigir que la entidad rectifique datos, fechas o saldos erróneos en tu historial crediticio.\n\nRuta legal recomendada:\n1. Reunir soportes que demuestren el error (extractos, certificados de saldo, comprobantes de pago).\n2. Presentar reclamo ante la entidad que reportó, solicitando la rectificación específica.\n3. La entidad tiene 15 días hábiles para responder y corregir si el error es verificable.\n4. Si no responden, puedes acudir a la Superintendencia de Industria y Comercio (SIC).\n\nNorma que te protege: Artículo 6 de la Ley 1266 de 2008 (derecho a rectificar información) y Decreto 1727 de 2009 (contenido de reportes).\n\nDocumento disponible: Reclamo por datos, fechas o saldos incorrectos — $229.000',
+      OBLIGACION_NO_RECONOCIDA: 'Tu caso corresponde a un reclamo por obligación no reconocida. Tienes derecho a exigir que la entidad aporte los documentos originales que dieron origen a la obligación y, si se confirma el error, elimine el reporte negativo de tu historial.\n\nRuta legal recomendada:\n1. Solicitar a la entidad que aporte el contrato, formularios y documentos de autorización de la obligación.\n2. Si la obligación no es tuya, exigir la eliminación inmediata del reporte negativo.\n3. La entidad tiene 15 días hábiles para investigar y responder.\n4. Si no responden o la obligación es claramente errónea, puedes acudir a la SIC.\n\nNorma que te protege: Artículo 6 de la Ley 1266 de 2008 (derecho a conocer y rectificar información) y artículo 8 de la Ley 1266 de 2008 (deber de reportar información veraz).\n\nDocumento disponible: Reclamo por obligación no reconocida — $229.000',
+      CASO_INCIERTO: 'Tu caso corresponde a una solicitud de verificación de obligación. Tienes derecho a conocer el origen, estado y legitimidad de cualquier obligación reportada a tu nombre antes de decidir si la reconoces o la reclamas.\n\nRuta legal recomendada:\n1. Solicitar a la entidad que proporcione el contrato, historial de pagos y documentos de autorización.\n2. Revisar la información para determinar si la obligación es legítima.\n3. Si confirmas que es tuya, pagar o negociar. Si no es tuya, presentar reclamo de rectificación.\n4. La entidad debe responder dentro de los 15 días hábiles siguientes.\n\nNorma que te protege: Artículo 6 de la Ley 1266 de 2008 (derecho fundamental de hábeas data: conocer la información recogida sobre el titular).\n\nDocumento disponible: Solicitud de verificación de obligación — $229.000'
+    };
     // =========================================================================
     // CONFIGURACIÓN DE PASOS POR SERVICIO
     // Cada paso es 'choice' (botones grandes, avanzan solos) o 'text' (campo,
@@ -2168,23 +2296,12 @@
 
     function getResultado(servicio, a) {
       if (servicio === 'habeas-data') {
-        if (a.hd_problema === 'pago' || a.hd_problema === 'datos') {
-          return { titulo: 'Hay elementos para iniciar una evaluación y posible reclamación.',
-                    descripcion: 'Indicas un pago no actualizado o una posible inconsistencia. Revisamos los soportes antes de definir cualquier reclamación.',
-                    tier: 'B' };
-        }
-        if (a.hd_problema === 'no-reconoce' || a.hd_problema === 'suplantacion') {
-          return { titulo: 'Tu información requiere una revisión especializada.',
-                    descripcion: 'Las situaciones de obligación no reconocida o posible suplantación necesitan verificar identidad, soportes y cronología.',
-                    tier: 'A' };
-        }
-        return { titulo: 'Podemos iniciar una evaluación estructurada.',
-                  descripcion: 'La información suministrada permite organizar los datos relevantes y definir los soportes necesarios.',
-                  tier: 'A' };
+        var ctHD = HD_CASE_TYPE[a.hd_problema];
+        return { titulo: 'Resultado de tu evaluación inicial', descripcion: HD_RESULTADOS[ctHD] || '', tier: 'B' };
       }
       if (servicio === 'deudas') {
-        return { titulo: 'Podemos iniciar una evaluación de tu situación.',
-                  descripcion: 'Ordenamos tus obligaciones, estado de mora y datos relevantes antes de una evaluación jurídica.',
+        return { titulo: 'Tu caso corresponde a una carta de negociación de deudas.',
+                  descripcion: 'Con los datos de tus obligaciones, su estado de mora y tus acreedores, elaboramos la carta de negociación dirigida a tus acreedores.',
                   tier: 'A' };
       }
       if (servicio === 'marca') {
@@ -2194,14 +2311,17 @@
       }
       if (servicio === 'tea') {
         var d = TEA_DATA[a.tea_area];
-        var nivel = TEA_NIVEL[a.tea_estado] || { tier: 'A', nombre: 'Evaluación + derecho de petición' };
+        var nivel = TEA_NIVEL[a.tea_estado] || { tier: 'A', nombre: 'Derecho de petición' };
+        // Regla de Liza (29-sep): solo la tutela y el desacato con acompañamiento son
+        // "Evaluación + producto"; todo lo demás se nombra solo por el producto.
+        if (a.tea_estado === 'tutela_incumplida' && a.tea_modalidad === 'acompanamiento') nivel = { tier: nivel.tier, nombre: 'Evaluación + incidente de desacato' };
         var c = TEA_CONDICION[a.tea_condicion];
         if (c && d && a.tea_estado && d.steps[a.tea_estado]) {
           var desc = 'Condición: ' + c.label + '. Área: ' + d.titulo + '. Normativa aplicable: ' + c.norma + '; ' + d.laws + '. ' + TEA_TRANSVERSAL + ' Servicio recomendado: ' + nivel.nombre + '.';
           if (a.tea_area === 'salud' && TEA_CATEGORIAS_2628.indexOf(a.tea_condicion) >= 0) {
             desc += ' El Certificado Único de Trastorno del Neurodesarrollo es voluntario y su ausencia no puede ser una barrera para acceder a servicios de salud.';
           }
-          if (c.revision) desc += ' ' + c.revision;
+          if (c.nota) desc += ' ' + c.nota;
           var res = { titulo: d.steps[a.tea_estado].replace('{NORMA}', c.cita), descripcion: desc, tier: nivel.tier };
           if (a.tea_estado === 'tutela_incumplida' && PRECIOS_DESACATO[a.tea_modalidad]) {
             res.monto = PRECIOS_DESACATO[a.tea_modalidad];
@@ -2299,7 +2419,7 @@
           '<div class="wizard-actions">' +
           '<button type="button" class="btn btn-primary" onclick="submitContacto()">Ver mi resultado</button>' +
           '</div>' +
-          '<p class="note">La evaluación inicial organiza tu caso; no reemplaza la revisión jurídica profesional.</p>';
+          (wz.servicio === 'habeas-data' ? '' : '<p class="note">La evaluación inicial organiza tu caso; no reemplaza la revisión jurídica profesional.</p>');
       }
     }
 
@@ -2340,8 +2460,10 @@
 
     function mostrarResultado() {
       var resultado = getResultado(wz.servicio, wz.answers);
-      var precios = PRECIOS[wz.servicio] || { A: 0, B: 0 };
-      var monto = resultado.monto || precios[resultado.tier] || precios.A;
+      // El producto (y su precio) sale SOLO del catálogo; sin producto válido no hay cobro.
+      var producto = resolverProducto(wz.servicio, wz.answers);
+      var validacion = validarProducto(producto);
+      var monto = validacion.ok ? producto.price : 0;
 
       document.getElementById('wizard-card').style.display = 'none';
       var conf = document.getElementById('form-confirmacion');
@@ -2349,14 +2471,14 @@
 
       document.getElementById('resultado-etiqueta').textContent = 'Resultado inicial';
       document.getElementById('resultado-titulo').textContent = resultado.titulo;
-      document.getElementById('resultado-descripcion').textContent = resultado.descripcion;
+      var descEl = document.getElementById('resultado-descripcion');
+      descEl.textContent = resultado.descripcion;
+      descEl.style.whiteSpace = 'pre-line';
 
       var reference = wz.servicio + '-' + Date.now();
       // Servicio real (texto libre en HubSpot: servicio_lyzbri) y formulario post-pago.
-      var servicioLyzbri = SERVICIO_A_HUBSPOT[wz.servicio] || wz.servicio;
-      var servicioForm = wz.servicio;
-      if (wz.servicio === 'tea' && wz.answers.tea_estado === 'peticion_sin_respuesta') { servicioLyzbri = 'tutela'; servicioForm = 'tea-tutela'; }
-      if (wz.servicio === 'tea' && wz.answers.tea_estado === 'tutela_incumplida') { servicioLyzbri = 'desacato'; servicioForm = 'tea-desacato'; }
+      var servicioLyzbri = validacion.ok ? producto.servicio_lyzbri : (SERVICIO_A_HUBSPOT[wz.servicio] || wz.servicio);
+      var servicioForm = validacion.ok ? producto.form_key : wz.servicio;
 
       // Guardamos el caso localmente ANTES de salir a Wompi, porque al volver
       // (redirect-url) esta página se recarga desde cero y se pierde wz.answers
@@ -2364,7 +2486,8 @@
       // en la URL de retorno — cubre el caso de que se abra en otra pestaña/dispositivo.
       try {
         localStorage.setItem('lyzbri_caso_' + reference, JSON.stringify({
-          servicio: servicioForm, answers: wz.answers, referencia: reference, monto: monto
+          servicio: servicioForm, answers: wz.answers, referencia: reference, monto: monto,
+          producto: validacion.ok ? producto.clave : null
         }));
       } catch (e) { /* localStorage puede fallar en modo privado — no es bloqueante */ }
 
@@ -2402,9 +2525,17 @@
       }
       ['tea_subtipo_nv', 'tea_modalidad', 'ali_tipo', 'ali_rol', 'ali_modalidad'].forEach(function (k) { delete respuestasParaHubspot[k]; });
       // Sub-caso de Hábeas Data: es el que decide qué plantilla usa Make.
-      if (wz.servicio === 'habeas-data') {
-        if (wz.answers.hd_problema === 'pago') respuestasParaHubspot.sub_caso = 'pago_historico';
-        else if (wz.answers.hd_problema === 'suplantacion') respuestasParaHubspot.sub_caso = 'suplantacion_identidad';
+      // Solo se escribe cuando el catálogo lo define (lista cerrada en HubSpot).
+      if (validacion.ok && producto.sub_caso) respuestasParaHubspot.sub_caso = producto.sub_caso;
+      // Trazabilidad: lo que la página ofrece = lo que se cobra = lo que HubSpot registra = ruta de Make.
+      if (validacion.ok) {
+        respuestasParaHubspot.lyzbri_service_code = producto.service_code;
+        respuestasParaHubspot.lyzbri_case_type = producto.case_type;
+        respuestasParaHubspot.lyzbri_processing_mode = producto.processing_mode;
+        respuestasParaHubspot.lyzbri_delivery_type = producto.delivery_type;
+        respuestasParaHubspot.lyzbri_make_route = producto.make_route;
+      } else {
+        respuestasParaHubspot.estado_revision = 'REQUIERE_DEFINICION';
       }
       // Nombre completo: es el campo que usan los documentos generados.
       if (wz.answers.nombre) respuestasParaHubspot.nombre_completo = wz.answers.nombre;
@@ -2423,8 +2554,16 @@
       }).catch(function (err) { console.warn('crear-caso no disponible todavía:', err); });
 
       var payBtn = document.getElementById('resultado-pago');
-      payBtn.textContent = 'Continuar al pago — ' + formatCOP(monto);
-      payBtn.href = buildWompiLink(monto, reference, servicioForm, wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : null);
+      if (!validacion.ok) {
+        // Opción sin producto completo en el catálogo: NO se publica como cobrable.
+        console.error('Producto no cobrable:', validacion.errores);
+        payBtn.style.display = 'none';
+        descEl.textContent = resultado.descripcion + '\n\nEsta opción todavía no está disponible para pago en línea. Escríbenos por WhatsApp y te orientamos.';
+      } else {
+        payBtn.style.display = '';
+        payBtn.textContent = (producto.cta ? producto.cta : 'Continuar al pago') + ' — ' + formatCOP(monto);
+        payBtn.href = buildWompiLink(monto, reference, servicioForm, wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : null);
+      }
 
       conf.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -2629,8 +2768,110 @@
       { id: 'evidencia_incumplimiento_tea', label: 'Hechos y pruebas del incumplimiento', type: 'textarea', maxLength: 1000 }
     ]);
 
+    // -------------------------------------------------------------------------
+    // Formularios de los documentos Zero Touch directos (enviar-documento).
+    // Los datos ya dados en la evaluación (nombre, correo, WhatsApp, entidad,
+    // condición) se precargan: ver PRECARGA más abajo.
+    // -------------------------------------------------------------------------
+    var OPC_TIPO_DOC = [{v:'cc',l:'C.C.'}, {v:'ce',l:'C.E.'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}, {v:'pep',l:'PEP'}];
+    var HD_OBLIGACION = [
+      { id: 'fuente_nombre', label: 'Entidad que reportó la obligación (banco, empresa, etc.)', type: 'text' },
+      { id: 'producto_obligacion', label: 'Tipo de obligación', type: 'select', options: [{v:'credito_consumo',l:'Crédito de consumo'}, {v:'tarjeta_credito',l:'Tarjeta de crédito'}, {v:'libre_inversion',l:'Crédito de libre inversión'}, {v:'telefonia',l:'Telefonía o internet'}, {v:'otro',l:'Otro'}] },
+      { id: 'producto_otro', label: '¿Qué tipo de obligación es?', type: 'text', optional: true, sinEtiquetaOpcional: true, condSobre: 'producto_obligacion', condValor: 'otro' },
+      { id: 'numero_obligacion', label: 'N° de la obligación, cuenta o contrato', type: 'text' }
+    ];
+    var HD_OPERADOR = { id: 'operador_nombre', label: 'Central de riesgo donde aparece el reporte', type: 'select', options: [{v:'datacredito',l:'Datacrédito (Experian)'}, {v:'transunion',l:'TransUnión (CIFIN)'}, {v:'ambos',l:'En ambas'}] };
+    var HD_TITULAR = [
+      { id: 'nombre_titular', label: 'Nombre completo del titular', type: 'text' },
+      { id: 'tipo_documento', label: 'Tipo de documento', type: 'select', options: OPC_TIPO_DOC },
+      { id: 'numero_documento', label: 'N° de documento', type: 'text' },
+      { id: 'ciudad_expedicion', label: 'Lugar de expedición del documento', type: 'text' },
+      { id: 'correo_titular', label: 'Correo electrónico (aquí recibes tu documento)', type: 'text' },
+      { id: 'celular_titular', label: 'Celular', type: 'text' }
+    ];
+    var HD_CIERRE = [
+      { id: 'hechos_adicionales', label: 'Hechos adicionales que quieras incluir', type: 'textarea', maxLength: 800, optional: true }
+    ];
+    CAMPOS_DETALLADOS['hd-suplantacion'] = [
+      { id: 'nombre_titular', label: 'Nombre completo del titular', type: 'text' },
+      { id: 'numero_documento', label: 'N° de cédula de ciudadanía', type: 'text' },
+      { id: 'ciudad_expedicion', label: 'Lugar de expedición de la cédula', type: 'text' },
+      { id: 'correo_titular', label: 'Correo electrónico (aquí recibes tu documento)', type: 'text' },
+      { id: 'celular_titular', label: 'Celular', type: 'text' }
+    ].concat(HD_OBLIGACION, [
+      { id: 'soportes', label: 'Otros soportes que aportas, además de tu cédula y la denuncia penal', type: 'textarea', maxLength: 500, optional: true }
+    ], HD_CIERRE);
+    CAMPOS_DETALLADOS['hd-datos-incorrectos'] = HD_TITULAR.concat(HD_OBLIGACION, [HD_OPERADOR,
+      { id: 'errores', label: '¿Qué datos están incorrectos? (marca todos los que apliquen)', type: 'multiselect', options: [{v:'saldo',l:'Saldo'}, {v:'fecha_mora',l:'Fecha de mora'}, {v:'fecha_pago',l:'Fecha de pago'}, {v:'estado',l:'Estado de la obligación'}, {v:'numero',l:'Número de cuenta o contrato'}, {v:'otro',l:'Otro error'}] },
+      { id: 'saldo_reportado', label: 'Saldo que aparece reportado', type: 'number', optional: true, sinEtiquetaOpcional: true, condSobre: 'errores', condValor: 'saldo' },
+      { id: 'saldo_real', label: 'Saldo real', type: 'number', optional: true, sinEtiquetaOpcional: true, condSobre: 'errores', condValor: 'saldo' },
+      { id: 'fecha_mora_reportada', label: 'Fecha de mora que aparece reportada', type: 'date', optional: true, sinEtiquetaOpcional: true, condSobre: 'errores', condValor: 'fecha_mora' },
+      { id: 'fecha_mora_real', label: 'Fecha de mora correcta', type: 'date', optional: true, sinEtiquetaOpcional: true, condSobre: 'errores', condValor: 'fecha_mora' },
+      { id: 'fecha_pago_reportada', label: 'Fecha de pago que aparece reportada', type: 'date', optional: true, sinEtiquetaOpcional: true, condSobre: 'errores', condValor: 'fecha_pago' },
+      { id: 'fecha_pago_real', label: 'Fecha de pago correcta', type: 'date', optional: true, sinEtiquetaOpcional: true, condSobre: 'errores', condValor: 'fecha_pago' },
+      { id: 'estado_reportado', label: 'Estado que aparece reportado', type: 'select', optional: true, sinEtiquetaOpcional: true, condSobre: 'errores', condValor: 'estado', options: [{v:'en mora',l:'En mora'}, {v:'al día',l:'Al día'}, {v:'cancelada',l:'Cancelada'}, {v:'castigada',l:'Castigada'}] },
+      { id: 'estado_real', label: 'Estado correcto', type: 'select', optional: true, sinEtiquetaOpcional: true, condSobre: 'errores', condValor: 'estado', options: [{v:'en mora',l:'En mora'}, {v:'al día',l:'Al día'}, {v:'cancelada',l:'Cancelada'}, {v:'pagada',l:'Pagada'}] },
+      { id: 'numero_reportado', label: 'Número que aparece reportado', type: 'text', optional: true, sinEtiquetaOpcional: true, condSobre: 'errores', condValor: 'numero' },
+      { id: 'numero_real', label: 'Número correcto', type: 'text', optional: true, sinEtiquetaOpcional: true, condSobre: 'errores', condValor: 'numero' },
+      { id: 'otro_error', label: 'Describe el error', type: 'textarea', maxLength: 500, optional: true, sinEtiquetaOpcional: true, condSobre: 'errores', condValor: 'otro' },
+      { id: 'soportes', label: 'Soportes que adjuntarás (extractos, comprobantes de pago, certificados de saldo, etc.)', type: 'textarea', maxLength: 500 }
+    ], HD_CIERRE);
+    CAMPOS_DETALLADOS['hd-no-reconocida'] = HD_TITULAR.concat(HD_OBLIGACION, [HD_OPERADOR,
+      { id: 'causa_no_reconocimiento', label: 'Causa posible del error', type: 'select', hint: 'Si crees que alguien usó tus documentos sin autorización (suplantación), escríbenos antes de continuar: ese caso tiene un reclamo distinto.', options: [{v:'error_administrativo',l:'Error administrativo de la entidad'}, {v:'tercero_nombre_similar',l:'Es de otra persona con nombre o documento similar'}, {v:'codeudoria',l:'Aparezco como codeudor sin haber sido informado'}, {v:'cancelada_prescrita',l:'Ya fue pagada, cancelada o prescrita'}, {v:'fraude_sin_suplantacion',l:'Un tercero la adquirió con mi información, sin falsificar documentos'}, {v:'otra',l:'Otra causa'}] },
+      { id: 'causa_otra', label: 'Describe la causa', type: 'textarea', maxLength: 500, optional: true, sinEtiquetaOpcional: true, condSobre: 'causa_no_reconocimiento', condValor: 'otra' },
+      { id: 'soportes', label: 'Otros soportes que aportas, además de tu documento de identidad', type: 'textarea', maxLength: 500, optional: true }
+    ], HD_CIERRE);
+    CAMPOS_DETALLADOS['hd-caso-incierto'] = HD_TITULAR.concat(HD_OBLIGACION, [HD_OPERADOR,
+      { id: 'soportes', label: 'Otros soportes que aportas, además de tu documento de identidad', type: 'textarea', maxLength: 500, optional: true }
+    ], HD_CIERRE);
+    CAMPOS_DETALLADOS['tea-denuncia-deportiva'] = [
+      { type: 'seccion', label: 'Persona afectada' },
+      { id: 'nombre_persona_afectada', label: 'Nombre completo de la persona afectada', type: 'text' },
+      { id: 'tipo_documento_afectado', label: 'Tipo de documento de la persona afectada', type: 'select', optional: true, options: [{v:'ti',l:'T.I.'}, {v:'cc',l:'C.C.'}, {v:'rc',l:'Registro civil'}, {v:'ce',l:'C.E.'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}] },
+      { id: 'documento_afectado', label: 'N° de documento de la persona afectada', type: 'text', optional: true },
+      { id: 'edad', label: 'Edad', type: 'number', optional: true },
+      { id: 'condicion_afectada', label: 'Condición o discapacidad (si deseas informarla)', type: 'select', optional: true, options: [{v:'tea',l:'Trastorno del espectro autista (TEA)'}, {v:'neuro',l:'Otro trastorno del neurodesarrollo'}, {v:'intelectual',l:'Discapacidad intelectual'}, {v:'fisica',l:'Discapacidad física'}, {v:'visual',l:'Discapacidad visual'}, {v:'sordera',l:'Sordera o sordoceguera'}, {v:'no_informa',l:'Prefiero no informarla'}] },
+      { id: 'ajuste_requerido', label: 'Necesidades de apoyo o ajustes que requiere para participar', type: 'textarea', maxLength: 500, optional: true },
+      { type: 'seccion', label: 'Quien presenta la denuncia' },
+      { id: 'nombre_denunciante', label: 'Tu nombre completo', type: 'text' },
+      { id: 'calidad_denunciante', label: 'Tu relación con la persona afectada', type: 'select', optional: true, options: [{v:'madre',l:'Madre'}, {v:'padre',l:'Padre'}, {v:'representante',l:'Representante legal'}, {v:'acudiente',l:'Acudiente o persona a cargo'}, {v:'familiar',l:'Familiar'}, {v:'misma_persona',l:'Soy la persona afectada'}, {v:'otro',l:'Otra'}] },
+      { id: 'tipo_documento_denunciante', label: 'Tu tipo de documento', type: 'select', optional: true, options: OPC_TIPO_DOC },
+      { id: 'documento_denunciante', label: 'Tu N° de documento', type: 'text', optional: true },
+      { id: 'correo_notificaciones', label: 'Tu correo (aquí recibes tu documento)', type: 'text' },
+      { id: 'celular_denunciante', label: 'Tu teléfono', type: 'text' },
+      { type: 'seccion', label: 'Institución a la que se dirige la denuncia' },
+      { id: 'institucion_deportiva', label: 'Club, escuela, liga, federación u organización responsable', type: 'text' },
+      { id: 'destinatario_responsable', label: 'Nombre del responsable (si lo conoces)', type: 'text', optional: true },
+      { id: 'destinatario_contacto', label: 'Correo, canal de radicación o dirección de la institución (si lo conoces)', type: 'text', optional: true },
+      { type: 'seccion', label: 'Actividad deportiva' },
+      { id: 'disciplina', label: 'Disciplina (fútbol, natación, etc.)', type: 'text', optional: true },
+      { id: 'nombre_actividad', label: 'Nombre del entrenamiento, competencia o evento', type: 'text', optional: true },
+      { id: 'fecha_evento', label: 'Fecha o periodo en que ocurrieron los hechos', type: 'text' },
+      { id: 'hora_evento', label: 'Hora (si aplica)', type: 'text', optional: true },
+      { id: 'lugar_evento', label: 'Lugar o escenario', type: 'text', optional: true },
+      { id: 'tipo_participacion', label: 'Tipo de participación', type: 'select', optional: true, options: [{v:'deportista',l:'Deportista inscrito(a)'}, {v:'entrenamiento',l:'Entrenamientos'}, {v:'competencia',l:'Competencia'}, {v:'aspirante',l:'Aspirante a participar'}, {v:'otro',l:'Otro'}] },
+      { type: 'seccion', label: 'Hechos' },
+      { id: 'relacion_hechos', label: 'Describe los hechos en orden cronológico (fechas, lugares, qué pasó)', type: 'textarea', maxLength: 2000 },
+      { id: 'tipo_conducta', label: 'Tipo de conducta (marca las que apliquen)', type: 'multiselect', options: [{v:'burlas',l:'Burlas'}, {v:'exclusion',l:'Exclusión'}, {v:'discriminacion',l:'Discriminación'}, {v:'impedimento',l:'Impedimento de participación'}] },
+      { id: 'conducta_denunciada', label: 'Describe la conducta de exclusión o discriminación', type: 'textarea', maxLength: 1000, optional: true },
+      { id: 'expresiones_utilizadas', label: 'Burlas o expresiones utilizadas', type: 'textarea', maxLength: 500, optional: true },
+      { id: 'personas_involucradas', label: 'Personas involucradas', type: 'text', optional: true },
+      { id: 'testigos', label: 'Testigos', type: 'text', optional: true },
+      { id: 'respuesta_institucion', label: 'Comunicaciones previas y respuesta de la institución (si las hubo)', type: 'textarea', maxLength: 800, optional: true },
+      { id: 'consecuencias', label: 'Consecuencias para la persona afectada', type: 'textarea', maxLength: 800, optional: true },
+      { type: 'seccion', label: 'Pruebas que anexarás' },
+      { id: 'documentos_anexos', label: 'Marca las que tienes', type: 'multiselect', options: [{v:'mensajes',l:'Mensajes'}, {v:'correos',l:'Correos'}, {v:'fotografias',l:'Fotografías'}, {v:'videos',l:'Videos'}, {v:'audios',l:'Audios'}, {v:'reglamentos',l:'Reglamentos'}, {v:'convocatorias',l:'Convocatorias'}, {v:'certificados',l:'Certificados o conceptos relevantes'}, {v:'testigos',l:'Datos de testigos'}] },
+      { id: 'otros_anexos', label: 'Otros documentos', type: 'text', optional: true }
+    ];
+    // Datos de la evaluación que se precargan en el formulario (campo -> respuesta del wizard).
+    var PRECARGA = { nombre_titular: 'nombre', nombre_denunciante: 'nombre', correo_titular: 'correo', correo_notificaciones: 'correo',
+      celular_titular: 'whatsapp', celular_denunciante: 'whatsapp', fuente_nombre: 'hd_entidad', condicion_afectada: 'tea_condicion' };
+
     var NOMBRE_SERVICIO = { 'habeas-data': 'Hábeas Data', 'deudas': 'Gestiona tu Deuda', 'marca': 'Registro de marca', 'tea': 'TEA y discapacidad',
-      'tea-tutela': 'TEA y discapacidad — acción de tutela', 'tea-desacato': 'TEA y discapacidad — incidente de desacato', 'alimentos': 'Cuota alimentaria' };
+      'tea-tutela': 'TEA y discapacidad — acción de tutela', 'tea-desacato': 'TEA y discapacidad — incidente de desacato', 'alimentos': 'Cuota alimentaria',
+      'hd-suplantacion': 'Hábeas Data — reclamo por suplantación de identidad', 'hd-datos-incorrectos': 'Hábeas Data — reclamo por datos, fechas o saldos incorrectos',
+      'hd-no-reconocida': 'Hábeas Data — reclamo por obligación no reconocida', 'hd-caso-incierto': 'Hábeas Data — solicitud de verificación de obligación',
+      'tea-denuncia-deportiva': 'Escrito de denuncia — discriminación, burlas o exclusión en espacio deportivo' };
 
     // El wizard usa sus propios códigos cortos ('habeas-data', 'marca', 'tea'),
     // pero el dropdown servicio_comprado en HubSpot tiene sus propios valores
@@ -2642,8 +2883,9 @@
       'tutela': 'tea-tutela', 'desacato': 'tea-desacato', 'alimentos': 'alimentos' };
 
     function campoHtml(c) {
+      if (c.type === 'seccion') return '<h4 style="margin:22px 0 4px;">' + c.label + '</h4>';
       var req = c.optional ? '' : 'required';
-      var label = '<label style="display:block;margin-top:14px;font-weight:600;">' + c.label + (c.optional ? ' <span class="fine-print">(opcional)</span>' : '') + '</label>';
+      var label = '<label style="display:block;margin-top:14px;font-weight:600;">' + c.label + (c.optional && !c.sinEtiquetaOpcional ? ' <span class="fine-print">(opcional)</span>' : '') + '</label>';
       if (c.hint) label += '<p class="fine-print" style="margin:4px 0 0;">' + c.hint + '</p>';
       var attrs = 'id="fd_' + c.id + '" name="' + c.id + '" ' + req + ' style="width:100%;padding:10px;margin-top:6px;border-radius:8px;border:1px solid #ccc;"';
       var input;
@@ -2681,7 +2923,11 @@
         var origen = document.getElementById('fd_' + div.getAttribute('data-cond-sobre'));
         if (!origen) return;
         var actualizar = function () {
-          div.style.display = (div.getAttribute('data-cond-valor').split('|').indexOf(origen.value) !== -1) ? 'block' : 'none';
+          var valores = origen.tagName === 'DIV'
+            ? Array.prototype.slice.call(origen.querySelectorAll('input[type="checkbox"]:checked')).map(function (i) { return i.value; })
+            : [origen.value];
+          var ok = div.getAttribute('data-cond-valor').split('|').some(function (v) { return valores.indexOf(v) !== -1; });
+          div.style.display = ok ? 'block' : 'none';
         };
         origen.addEventListener('change', actualizar);
         actualizar();
@@ -2710,7 +2956,19 @@
         var selTipo = document.getElementById('fd_tipo_solicitud_alimentos');
         if (selTipo && tipoPre) selTipo.value = tipoPre;
       }
+      // Precarga con lo que la persona ya respondió en la evaluación.
+      try {
+        var casoP = JSON.parse(localStorage.getItem('lyzbri_caso_' + referencia) || 'null');
+        if (casoP && casoP.answers) {
+          Object.keys(PRECARGA).forEach(function (campo) {
+            var el = document.getElementById('fd_' + campo);
+            var val = casoP.answers[PRECARGA[campo]];
+            if (el && val && !el.value) el.value = val;
+          });
+        }
+      } catch (e) {}
       aplicarCondicionales(cont);
+      var productoForm = productoPorForm(servicio);
 
       document.getElementById('fd_form').addEventListener('submit', function (ev) {
         ev.preventDefault();
@@ -2744,11 +3002,14 @@
         var estado = document.getElementById('fd_estado');
         estado.textContent = 'Enviando…';
 
-        var endpoint = servicio === 'alimentos' ? '/.netlify/functions/enviar-alimentos' : '/.netlify/functions/guardar-formulario';
+        var envio = productoForm ? productoForm.submit : (servicio === 'alimentos' ? 'enviar-alimentos' : 'guardar-formulario');
+        var endpoint = '/.netlify/functions/' + envio;
+        var cuerpo = { referenciaPago: referencia, servicio: servicio, campos: datos };
+        if (envio === 'enviar-documento') { cuerpo.serviceCode = productoForm.service_code; cuerpo.caseType = productoForm.case_type; }
         fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ referenciaPago: referencia, servicio: servicio, campos: datos })
+          body: JSON.stringify(cuerpo)
         }).then(function (res) {
           if (res.status === 400) {
             return res.json().then(function (r) {
@@ -2776,6 +3037,12 @@
 
       cont.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+
+    // Autocomprobación: cualquier producto del catálogo incompleto se reporta en consola.
+    Object.keys(CATALOGO).forEach(function (k) {
+      var v = validarProducto(CATALOGO[k]);
+      if (!v.ok) console.error('CATALOGO ' + k + ' no cobrable:', v.errores);
+    });
 
     window.addEventListener('DOMContentLoaded', function () {
       var params = new URLSearchParams(window.location.search);
@@ -2813,7 +3080,8 @@
                 // traduce de vuelta al código corto que usa CAMPOS_DETALLADOS
                 // ("tea"). Si HubSpot no devolvió servicio (advertencia de token
                 // no configurado), se usa el que ya traía la URL como respaldo.
-                var svcFinal = (data.servicio && SERVICIO_DESDE_HUBSPOT[data.servicio]) || servicio;
+                var prodPagado = data.serviceCode && data.caseType ? CATALOGO[data.serviceCode + '|' + data.caseType] : null;
+                var svcFinal = (prodPagado && prodPagado.form_key) || (data.servicio && SERVICIO_DESDE_HUBSPOT[data.servicio]) || servicio;
                 mostrarFormularioDetallado(svcFinal, data.referenciaPago || referencia || 'sin-referencia', data.tipoAlimentos || params.get('tipo'));
               } else if (contVal) {
                 contVal.innerHTML = '<p>No pudimos verificar tu pago. Si ya pagaste, escríbenos por WhatsApp con tu referencia (' + (referencia || '') + ').</p>';

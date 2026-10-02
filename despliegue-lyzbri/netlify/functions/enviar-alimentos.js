@@ -176,6 +176,47 @@ function faltantes(tipo, c) {
   return req.filter(function (k) { return !c[k] || String(c[k]).trim() === ''; });
 }
 
+// La búsqueda de HubSpot es "eventualmente consistente": un contacto recién
+// creado por crear-caso.js puede tardar varios segundos en aparecer en /search
+// (hallazgo de la prueba E2E del 28-sep-2026). Se reintenta y, si aún no
+// aparece, se lee directo por correo (lectura consistente), aceptándolo SOLO si
+// su referencia_pago coincide. Si el caso no aparece, NUNCA se descarta en
+// silencio: se alerta a Liza (ruta MANUAL_REVIEW, sin generar documento).
+async function buscarCaso(H, referenciaPago, correos, propiedades) {
+  const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
+  for (let i = 0; i < 3; i++) {
+    if (i) await pausa(1500);
+    const sr = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+      method: 'POST', headers: H,
+      body: JSON.stringify({
+        filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
+        properties: propiedades
+      })
+    });
+    const sd = await sr.json();
+    if (sd.results && sd.results[0]) return sd.results[0];
+  }
+  const vistos = {};
+  for (const correo of (correos || [])) {
+    if (!correo || vistos[correo] || String(correo).indexOf('@') === -1) continue;
+    vistos[correo] = true;
+    const r = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email&properties=${encodeURIComponent(propiedades.concat('referencia_pago').join(','))}`, { headers: H });
+    if (r.ok) {
+      const c = await r.json();
+      if (c && c.properties && c.properties.referencia_pago === referenciaPago) return c;
+    }
+  }
+  return null;
+}
+
+// MODO PRUEBA (solo Deploy Preview de Netlify): permite probar la cadena completa
+// sin cobrar. Exige LYZBRI_MODO_PRUEBA=true (variable definida SOLO para el
+// contexto deploy-preview) y que la petición NO venga del dominio de producción.
+function modoPrueba(event) {
+  const host = String((event && event.headers && (event.headers.host || event.headers.Host)) || '');
+  return process.env.LYZBRI_MODO_PRUEBA === 'true' && process.env.CONTEXT !== 'production' && host.indexOf('lyzbri.com') === -1;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ ok: false, reason: 'method_not_allowed' }) };
@@ -195,7 +236,7 @@ exports.handler = async (event) => {
 
   try {
     // 1. El pago con esa referencia debe estar aprobado en Wompi.
-    const wompiCheck = await fetch(`https://production.wompi.co/v1/transactions?reference=${encodeURIComponent(referenciaPago)}`);
+    const wompiCheck = modoPrueba(event) ? { ok: false } : await fetch(`https://production.wompi.co/v1/transactions?reference=${encodeURIComponent(referenciaPago)}`);
     if (wompiCheck.ok) {
       const w = await wompiCheck.json();
       const tx = w.data && w.data[0];
@@ -205,17 +246,23 @@ exports.handler = async (event) => {
     }
 
     // 2. Caso en HubSpot (creado antes del pago por crear-caso.js).
-    const sr = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
-      method: 'POST', headers: H,
-      body: JSON.stringify({
-        filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
-        properties: ['email', 'firstname', 'nombre_completo', 'phone', 'tipo_solicitud_alimentos', 'modalidad_servicio', 'hechos_completos']
-      })
-    });
-    const sd = await sr.json();
-    const contact = sd.results && sd.results[0];
+    const contact = await buscarCaso(H, referenciaPago, [campos.correo_entrega],
+      ['email', 'firstname', 'nombre_completo', 'phone', 'tipo_solicitud_alimentos', 'modalidad_servicio', 'hechos_completos']);
     if (!contact) {
-      return { statusCode: 404, body: JSON.stringify({ ok: false, reason: 'case_not_found_in_hubspot' }) };
+      // Caso pagado que no aparece en HubSpot: alerta a Liza, sin documento.
+      // (Sin el campo "tipo" para que Make NO lo enrute a la generación del Word.)
+      try {
+        await fetch(process.env.MAKE_ALIMENTOS_WEBHOOK_URL, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ruta: 'MANUAL_REVIEW', service_code: 'ALIMENTOS', case_type: String(campos.tipo_solicitud_alimentos || '').toUpperCase(),
+            referencia: referenciaPago, correo_cliente: campos.correo_entrega || '',
+            error: 'Formulario de alimentos recibido pero el caso no se encontró en HubSpot (ni por referencia ni por correo). Contactar al cliente.',
+            correo_notificacion: process.env.LYZBRI_NOTIFY_EMAIL || 'contacto@lyzbri.com'
+          })
+        });
+      } catch (e) {}
+      return { statusCode: 404, body: JSON.stringify({ ok: false, reason: 'case_not_found_in_hubspot', alertaEnviada: true }) };
     }
     const p = contact.properties || {};
     if (p.hechos_completos === 'true') {
@@ -255,7 +302,7 @@ exports.handler = async (event) => {
     }
 
     // 4. En HubSpot solo queda lo del propio cliente (sin datos de terceros).
-    const props = { hechos_completos: 'true', fecha_hechos_completos: new Date().toISOString() };
+    const props = { hechos_completos: 'true', fecha_hechos_completos: new Date().toISOString().slice(0, 10) };
     ['address', 'city', 'state', 'numero_documento'].forEach(function (k) { if (campos[k]) props[k] = campos[k]; });
     if (TIPO_DOC[campos.tipo_documento]) props.tipo_documento = campos.tipo_documento;
     if (!p.email && campos.correo_entrega) props.email = campos.correo_entrega;

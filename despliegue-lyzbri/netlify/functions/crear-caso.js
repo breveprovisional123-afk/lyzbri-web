@@ -39,7 +39,10 @@ exports.handler = async (event) => {
     phone: whatsapp,
     servicio_lyzbri: servicioLyzbri || servicio,
     referencia_pago: referenciaPago,
-    pago_confirmado: 'false'
+    pago_confirmado: 'false',
+    // Caso nuevo: los hechos de un caso anterior del mismo correo NO pueden
+    // disparar un documento para este pago (Make exige hechos_completos=true).
+    hechos_completos: 'false'
   };
   if (SERVICIOS_EN_LISTA.indexOf(servicio) !== -1) properties.servicio_comprado = servicio;
   if (correo) properties.email = correo;
@@ -52,7 +55,11 @@ exports.handler = async (event) => {
   // propiedad desconocida haría que HubSpot rechazara el caso completo.
   var PROPIEDADES_PERMITIDAS = ['hd_problema', 'hd_reclamo', 'hd_entidad', 'deuda_cantidad', 'deuda_cobro',
     'marca_tipo', 'marca_disponibilidad', 'categoria_condicion_tea', 'area_caso_tea', 'area_caso_tea_texto',
-    'tea_estado', 'subtipo_no_visible_tea', 'sub_caso', 'nombre_completo', 'tipo_solicitud_alimentos', 'modalidad_servicio'];
+    'tea_estado', 'subtipo_no_visible_tea', 'sub_caso', 'nombre_completo', 'tipo_solicitud_alimentos', 'modalidad_servicio',
+    // Trazabilidad (Corrección crítica 27-sep-2026): identificador estable del
+    // producto vendido y ruta de procesamiento. Make enruta por lyzbri_make_route.
+    'lyzbri_service_code', 'lyzbri_case_type', 'lyzbri_processing_mode', 'lyzbri_delivery_type',
+    'lyzbri_make_route', 'estado_revision'];
   if (respuestasWizard && typeof respuestasWizard === 'object') {
     Object.keys(respuestasWizard).forEach(function (k) {
       if (PROPIEDADES_PERMITIDAS.indexOf(k) !== -1 && respuestasWizard[k] !== undefined && respuestasWizard[k] !== '') {
