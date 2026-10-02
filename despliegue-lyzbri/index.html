@@ -1012,7 +1012,7 @@
 
   <main>
     <div class="shell">
-      <article id="aviso-pago" class="card"><h3>Gracias por continuar</h3><p>Cuando Wompi confirme tu pago, revisaremos tu caso y te escribiremos al WhatsApp que dejaste en el formulario.</p></article>
+      <article id="aviso-pago" class="card"><h3>Gracias por continuar</h3><p>Cuando Bold confirme tu pago, revisaremos tu caso y te escribiremos al WhatsApp que dejaste en el formulario.</p></article>
       <article id="formulario-detallado-container" class="card" style="display:none;"></article>
     </div>
     <section class="hero">
@@ -1609,7 +1609,7 @@
           <div class="form-actions" style="margin-top:18px;">
             <a class="btn btn-primary" id="resultado-pago" href="#" target="_blank" rel="noopener">Continuar al pago</a>
           </div>
-          <p class="fine-print">Wompi te permitirá pagar con PSE, Botón Bancolombia, Nequi o tarjeta en el siguiente paso.</p>
+          <p class="fine-print">El pago se procesa de forma segura a través de Bold: podrás pagar con tarjeta débito o crédito, PSE y los demás medios que Bold tenga habilitados.</p>
         </article>
       </div>
     </section>
@@ -1809,7 +1809,7 @@
           <li>Información del caso que tú nos suministras al responder la evaluación inicial y, si contratas, los documentos y hechos que aportes.</li>
           <li>Datos sensibles, solo si tú los suministras y cuando el servicio los requiera (por ejemplo, información de salud o discapacidad).</li>
           <li>Datos de niños, niñas y adolescentes, únicamente cuando su representante legal los entregue para atender el caso.</li>
-          <li>Datos de pago: el pago se procesa a través de Wompi. Lyzbri no recibe ni almacena números de tarjeta ni credenciales bancarias; solo conoce el estado y la referencia de la transacción.</li>
+          <li>Datos de pago: el pago se procesa a través de Bold. Lyzbri no recibe ni almacena números de tarjeta ni credenciales bancarias; solo conoce el estado y la referencia de la transacción.</li>
         </ul>
         <h3>3. Finalidades</h3>
         <ul>
@@ -1834,7 +1834,7 @@
         <p>Puedes ejercer tus derechos escribiéndonos por el WhatsApp o el formulario de contacto de esta plataforma, indicando tu nombre, el derecho que deseas ejercer y una descripción clara de tu solicitud. Para proteger tu información, podremos pedirte datos que nos permitan verificar tu identidad.</p>
         <p>Las consultas se responderán en un máximo de diez (10) días hábiles contados desde su recibo, prorrogables por cinco (5) días hábiles más si informamos los motivos de la demora. Los reclamos de rectificación, actualización o supresión se resolverán en un máximo de quince (15) días hábiles, prorrogables por ocho (8) días hábiles más en los términos de la ley. Si el reclamo está incompleto, te pediremos subsanarlo dentro de los cinco (5) días siguientes a su recibo.</p>
         <h3>7. Seguridad, conservación y terceros</h3>
-        <p>Aplicamos medidas razonables para proteger la información contra acceso no autorizado, pérdida o uso indebido. Conservamos tus datos durante el tiempo necesario para las finalidades descritas y los plazos legales aplicables. Solo compartimos información con terceros cuando es necesario para prestar el servicio (por ejemplo, la pasarela de pagos Wompi y la plataforma de gestión de contactos HubSpot, cuyos servidores pueden estar ubicados fuera de Colombia) o cuando una autoridad competente lo exija. No vendemos tus datos.</p>
+        <p>Aplicamos medidas razonables para proteger la información contra acceso no autorizado, pérdida o uso indebido. Conservamos tus datos durante el tiempo necesario para las finalidades descritas y los plazos legales aplicables. Solo compartimos información con terceros cuando es necesario para prestar el servicio (por ejemplo, la pasarela de pagos Bold y la plataforma de gestión de contactos HubSpot, cuyos servidores pueden estar ubicados fuera de Colombia) o cuando una autoridad competente lo exija. No vendemos tus datos.</p>
         <h3>8. Vigencia y cambios</h3>
         <p>Esta política rige desde la fecha de su última actualización. Cualquier cambio sustancial se publicará en esta página.</p>
 
@@ -1856,7 +1856,7 @@
         <h3>4. Tus obligaciones</h3>
         <p>Debes suministrar información veraz, completa y actualizada, y los documentos que se requieran. Lyzbri no es responsable por las consecuencias de información falsa o incompleta.</p>
         <h3>5. Precios y pago</h3>
-        <p>El precio del servicio se te muestra al momento de contratar, antes de pagar, en pesos colombianos. Los pagos se realizan a través de la pasarela Wompi; Lyzbri no almacena datos de tu tarjeta ni de tu cuenta. Cuando el precio se anuncie como "Desde", el valor final se te informará antes del pago según la complejidad del caso.</p>
+        <p>El precio del servicio se te muestra al momento de contratar, antes de pagar, en pesos colombianos. Los pagos se realizan a través de la pasarela Bold; Lyzbri no almacena datos de tu tarjeta ni de tu cuenta. Cuando el precio se anuncie como "Desde", el valor final se te informará antes del pago según la complejidad del caso.</p>
         <h3>6. Retracto y devoluciones</h3>
         <p>Si contratas a distancia, tienes derecho de retracto en los términos del artículo 47 de la Ley 1480 de 2011 (Estatuto del Consumidor), salvo las excepciones legales, entre ellas los servicios cuya prestación haya comenzado con tu consentimiento. Para ejercerlo, escríbenos por el WhatsApp o el formulario de contacto de la plataforma.</p>
         <h3>7. Propiedad intelectual</h3>
@@ -1881,34 +1881,73 @@
 
   <script>
     // =========================================================================
-    // CONFIGURACIÓN DE PAGO (WOMPI)
+    // CONFIGURACIÓN DE PAGO (BOLD — Botón de pagos, integración manual)
     // -------------------------------------------------------------------------
-    // Llave pública de pruebas (sandbox) puesta. Para cobrar de verdad, reemplazar por la de producción.
-    // La encuentras en tu panel de Wompi > Configuración > Llaves API.
-    // Con esta llave, el link de checkout deja a la persona elegir PSE, Botón
-    // Bancolombia, Nequi o tarjeta directamente en Wompi — no se construyen
-    // botones separados aquí.
+    // El monto y la firma de integridad los entrega el servidor
+    // (/.netlify/functions/bold-firma) a partir del catálogo; la llave secreta
+    // nunca llega al navegador. Las llaves de Bold están en las variables de
+    // entorno de Netlify (pruebas o producción).
+    // Al terminar, Bold devuelve a la URL de retorno agregando
+    // ?bold-order-id=<referencia>&bold-tx-status=<estado>; el pago se vuelve a
+    // verificar en el servidor (validar-formulario) antes de mostrar el formulario.
     // =========================================================================
-    var WOMPI_PUBLIC_KEY = "pub_test_TL847L1p5HtyqRkYPLPxIYWY9JQ3X95M"; // llave PÚBLICA de PRUEBAS (sandbox). Antes de vender de verdad, cambiar por la de producción (pub_prod_...).
+    var BOLD_SCRIPT = 'https://checkout.bold.co/library/boldPaymentButton.js';
 
-    function buildWompiLink(amountCOP, reference, servicio, extra) {
-      var amountCents = Math.round(amountCOP * 100);
-      // La URL de retorno lleva nuestra propia referencia y el servicio como
-      // parámetros propios (no dependemos solo de lo que Wompi decida anexar,
-      // p. ej. ?id=<transactionId>) — así el formulario detallado post-pago
-      // siempre sabe qué caso y qué servicio mostrar al volver.
-      var redirectUrl = window.location.href.split('#')[0].split('?')[0]
+    function cargarBold() {
+      return new Promise(function (resolve, reject) {
+        if (window.BoldCheckout) return resolve();
+        var s = document.querySelector('script[src="' + BOLD_SCRIPT + '"]');
+        if (!s) { s = document.createElement('script'); s.src = BOLD_SCRIPT; document.head.appendChild(s); }
+        s.addEventListener('load', function () { resolve(); });
+        s.addEventListener('error', function () { reject(new Error('bold_script_no_cargo')); });
+        setTimeout(function () { window.BoldCheckout ? resolve() : reject(new Error('bold_script_tiempo')); }, 15000);
+      });
+    }
+
+    // La URL de retorno lleva nuestra propia referencia y el servicio, así el
+    // formulario post-pago siempre sabe qué caso y qué servicio mostrar al volver.
+    function urlRetornoPago(reference, servicio, extra) {
+      return window.location.href.split('#')[0].split('?')[0]
         + '?pago=ok&referencia=' + encodeURIComponent(reference)
         + '&servicio=' + encodeURIComponent(servicio)
         + (extra && extra.tipo ? '&tipo=' + encodeURIComponent(extra.tipo) : '');
-      var params = new URLSearchParams({
-        'public-key': WOMPI_PUBLIC_KEY,
-        'currency': 'COP',
-        'amount-in-cents': String(amountCents),
-        'reference': reference,
-        'redirect-url': redirectUrl
+    }
+
+    function pagarConBold(btn, clave, reference, servicio, extra, descripcion) {
+      var textoBoton = btn.textContent;
+      btn.textContent = 'Abriendo el pago seguro de Bold…';
+      btn.setAttribute('aria-busy', 'true');
+      Promise.all([
+        cargarBold(),
+        fetch('/.netlify/functions/bold-firma', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ referencia: reference, clave: clave })
+        }).then(function (r) { return r.json(); })
+      ]).then(function (res) {
+        var f = res[1];
+        if (!f || !f.ok) throw new Error((f && f.reason) || 'firma_no_disponible');
+        var checkout = new BoldCheckout({
+          orderId: reference,
+          currency: 'COP',
+          amount: String(f.amount),
+          apiKey: f.apiKey,
+          integritySignature: f.signature,
+          description: String(descripcion || 'Servicio Lyzbri Legal').slice(0, 100),
+          redirectionUrl: urlRetornoPago(reference, servicio, extra),
+          renderMode: 'embedded'
+        });
+        btn.textContent = textoBoton; btn.removeAttribute('aria-busy');
+        checkout.open();
+      }).catch(function (err) {
+        console.error('Pago Bold no disponible:', err);
+        btn.textContent = textoBoton; btn.removeAttribute('aria-busy');
+        var aviso = document.getElementById('aviso-error-pago');
+        if (!aviso) {
+          aviso = document.createElement('p'); aviso.id = 'aviso-error-pago'; aviso.className = 'fine-print';
+          btn.parentNode.insertBefore(aviso, btn.nextSibling);
+        }
+        aviso.textContent = 'No pudimos abrir el pago en este momento. Intenta de nuevo en unos segundos.';
       });
-      return 'https://checkout.wompi.co/p/?' + params.toString();
     }
 
     function formatCOP(n) {
@@ -2480,7 +2519,7 @@
       var servicioLyzbri = validacion.ok ? producto.servicio_lyzbri : (SERVICIO_A_HUBSPOT[wz.servicio] || wz.servicio);
       var servicioForm = validacion.ok ? producto.form_key : wz.servicio;
 
-      // Guardamos el caso localmente ANTES de salir a Wompi, porque al volver
+      // Guardamos el caso localmente ANTES de salir a pagar, porque al volver
       // (redirect-url) esta página se recarga desde cero y se pierde wz.answers
       // en memoria. Esto es respaldo del ?referencia=/&servicio= que ya viaja
       // en la URL de retorno — cubre el caso de que se abra en otra pestaña/dispositivo.
@@ -2562,7 +2601,13 @@
       } else {
         payBtn.style.display = '';
         payBtn.textContent = (producto.cta ? producto.cta : 'Continuar al pago') + ' — ' + formatCOP(monto);
-        payBtn.href = buildWompiLink(monto, reference, servicioForm, wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : null);
+        var extraPago = wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : null;
+        payBtn.href = '#pago';
+        payBtn.dataset.retorno = urlRetornoPago(reference, servicioForm, extraPago);
+        payBtn.onclick = function (e) {
+          e.preventDefault();
+          pagarConBold(payBtn, producto.clave, reference, servicioForm, extraPago, producto.nombre);
+        };
       }
 
       conf.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2654,7 +2699,7 @@
     // =========================================================================
     // FORMULARIO DETALLADO DE HECHOS (POST-PAGO)
     // -------------------------------------------------------------------------
-    // Se muestra cuando se vuelve de Wompi con ?pago=ok (o, para probar la
+    // Se muestra cuando se vuelve de la pasarela (Bold) con ?pago=ok (o, para probar la
     // interfaz sin pagar de verdad, visitando directamente esta misma URL con
     // ?pago=ok&servicio=<habeas-data|deudas|marca|tea>&referencia=demo-123).
     // Los nombres de los campos (id) son los mismos nombres de propiedad que se
@@ -3049,9 +3094,9 @@
       if (params.get('pago') === 'ok') {
         var referencia = params.get('referencia');
         var servicio = params.get('servicio');
-        var wompiTxId = params.get('id'); // Wompi anexa esto solo en un retorno real de pago
+        var boldOrderId = params.get('bold-order-id'); // Bold lo agrega solo en un retorno real de pago
         if (!referencia || !servicio) {
-          // Respaldo: si la URL no trae los parámetros (p. ej. Wompi los reescribió),
+          // Respaldo: si la URL no trae los parámetros (p. ej. la pasarela los reescribió),
           // se busca el último caso guardado en localStorage antes de salir a pagar.
           try {
             for (var i = 0; i < localStorage.length; i++) {
@@ -3067,12 +3112,12 @@
 
         if (!servicio || !CAMPOS_DETALLADOS[servicio]) {
           var av0 = document.getElementById('aviso-pago'); if (av0) av0.style.display = 'block';
-        } else if (wompiTxId) {
-          // Retorno real de Wompi: re-validar en el servidor antes de mostrar el
+        } else if (boldOrderId) {
+          // Retorno real de Bold: re-validar en el servidor antes de mostrar el
           // formulario -- nunca confiar solo en el parámetro de la URL.
           var contVal = document.getElementById('formulario-detallado-container');
           if (contVal) { contVal.style.display = 'block'; contVal.innerHTML = '<p>Verificando tu pago…</p>'; }
-          fetch('/.netlify/functions/validar-formulario?id=' + encodeURIComponent(wompiTxId))
+          fetch('/.netlify/functions/validar-formulario?orden=' + encodeURIComponent(boldOrderId))
             .then(function (r) { return r.json(); })
             .then(function (data) {
               if (data.valid) {
@@ -3083,6 +3128,8 @@
                 var prodPagado = data.serviceCode && data.caseType ? CATALOGO[data.serviceCode + '|' + data.caseType] : null;
                 var svcFinal = (prodPagado && prodPagado.form_key) || (data.servicio && SERVICIO_DESDE_HUBSPOT[data.servicio]) || servicio;
                 mostrarFormularioDetallado(svcFinal, data.referenciaPago || referencia || 'sin-referencia', data.tipoAlimentos || params.get('tipo'));
+              } else if (contVal && (data.status === 'PENDING' || data.status === 'PROCESSING')) {
+                contVal.innerHTML = '<p>Tu pago está en proceso de confirmación (los pagos por PSE pueden tardar unos minutos). Vuelve a cargar esta página en unos minutos para continuar.</p>';
               } else if (contVal) {
                 contVal.innerHTML = '<p>No pudimos verificar tu pago. Si ya pagaste, escríbenos por WhatsApp con tu referencia (' + (referencia || '') + ').</p>';
               }
@@ -3094,7 +3141,7 @@
               mostrarFormularioDetallado(servicio, referencia || 'sin-referencia', params.get('tipo'));
             });
         } else {
-          // Sin ?id=: no viene de un pago real de Wompi -- es una visita de prueba
+          // Sin ?bold-order-id=: no viene de un pago real -- es una visita de prueba
           // (?pago=ok&servicio=...&referencia=...) para maquetar/probar la interfaz,
           // tal como se definió. Se muestra directo, sin llamar al backend.
           mostrarFormularioDetallado(servicio, referencia || 'sin-referencia', params.get('tipo'));

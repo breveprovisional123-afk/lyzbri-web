@@ -1,38 +1,36 @@
-// Netlify Function — valida en tiempo real que exista un pago APROBADO en Wompi
+// Netlify Function — valida en tiempo real que exista un pago APROBADO en Bold
 // antes de permitir que se muestre el formulario. Nunca se confia solo en el
-// parametro de la URL: siempre se re-verifica contra la API de Wompi en el servidor.
+// parametro de la URL: siempre se re-verifica contra la API de Bold en el servidor.
 //
-// Requiere la variable de entorno HUBSPOT_PRIVATE_APP_TOKEN configurada en
-// Netlify (Site settings -> Environment variables). Esta funcion NO la trae
-// escrita en el codigo -- se lee del entorno en tiempo de ejecucion.
+// Bold redirige a la URL de retorno agregando ?bold-order-id=<referencia>&bold-tx-status=<estado>.
+// La landing llama a esta funcion con ?orden=<bold-order-id>.
+//
+// Requiere HUBSPOT_PRIVATE_APP_TOKEN y las llaves de Bold en las variables de
+// entorno de Netlify (ver lib/bold-pago.js). Nada de eso va escrito en el codigo.
+
+const { verificarPago, consultarPago } = require('./lib/bold-pago');
 
 exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
-  const transactionId = params.id; // Wompi redirige con ?id=<transactionId>
+  const referenciaPago = params.orden; // = bold-order-id = referencia del caso
 
-  if (!transactionId) {
-    return { statusCode: 400, body: JSON.stringify({ valid: false, reason: 'missing_transaction_id' }) };
+  if (!referenciaPago) {
+    return { statusCode: 400, body: JSON.stringify({ valid: false, reason: 'missing_order_id' }) };
   }
 
   try {
-    // 1. Verificar el estado real del pago contra Wompi.
-    //    GET /v1/transactions/:id es un endpoint publico de Wompi (no requiere llave privada).
-    const wompiRes = await fetch(`https://production.wompi.co/v1/transactions/${transactionId}`);
-    if (!wompiRes.ok) {
-      return { statusCode: 502, body: JSON.stringify({ valid: false, reason: 'wompi_unreachable' }) };
+    // 1. Verificar el estado real del pago contra Bold.
+    const pago = await consultarPago(referenciaPago);
+    if (!pago.ok) {
+      return { statusCode: 502, body: JSON.stringify({ valid: false, reason: pago.reason }) };
     }
-    const wompiData = await wompiRes.json();
-    const tx = wompiData.data;
-
-    if (!tx || tx.status !== 'APPROVED') {
-      return { statusCode: 200, body: JSON.stringify({ valid: false, reason: 'payment_not_approved', status: tx ? tx.status : null }) };
+    if (pago.status !== 'APPROVED') {
+      return { statusCode: 200, body: JSON.stringify({ valid: false, reason: 'payment_not_approved', status: pago.status || null, referenciaPago }) };
     }
-
-    const referenciaPago = tx.reference;
 
     if (!process.env.HUBSPOT_PRIVATE_APP_TOKEN) {
       // Sin el token no podemos confirmar el caso en HubSpot. Se devuelve el
-      // pago como aprobado (ya verificado contra Wompi) pero sin datos de
+      // pago como aprobado (ya verificado contra Bold) pero sin datos de
       // servicio -- el front-end debe manejar este caso con el ?servicio= de
       // respaldo que ya viaja en la URL.
       return { statusCode: 200, body: JSON.stringify({ valid: true, referenciaPago, servicio: null, warning: 'hubspot_token_not_configured' }) };
@@ -56,6 +54,16 @@ exports.handler = async (event) => {
 
     if (!contact) {
       return { statusCode: 200, body: JSON.stringify({ valid: false, reason: 'case_not_found_in_hubspot', referenciaPago }) };
+    }
+
+    // 3. El valor pagado debe corresponder al producto registrado en el caso.
+    const clave = contact.properties.lyzbri_service_code && contact.properties.lyzbri_case_type
+      ? `${contact.properties.lyzbri_service_code}|${contact.properties.lyzbri_case_type}` : null;
+    if (clave) {
+      const v = await verificarPago(referenciaPago, clave);
+      if (!v.aprobado) {
+        return { statusCode: 200, body: JSON.stringify({ valid: false, reason: v.reason, referenciaPago }) };
+      }
     }
 
     return {
