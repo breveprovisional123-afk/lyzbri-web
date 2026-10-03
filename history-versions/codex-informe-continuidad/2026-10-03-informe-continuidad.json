@@ -1,0 +1,73 @@
+{
+  "fecha": "2026-10-03",
+  "asistente": "Codex",
+  "proyecto": "Lyzbri",
+  "repositorio": "C:\\Users\\pc\\lyzbri-web",
+  "seo_en_produccion": {
+    "titulo": "Lyzbri | Servicios Legales Online y Digitales en Colombia",
+    "descripcion": "Servicios legales online en Colombia: hábeas data, deudas, derechos TEA y discapacidad, cuota alimentaria y registro de marca. Evaluación inicial gratis.",
+    "canonical": "https://lyzbri.com/",
+    "estado": "Verificado en la respuesta HTTP de producción"
+  },
+  "archivos_modificados_o_agregados": [
+    "despliegue-lyzbri/index.html",
+    "despliegue-lyzbri/netlify/functions/bold-webhook.js",
+    ".gitignore",
+    "backups-produccion/2026-10-02_index-produccion.html",
+    "backups-produccion/README.md",
+    "despliegue-lyzbri/og-lyzbri.jpg",
+    "despliegue-lyzbri/robots.txt",
+    "despliegue-lyzbri/sitemap.xml"
+  ],
+  "respaldos": [
+    {
+      "origen": "despliegue-lyzbri\\index.html",
+      "copia": "history-versions/codex-informe-continuidad/2026-10-03-index.html",
+      "sha256": "F411D4F84A35B32E2196423F9F65B0E5D47AD88A1CCE58D4A7E8474AE3299466"
+    },
+    {
+      "origen": "despliegue-lyzbri\\netlify\\functions\\bold-webhook.js",
+      "copia": "history-versions/codex-informe-continuidad/2026-10-03-bold-webhook.js",
+      "sha256": "A21DE9B735438F1798719EC7CE7B105024E5B634415663FA057EF5913F4537E0"
+    },
+    {
+      "origen": "despliegue-lyzbri\\netlify\\functions\\crear-caso.js",
+      "copia": "history-versions/codex-informe-continuidad/2026-10-03-crear-caso.js",
+      "sha256": "3D68A494AC73A3C0FB8600DD653653F16BFA9F48D7B9A4C7339B8D17B8CB779A"
+    },
+    {
+      "origen": "despliegue-lyzbri\\robots.txt",
+      "copia": "history-versions/codex-informe-continuidad/2026-10-03-robots.txt",
+      "sha256": "304F40BC9FCBAE5663F14198A6E5250FEC13AFAFF32145C01A32513B4040CE6F"
+    },
+    {
+      "origen": "despliegue-lyzbri\\sitemap.xml",
+      "copia": "history-versions/codex-informe-continuidad/2026-10-03-sitemap.xml",
+      "sha256": "2F4B1A259720CE0C15C6BC74D42AAED8B43415A59F73E3CC3CD4A2F0A540B795"
+    },
+    {
+      "origen": "despliegue-lyzbri\\og-lyzbri.jpg",
+      "copia": "history-versions/codex-informe-continuidad/2026-10-03-og-lyzbri.jpg",
+      "sha256": "80B7B64D740AECCF9336A895B300730E5D4C084114DB9723A30CDA82B6794131"
+    }
+  ],
+  "despliegue_produccion": {
+    "estado": "Publicado correctamente y verificado",
+    "url": "https://lyzbri.com/",
+    "deploy_id": "6ac08dcd869e05c57a998577",
+    "url_unica": "https://6ac08dcd869e05c57a998577--super-parfait-7167ac.netlify.app",
+    "commit": "No realizado",
+    "push": "No realizado"
+  },
+  "verificaciones": {
+    "landing_http": 200,
+    "robots_http": 200,
+    "sitemap_http": 200,
+    "titulo_canonical": "Correctos",
+    "javascript_inline": "1 script comprobado con node --check",
+    "bold_webhook_sintaxis": "Correcta",
+    "bold_firma_invalida_http": 401,
+    "prueba_pago_real": "No realizada",
+    "git_diff_check": "Correcto"
+  }
+}
