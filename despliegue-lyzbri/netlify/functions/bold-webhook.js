@@ -35,6 +35,42 @@ async function alertar(referencia, error) {
   } catch (e) { return false; }
 }
 
+async function leerRespuestaHubSpot(response) {
+  const body = await response.text();
+  let json = null;
+  try { json = JSON.parse(body); } catch (_) {}
+  return { status: response.status, ok: response.ok, body, json };
+}
+
+function clasificarErrorHubSpot(status, body) {
+  if (status === 401) return 'credenciales';
+  if (status === 403 && /cloudflare|<!doctype\s+html|<html/i.test(body || '')) return 'bloqueo_intermediario';
+  if (status === 403) return 'credenciales/permisos';
+  if (status === 400 || status === 422) return 'validación/payload';
+  if (status === 404) return 'not-found';
+  if (status === 429) return 'límite_de_solicitudes';
+  if (status >= 500) return 'error_servidor';
+  return 'error_http';
+}
+
+function cuerpoSeguroHubSpot(respuesta) {
+  // En errores JSON conserva el diagnóstico útil sin reenviar propiedades completas del contacto.
+  if (respuesta.json && typeof respuesta.json === 'object') {
+    const j = respuesta.json;
+    const seguro = {
+      status: j.status,
+      category: j.category,
+      message: j.message,
+      correlationId: j.correlationId,
+      errors: Array.isArray(j.errors) ? j.errors.map(function (e) {
+        return { code: e.code, category: e.category, message: e.message };
+      }) : undefined
+    };
+    return JSON.stringify(seguro);
+  }
+  return String(respuesta.body || '').slice(0, 1500);
+}
+
 async function procesarPago(ev, referencia) {
   if (!process.env.HUBSPOT_PRIVATE_APP_TOKEN) {
     await alertar(referencia, 'Bold aprobó un pago pero falta HUBSPOT_PRIVATE_APP_TOKEN para registrarlo.');
@@ -45,22 +81,64 @@ async function procesarPago(ev, referencia) {
   try {
     const s = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
       method: 'POST', headers: H,
-      body: JSON.stringify({ filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referencia }] }],
-        properties: ['pago_confirmado'] })
+      body: JSON.stringify({
+        filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referencia }] }],
+        properties: ['referencia_pago', 'pago_confirmado'],
+        limit: 2
+      })
     });
-    if (!s.ok) throw new Error('HubSpot search respondió HTTP ' + s.status);
-    const sd = await s.json();
-    const contacto = sd.results && sd.results[0];
-    if (!contacto) {
-      await alertar(referencia, 'Bold aprobó un pago (' + ((ev.data.amount && ev.data.amount.total) || '?') + ' COP, transacción ' + (ev.data.payment_id || ev.subject || '?') + ') pero el caso no aparece en HubSpot. Contactar al cliente.');
+    const search = await leerRespuestaHubSpot(s);
+    if (!search.ok) {
+      await alertar(referencia, JSON.stringify({
+        etapa: 'SEARCH',
+        clasificación: clasificarErrorHubSpot(search.status, search.body),
+        status: search.status,
+        body: cuerpoSeguroHubSpot(search)
+      }));
       return;
     }
-    if (contacto.properties && contacto.properties.pago_confirmado === 'true') return;
+    if (!search.json || !Array.isArray(search.json.results)) {
+      await alertar(referencia, JSON.stringify({
+        etapa: 'SEARCH', clasificación: 'respuesta_inválida_de_búsqueda',
+        status: search.status, body: cuerpoSeguroHubSpot(search)
+      }));
+      return;
+    }
 
-    const actualizacion = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${contacto.id}`, {
-      method: 'PATCH', headers: H, body: JSON.stringify({ properties: { pago_confirmado: 'true' } })
+    const contactos = search.json.results;
+    if (contactos.length === 0) {
+      await alertar(referencia, 'Bold aprobó un pago (' + ((ev.data.amount && ev.data.amount.total) || '?') +
+        ' COP, transacción ' + (ev.data.payment_id || ev.subject || '?') + ') pero la búsqueda de HubSpot no encontró el caso. ' +
+        JSON.stringify({ etapa: 'SEARCH', status: search.status, total: 0 }));
+      return;
+    }
+    if (contactos.length !== 1 || !contactos[0].id || !contactos[0].properties ||
+        contactos[0].properties.referencia_pago !== referencia) {
+      await alertar(referencia, JSON.stringify({
+        etapa: 'SEARCH', clasificación: 'búsqueda_ambigua_o_referencia_no_coincidente',
+        status: search.status, coincidencias: contactos.length
+      }));
+      return;
+    }
+
+    const contacto = contactos[0];
+    if (contacto.properties.pago_confirmado === 'true' || contacto.properties.pago_confirmado === true) return;
+
+    const actualizacion = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contacto.id)}`, {
+      method: 'PATCH', headers: H,
+      body: JSON.stringify({ properties: { pago_confirmado: 'true' } })
     });
-    if (!actualizacion.ok) throw new Error('HubSpot update respondió HTTP ' + actualizacion.status);
+    const patch = await leerRespuestaHubSpot(actualizacion);
+    const confirmado = patch.json && patch.json.properties &&
+      (patch.json.properties.pago_confirmado === 'true' || patch.json.properties.pago_confirmado === true);
+    if (!patch.ok || !confirmado) {
+      await alertar(referencia, JSON.stringify({
+        etapa: 'PATCH',
+        clasificación: patch.ok ? 'respuesta_inválida_de_PATCH' : clasificarErrorHubSpot(patch.status, patch.body),
+        status: patch.status,
+        body: cuerpoSeguroHubSpot(patch)
+      }));
+    }
   } catch (e) {
     await alertar(referencia, 'Bold aprobó un pago pero falló el registro en HubSpot: ' + e.message);
   }
