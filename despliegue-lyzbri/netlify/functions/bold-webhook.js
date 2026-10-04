@@ -44,7 +44,7 @@ async function leerRespuestaHubSpot(response) {
 
 function clasificarErrorHubSpot(status, body) {
   if (status === 401) return 'credenciales';
-  if (status === 403 && /cloudflare|<!doctype\\s+html|<html/i.test(body || '')) return 'bloqueo_intermediario';
+  if (status === 403 && /cloudflare|<!doctype\s+html|<html/i.test(body || '')) return 'bloqueo_intermediario';
   if (status === 403) return 'credenciales/permisos';
   if (status === 400 || status === 422) return 'validación/payload';
   if (status === 404) return 'not-found';
