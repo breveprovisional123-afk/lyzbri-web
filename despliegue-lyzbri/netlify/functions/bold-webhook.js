@@ -2,8 +2,8 @@
 // URL para registrar en el panel de Bold (Integraciones → Webhooks):
 //   https://lyzbri.com/.netlify/functions/bold-webhook
 //
-// Valida x-bold-signature y responde 200 inmediatamente a notificaciones válidas.
-// El registro en HubSpot y las alertas MANUAL_REVIEW continúan con waitUntil.
+// Valida x-bold-signature y procesa SALE_APPROVED antes de confirmar la recepción.
+// Si falla el registro en HubSpot, devuelve un error HTTP para permitir reintentos de Bold.
 // Repetir una notificación es seguro: pago_confirmado evita actualizar dos veces.
 
 const crypto = require('crypto');
@@ -74,7 +74,7 @@ function cuerpoSeguroHubSpot(respuesta) {
 async function procesarPago(ev, referencia) {
   if (!process.env.HUBSPOT_PRIVATE_APP_TOKEN) {
     await alertar(referencia, 'Bold aprobó un pago pero falta HUBSPOT_PRIVATE_APP_TOKEN para registrarlo.');
-    return;
+    return false;
   }
 
   const H = { 'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`, 'Content-Type': 'application/json' };
@@ -95,14 +95,14 @@ async function procesarPago(ev, referencia) {
         status: search.status,
         body: cuerpoSeguroHubSpot(search)
       }));
-      return;
+      return false;
     }
     if (!search.json || !Array.isArray(search.json.results)) {
       await alertar(referencia, JSON.stringify({
         etapa: 'SEARCH', clasificación: 'respuesta_inválida_de_búsqueda',
         status: search.status, body: cuerpoSeguroHubSpot(search)
       }));
-      return;
+      return false;
     }
 
     const contactos = search.json.results;
@@ -110,7 +110,7 @@ async function procesarPago(ev, referencia) {
       await alertar(referencia, 'Bold aprobó un pago (' + ((ev.data.amount && ev.data.amount.total) || '?') +
         ' COP, transacción ' + (ev.data.payment_id || ev.subject || '?') + ') pero la búsqueda de HubSpot no encontró el caso. ' +
         JSON.stringify({ etapa: 'SEARCH', status: search.status, total: 0 }));
-      return;
+      return false;
     }
     if (contactos.length !== 1 || !contactos[0].id || !contactos[0].properties ||
         contactos[0].properties.referencia_pago !== referencia) {
@@ -118,11 +118,11 @@ async function procesarPago(ev, referencia) {
         etapa: 'SEARCH', clasificación: 'búsqueda_ambigua_o_referencia_no_coincidente',
         status: search.status, coincidencias: contactos.length
       }));
-      return;
+      return false;
     }
 
     const contacto = contactos[0];
-    if (contacto.properties.pago_confirmado === 'true' || contacto.properties.pago_confirmado === true) return;
+    if (contacto.properties.pago_confirmado === 'true' || contacto.properties.pago_confirmado === true) return true;
 
     const actualizacion = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contacto.id)}`, {
       method: 'PATCH', headers: H,
@@ -138,13 +138,16 @@ async function procesarPago(ev, referencia) {
         status: patch.status,
         body: cuerpoSeguroHubSpot(patch)
       }));
+      return false;
     }
+    return true;
   } catch (e) {
     await alertar(referencia, 'Bold aprobó un pago pero falló el registro en HubSpot: ' + e.message);
+    return false;
   }
 }
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ ok: false, reason: 'method_not_allowed' }) };
   }
@@ -167,11 +170,9 @@ exports.handler = async (event, context) => {
     return { statusCode: 200, body: JSON.stringify({ ok: true, ignorado: tipo || 'sin_tipo' }) };
   }
 
-  const tarea = procesarPago(ev, referencia);
-  if (context && typeof context.waitUntil === 'function') {
-    context.waitUntil(tarea);
-  } else {
-    tarea.catch(function (e) { console.error('Error procesando notificación Bold:', e); });
+  const procesado = await procesarPago(ev, referencia);
+  if (!procesado) {
+    return { statusCode: 503, body: JSON.stringify({ ok: false, recibido: true, reintento: true }) };
   }
   return { statusCode: 200, body: JSON.stringify({ ok: true, recibido: true }) };
 };
