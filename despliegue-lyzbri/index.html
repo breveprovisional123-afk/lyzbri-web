@@ -3099,20 +3099,31 @@
           }
         }
 
-        // Condición C8: Mapeo y concatenación de campos TEA para compatibilidad con plantillas
+        // Correcciones X1, X2 y O6 (Auditoría Claude):
+        // X2: Asignar parentesco directamente a nombre_acudiente_tea (limpio, sin prefijo)
         if (datos.parentesco_beneficiario_tea) {
-          datos.nombre_acudiente_tea = '[Parentesco: ' + datos.parentesco_beneficiario_tea + ']' + (datos.nombre_acudiente_tea ? ' ' + datos.nombre_acudiente_tea : '');
+          datos.nombre_acudiente_tea = datos.parentesco_beneficiario_tea.trim();
         }
+        // O6: Integrar sede y fecha (formato DD/MM/AAAA) en hechos_incumplimiento_tea
         var prefijoHechos = [];
         if (datos.lugar_sede_entidad) {
-          prefijoHechos.push('Sede de la entidad: ' + datos.lugar_sede_entidad);
+          prefijoHechos.push('Sede de la entidad: ' + datos.lugar_sede_entidad.trim());
         }
         if (datos.fecha_barrera_tea) {
-          prefijoHechos.push('Fecha del suceso: ' + datos.fecha_barrera_tea);
+          var fb = datos.fecha_barrera_tea;
+          if (fb.indexOf('-') !== -1) {
+            var partesF = fb.split('-');
+            if (partesF.length === 3) fb = partesF[2] + '/' + partesF[1] + '/' + partesF[0];
+          }
+          prefijoHechos.push('Fecha del suceso: ' + fb);
         }
         if (prefijoHechos.length > 0) {
           datos.hechos_incumplimiento_tea = prefijoHechos.join('; ') + (datos.hechos_incumplimiento_tea ? '. Hechos: ' + datos.hechos_incumplimiento_tea : '');
         }
+        // X1: Eliminar campos que NO existen en HubSpot para evitar error propertiesNotFound
+        delete datos.parentesco_beneficiario_tea;
+        delete datos.lugar_sede_entidad;
+        delete datos.fecha_barrera_tea;
 
         var estado = document.getElementById('fd_estado');
         estado.textContent = 'Enviando…';

@@ -30,7 +30,7 @@ const WHITELIST_POR_SERVICIO = {
     'tipo_documento', 'numero_documento', 'entidad_involucrada_tea',
     'nombre_beneficiario_tea', 'tipo_documento_beneficiario_tea',
     'documento_beneficiario_tea', 'ajuste_solicitado_tea', 'hechos_incumplimiento_tea',
-    'parentesco_beneficiario_tea', 'lugar_sede_entidad', 'fecha_barrera_tea', 'nombre_acudiente_tea',
+    'nombre_acudiente_tea',
     'fecha_envio_dpeticion_tea', 'juzgado_fallo_tea', 'radicado_tutela_tea',
     'fecha_fallo_tutela', 'fecha_notificacion_fallo_tea', 'plazo_cumplimiento_fallo_tea',
     'orden_incumplida_tea', 'evidencia_incumplimiento_tea', ...CAMPOS_COMUNES
@@ -170,6 +170,11 @@ exports.handler = async (event) => {
   if (!checkCampos.ok) {
     return { statusCode: 400, body: JSON.stringify({ ok: false, reason: 'campo_no_permitido', detail: checkCampos.error }) };
   }
+
+  // X1: Eliminación defensiva de campos no existentes en HubSpot
+  delete campos.parentesco_beneficiario_tea;
+  delete campos.lugar_sede_entidad;
+  delete campos.fecha_barrera_tea;
 
   try {
     // 1. Verificar de nuevo, del lado del servidor, que el pago con esa

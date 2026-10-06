@@ -62,8 +62,12 @@ exports.handler = async (event) => {
     'lyzbri_make_route'];
   // Condicion C7 (A2): La marca de revision manual por tutela previa se calcula
   // en el servidor. El cliente no puede inyectar ni modificar estado_revision.
-  if (respuestasWizard && (respuestasWizard.tutela_previa === 'si' || respuestasWizard.tutela_previa === true)) {
-    properties.estado_revision = 'MANUAL_REVIEW';
+  if (respuestasWizard) {
+    if (respuestasWizard.tutela_previa === 'si' || respuestasWizard.tutela_previa === true) {
+      properties.estado_revision = 'MANUAL_REVIEW';
+    } else if (respuestasWizard.tutela_previa === 'no' || respuestasWizard.tutela_previa === false) {
+      properties.estado_revision = '';
+    }
   }
 
   if (respuestasWizard && typeof respuestasWizard === 'object') {
