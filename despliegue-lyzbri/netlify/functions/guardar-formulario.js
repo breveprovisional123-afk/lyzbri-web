@@ -1,3 +1,91 @@
+
+// =============================================================================
+// LISTA BLANCA DE CAMPOS POR SERVICIO (Condición C9 / Hallazgo B4)
+// Protege HubSpot contra inyección de propiedades no autorizadas o reservadas.
+// =============================================================================
+const CAMPOS_RESERVADOS = [
+  'pago_confirmado', 'referencia_pago', 'hechos_completos',
+  'estado_revision', 'email', 'fecha_hechos_completos'
+];
+
+const CAMPOS_COMUNES = ['address', 'city', 'state'];
+
+const WHITELIST_POR_SERVICIO = {
+  'habeas-data': [
+    'tipo_documento', 'numero_documento', 'entidad_reportante',
+    'fecha_hecho', 'numero_obligaciones', 'monto_obligacion',
+    'hechos_adicionales_hd', ...CAMPOS_COMUNES
+  ],
+  'deudas': [
+    'tipo_documento', 'numero_documento', 'acreedores',
+    'numero_obligaciones', 'monto_total_adeudado', 'objetivo_negociacion',
+    'observaciones_deudas', ...CAMPOS_COMUNES
+  ],
+  'marca': [
+    'nombre_marca', 'denominacion_signo', 'tipo_signo_especial',
+    'incluye_elementos_graficos', 'archivo_logo_url', 'descripcion_productos_servicios',
+    'titular_tipo', 'razon_social', 'nit_titular', ...CAMPOS_COMUNES
+  ],
+  'tea': [
+    'tipo_documento', 'numero_documento', 'entidad_involucrada_tea',
+    'nombre_beneficiario_tea', 'tipo_documento_beneficiario_tea',
+    'documento_beneficiario_tea', 'ajuste_solicitado_tea', 'hechos_incumplimiento_tea',
+    'nombre_acudiente_tea',
+    'fecha_envio_dpeticion_tea', 'juzgado_fallo_tea', 'radicado_tutela_tea',
+    'fecha_fallo_tutela', 'fecha_notificacion_fallo_tea', 'plazo_cumplimiento_fallo_tea',
+    'orden_incumplida_tea', 'evidencia_incumplimiento_tea', ...CAMPOS_COMUNES
+  ],
+  'alimentos': [
+    'tipo_solicitud_alimentos', 'correo_entrega', 'tipo_documento', 'numero_documento',
+    'calidad_solicitante_alimentos', 'autoridad_destino', 'municipio_autoridad',
+    'nombre_alimentario', 'documento_alimentario', 'fecha_nacimiento_alimentario',
+    'nombre_otra_parte', 'parentesco_otra_parte', 'documento_otra_parte',
+    'direccion_otra_parte', 'telefono_otra_parte', 'correo_otra_parte', 'trabajo_otra_parte',
+    'aporte_estado', 'aporte_desde', 'aporte_valor', 'ingresos_conocidos', 'ingresos_valor',
+    'documento_fijacion', 'fecha_fijacion', 'autoridad_que_fijo', 'cuota_vigente',
+    'gasto_vivienda', 'gasto_alimentacion', 'gasto_educacion', 'gasto_salud',
+    'gasto_vestuario_recreacion', 'gasto_otros', 'motivos_aumento', 'mejora_patrimonial',
+    'causa_disminucion', 'motivos_disminucion', 'causal_exoneracion', 'motivos_exoneracion',
+    'cuota_solicitada', 'hechos_adicionales', ...CAMPOS_COMUNES
+  ]
+};
+
+// Aliases para mapear service_code o claves de catalogo
+WHITELIST_POR_SERVICIO['TEA'] = WHITELIST_POR_SERVICIO['tea'];
+WHITELIST_POR_SERVICIO['HABEAS_DATA'] = WHITELIST_POR_SERVICIO['habeas-data'];
+WHITELIST_POR_SERVICIO['DEUDAS'] = WHITELIST_POR_SERVICIO['deudas'];
+WHITELIST_POR_SERVICIO['MARCA'] = WHITELIST_POR_SERVICIO['marca'];
+WHITELIST_POR_SERVICIO['ALIMENTOS'] = WHITELIST_POR_SERVICIO['alimentos'];
+WHITELIST_POR_SERVICIO['tea-tutela'] = WHITELIST_POR_SERVICIO['tea'];
+WHITELIST_POR_SERVICIO['tea-desacato'] = WHITELIST_POR_SERVICIO['tea'];
+
+function validarCamposFormulario(campos, servicio) {
+  if (!campos || typeof campos !== 'object') {
+    return { ok: false, error: 'campos_no_objeto' };
+  }
+  const keys = Object.keys(campos);
+  if (keys.length === 0) {
+    return { ok: false, error: 'campos_vacios' };
+  }
+
+  // Obtener lista blanca del servicio o conjunto global si el servicio no viene especificado
+  const permitidos = (servicio && WHITELIST_POR_SERVICIO[servicio]) 
+    ? new Set(WHITELIST_POR_SERVICIO[servicio])
+    : new Set(Object.values(WHITELIST_POR_SERVICIO).flat());
+
+  for (const k of keys) {
+    // 1. Rechazo de campos reservados
+    if (CAMPOS_RESERVADOS.includes(k) || k.startsWith('lyzbri_') || k.startsWith('servicio_')) {
+      return { ok: false, error: `campo_reservado_no_permitido: ${k}` };
+    }
+    // 2. Rechazo de claves no presentes en la lista blanca
+    if (!permitidos.has(k)) {
+      return { ok: false, error: `campo_no_permitido: ${k}` };
+    }
+  }
+  return { ok: true };
+}
+
 // Recibe el envio del formulario detallado (despues de que el cliente ya paso por
 // la validacion de pago) y escribe los campos en el MISMO contacto de HubSpot,
 // identificado por referencia_pago. Nunca crea un contacto nuevo. Marca
@@ -72,10 +160,21 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ ok: false, reason: 'invalid_json' }) };
   }
 
-  const { referenciaPago, correo, campos } = payload;
+  const { referenciaPago, correo, campos, servicio } = payload;
   if (!referenciaPago || !campos || typeof campos !== 'object') {
     return { statusCode: 400, body: JSON.stringify({ ok: false, reason: 'missing_fields' }) };
   }
+
+  // Validación estricta B4 / C9
+  const checkCampos = validarCamposFormulario(campos, servicio || payload.service_code);
+  if (!checkCampos.ok) {
+    return { statusCode: 400, body: JSON.stringify({ ok: false, reason: 'campo_no_permitido', detail: checkCampos.error }) };
+  }
+
+  // X1: Eliminación defensiva de campos no existentes en HubSpot
+  delete campos.parentesco_beneficiario_tea;
+  delete campos.lugar_sede_entidad;
+  delete campos.fecha_barrera_tea;
 
   try {
     // 1. Verificar de nuevo, del lado del servidor, que el pago con esa
@@ -189,3 +288,5 @@ exports.handler = async (event) => {
     return { statusCode: 500, body: JSON.stringify({ ok: false, reason: 'server_error', message: err.message }) };
   }
 };
+
+exports._validarCamposFormulario = validarCamposFormulario;

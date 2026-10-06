@@ -59,7 +59,17 @@ exports.handler = async (event) => {
     // Trazabilidad (Corrección crítica 27-sep-2026): identificador estable del
     // producto vendido y ruta de procesamiento. Make enruta por lyzbri_make_route.
     'lyzbri_service_code', 'lyzbri_case_type', 'lyzbri_processing_mode', 'lyzbri_delivery_type',
-    'lyzbri_make_route', 'estado_revision'];
+    'lyzbri_make_route'];
+  // Condicion C7 (A2): La marca de revision manual por tutela previa se calcula
+  // en el servidor. El cliente no puede inyectar ni modificar estado_revision.
+  if (respuestasWizard) {
+    if (respuestasWizard.tutela_previa === 'si' || respuestasWizard.tutela_previa === true) {
+      properties.estado_revision = 'MANUAL_REVIEW';
+    } else if (respuestasWizard.tutela_previa === 'no' || respuestasWizard.tutela_previa === false) {
+      properties.estado_revision = '';
+    }
+  }
+
   if (respuestasWizard && typeof respuestasWizard === 'object') {
     Object.keys(respuestasWizard).forEach(function (k) {
       if (PROPIEDADES_PERMITIDAS.indexOf(k) !== -1 && respuestasWizard[k] !== undefined && respuestasWizard[k] !== '') {

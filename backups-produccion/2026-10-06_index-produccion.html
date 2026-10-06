@@ -1631,10 +1631,6 @@
           <span class="tag" id="resultado-etiqueta">Resultado inicial</span>
           <h3 id="resultado-titulo">Tu evaluación inicial está lista.</h3>
           <p id="resultado-descripcion"></p>
-          <div id="resultado-alerta-tutela" style="display:none; margin: 16px 0; padding: 14px 16px; border-radius: 8px; background: rgba(220, 53, 69, 0.12); border-left: 4px solid #dc3545; color: #fff; line-height: 1.5; font-size: 0.95rem;">
-            <strong>Atención jurídica importante:</strong> Presentar una nueva tutela por los mismos hechos ante otro juez puede considerarse actuación temeraria (Art. 38 Decreto 2591 de 1991) y acarrear sanciones legales.<br><br>
-            En Lyzbri tramitamos este caso bajo revisión manual previa de una abogada para verificar la procedencia antes de cualquier radicación. Por favor envíe copia del fallo o del radicado de su tutela anterior a nuestro correo oficial: <a href="mailto:contacto@lyzbri.com" style="color: #64b5f6; text-decoration: underline;">contacto@lyzbri.com</a>
-          </div>
           <p class="fine-print" id="resultado-nota">Este resultado organiza la información disponible; la viabilidad jurídica y el alcance final requieren revisión profesional.</p>
           <div class="form-actions" style="margin-top:18px;">
             <a class="btn btn-primary" id="resultado-pago" href="#" target="_blank" rel="noopener">Continuar al pago</a>
@@ -2333,16 +2329,6 @@
             options: TEA_DATA[a.tea_area].estados.map(function (e) { return { value: e.value, label: e.label }; })
           });
         }
-        // Pregunta obligatoria de tutela previa (Condición C7 / Salvaguarda A2)
-        if (a.tea_estado === 'peticion_sin_respuesta') {
-          steps.push({
-            id: 'tutela_previa', type: 'choice', q: '¿Has presentado previamente una acción de tutela por estos mismos hechos?',
-            options: [
-              { value: 'no', label: 'No, es la primera vez que presento tutela por estos hechos' },
-              { value: 'si', label: 'Sí, ya había presentado una tutela previamente' }
-            ]
-          });
-        }
         // Incidente de desacato: dos modalidades con precio distinto.
         if (a.tea_estado === 'tutela_incumplida') {
           steps.push({ id: 'tea_modalidad', type: 'choice', q: '¿Cómo quieres adelantar el incidente de desacato?', options: [
@@ -2553,11 +2539,6 @@
       var descEl = document.getElementById('resultado-descripcion');
       descEl.textContent = resultado.descripcion;
       descEl.style.whiteSpace = 'pre-line';
-
-      var alertaTutela = document.getElementById('resultado-alerta-tutela');
-      if (alertaTutela) {
-        alertaTutela.style.display = (wz.answers.tutela_previa === 'si') ? 'block' : 'none';
-      }
 
       var reference = wz.servicio + '-' + Date.now();
       // Servicio real (texto libre en HubSpot: servicio_lyzbri) y formulario post-pago.
@@ -2835,12 +2816,9 @@
         { id: 'tipo_documento', label: 'Tu tipo de documento (quien solicita)', type: 'select', options: [{v:'cc',l:'C.C.'}, {v:'ce',l:'C.E.'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}, {v:'pep',l:'PEP'}] },
         { id: 'numero_documento', label: 'Tu N° de documento', type: 'text' },
         { id: 'entidad_involucrada_tea', label: 'Entidad involucrada (colegio, EPS, club, etc.)', type: 'text' },
-        { id: 'lugar_sede_entidad', label: 'Sede o ciudad de la entidad', type: 'text', optional: true },
         { id: 'nombre_beneficiario_tea', label: 'Nombre del beneficiario (si es distinto a quien paga, ej. hijo/a)', type: 'text' },
-        { id: 'parentesco_beneficiario_tea', label: 'Parentesco con el beneficiario (ej. Madre, Padre, Acudiente)', type: 'text', optional: true },
         { id: 'tipo_documento_beneficiario_tea', label: 'Tipo de documento del beneficiario', type: 'select', options: [{v:'ti',l:'T.I.'}, {v:'cc',l:'C.C.'}, {v:'rc_menor',l:'Registro Civil / Otro (menor sin cédula)'}] },
         { id: 'documento_beneficiario_tea', label: 'N° de documento del beneficiario', type: 'text' },
-        { id: 'fecha_barrera_tea', label: 'Fecha en que ocurrió la situación o barrera', type: 'date', optional: true },
         { id: 'ajuste_solicitado_tea', label: 'Ajuste o derecho que está solicitando', type: 'textarea', maxLength: 500 },
         { id: 'hechos_incumplimiento_tea', label: 'Hechos — qué pasó y por qué considera que no se ha resuelto', type: 'textarea', maxLength: 1000 }
       ]
@@ -3098,32 +3076,6 @@
             datos.documento_beneficiario_tea = 'Registro Civil / sin cédula — ' + datos.documento_beneficiario_tea;
           }
         }
-
-        // Correcciones X1, X2 y O6 (Auditoría Claude):
-        // X2: Asignar parentesco directamente a nombre_acudiente_tea (limpio, sin prefijo)
-        if (datos.parentesco_beneficiario_tea) {
-          datos.nombre_acudiente_tea = datos.parentesco_beneficiario_tea.trim();
-        }
-        // O6: Integrar sede y fecha (formato DD/MM/AAAA) en hechos_incumplimiento_tea
-        var prefijoHechos = [];
-        if (datos.lugar_sede_entidad) {
-          prefijoHechos.push('Sede de la entidad: ' + datos.lugar_sede_entidad.trim());
-        }
-        if (datos.fecha_barrera_tea) {
-          var fb = datos.fecha_barrera_tea;
-          if (fb.indexOf('-') !== -1) {
-            var partesF = fb.split('-');
-            if (partesF.length === 3) fb = partesF[2] + '/' + partesF[1] + '/' + partesF[0];
-          }
-          prefijoHechos.push('Fecha del suceso: ' + fb);
-        }
-        if (prefijoHechos.length > 0) {
-          datos.hechos_incumplimiento_tea = prefijoHechos.join('; ') + (datos.hechos_incumplimiento_tea ? '. Hechos: ' + datos.hechos_incumplimiento_tea : '');
-        }
-        // X1: Eliminar campos que NO existen en HubSpot para evitar error propertiesNotFound
-        delete datos.parentesco_beneficiario_tea;
-        delete datos.lugar_sede_entidad;
-        delete datos.fecha_barrera_tea;
 
         var estado = document.getElementById('fd_estado');
         estado.textContent = 'Enviando…';
