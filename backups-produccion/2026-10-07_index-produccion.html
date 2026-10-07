@@ -3233,10 +3233,7 @@
         var seg = window.location.pathname.replace(/\/+$/, '').split('/').pop();
         svc = RUTAS[seg] || null;
       }
-      if (svc && VERTICALES[svc]) {
-        aplicarVertical(svc);
-        startWizard(svc);
-      }
+      if (svc && VERTICALES[svc]) { aplicarVertical(svc); }
     });
 
     // =========================================================================
