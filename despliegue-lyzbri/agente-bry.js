@@ -19,7 +19,7 @@
     subtitulo: 'Tu asistente Legal Virtual',
     logoUrl: 'logo lyzbri.jpeg',
     avatarAgenteUrl: 'logo lyzbri.jpeg',
-    tiempoRespuestaMs: 500, // Simulación de escritura empática
+    tiempoRespuestaMs: 1400, // Simulación de escritura empática natural (1 a 2 segundos)
     servicioSoportado: 'tea', // V1: TEA y Discapacidad
   };
 
@@ -38,7 +38,7 @@
   // 2. CATÁLOGO DE TEXTOS Y EMPATÍA PARAMETRIZADA (MENSAJES_BRY)
   // Verbatim del documento: MAPA-PREGUNTAS-Y-GUION-BRY-tea-discapacidad-2026-10-07.md
   var MENSAJES_BRY = {
-    saludo: 'Hola, soy **Bry**, tu asistente legal virtual. Estoy aquí para acompañarte con calma y sin complicaciones. Cuéntame, ¿en qué puedo ayudarte hoy?',
+    saludo: '¡Hola! Soy **Bry**, tu asistente legal virtual. Estoy aquí para acompañarte con calma y sin complicaciones. Cuéntame, ¿en qué puedo ayudarte hoy?',
     intro_tea: 'Gracias por confiarme esto. Vamos paso a paso; son solo unas preguntas y, al final, te muestro una orientación inicial gratuita.',
     q_condicion: 'Para orientarte bien, cuéntame: ¿cuál es la condición o discapacidad de la persona? Lo que me compartas es confidencial.',
     q_subtipo_nv: 'Gracias por la confianza. Las discapacidades no visibles tienen la misma protección que cualquier otra. ¿Dirías que es más bien…?',
@@ -292,9 +292,10 @@
     if (callback) callback();
   };
 
-  // Indicador de escritura
-  AgenteBry.prototype.mostrarEscribiendo = function (callback) {
+  // Indicador de escritura con simulación de efecto humano
+  AgenteBry.prototype.mostrarEscribiendo = function (callback, duracionMs) {
     var self = this;
+    var duracion = duracionMs || AGENTE_BRY_CONFIG.tiempoRespuestaMs;
     var row = document.createElement('div');
     row.className = 'bry-message-row bry-agent bry-typing-row';
 
@@ -314,10 +315,10 @@
     setTimeout(function () {
       if (row.parentNode) row.parentNode.removeChild(row);
       if (callback) callback();
-    }, AGENTE_BRY_CONFIG.tiempoRespuestaMs);
+    }, duracion);
   };
 
-  // Renderizar chips de respuesta rápida
+  // Renderizar chips de respuesta rápida con compactación automática (Experiencia Anti-Gravity)
   AgenteBry.prototype.mostrarChips = function (opciones, alSeleccionar) {
     var self = this;
     var container = document.createElement('div');
@@ -329,9 +330,11 @@
       btn.className = 'bry-chip-btn';
       btn.textContent = opt.label;
       btn.addEventListener('click', function () {
-        // Deshabilitar todos los chips de este grupo para evitar doble clic
-        var hermanos = container.querySelectorAll('.bry-chip-btn');
-        hermanos.forEach(function (b) { b.disabled = true; });
+        // Desvanecer y retirar las opciones anteriores para evitar "muros de botones"
+        container.classList.add('bry-replies-hidden');
+        setTimeout(function () {
+          if (container.parentNode) container.parentNode.removeChild(container);
+        }, 260);
         alSeleccionar(opt);
       });
       container.appendChild(btn);
@@ -341,36 +344,92 @@
     this.scrollToBottom();
   };
 
-  AgenteBry.prototype.scrollToBottom = function () {
+  // Autoscroll suave y continuo hacia abajo para acompañar al usuario sin scroll manual
+  AgenteBry.prototype.scrollToBottom = function (forceInstant) {
     var self = this;
-    setTimeout(function () {
-      self.chatBody.scrollTop = self.chatBody.scrollHeight;
-    }, 50);
+    var scrollNow = function () {
+      if (!self.chatBody) return;
+      if (forceInstant || typeof self.chatBody.scrollTo !== 'function') {
+        self.chatBody.scrollTop = self.chatBody.scrollHeight;
+      } else {
+        try {
+          self.chatBody.scrollTo({
+            top: self.chatBody.scrollHeight + 150,
+            behavior: 'smooth'
+          });
+        } catch (e) {
+          self.chatBody.scrollTop = self.chatBody.scrollHeight;
+        }
+      }
+    };
+    scrollNow();
+    setTimeout(scrollNow, 40);
+    setTimeout(scrollNow, 120);
+    setTimeout(scrollNow, 280);
   };
 
-  // INICIO DE LA CONVERSACIÓN
+  // 1. SALUDO INICIAL Y APERTURA LIMPIA
   AgenteBry.prototype.iniciarConversacion = function () {
     var self = this;
+    this.pasoActual = 'BIENVENIDA';
     this.mostrarEscribiendo(function () {
       self.agregarMensaje('agent', MENSAJES_BRY.saludo, function () {
-        self.mostrarEscribiendo(function () {
-          self.agregarMensaje('agent', MENSAJES_BRY.intro_tea, function () {
-            self.preguntaCondicion();
-          });
-        });
+        self.mostrarBotonInicio();
       });
+    }, 900);
+  };
+
+  // Botón flotante de acción rápida: "Empezar orientación"
+  AgenteBry.prototype.mostrarBotonInicio = function () {
+    var self = this;
+    var container = document.createElement('div');
+    container.className = 'bry-start-action-container';
+    container.id = 'bry-start-action-box';
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'bry-btn-start';
+    btn.innerHTML = '<span>Empezar orientación</span><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
+
+    var alIniciar = function () {
+      if (container.classList.contains('bry-start-hidden')) return;
+      container.classList.add('bry-start-hidden');
+      setTimeout(function () {
+        if (container.parentNode) container.parentNode.removeChild(container);
+      }, 250);
+      self.transicionHaciaOrientacion();
+    };
+
+    btn.addEventListener('click', alIniciar);
+    container.appendChild(btn);
+    this.chatBody.appendChild(container);
+    this.scrollToBottom();
+    this.startActionHandler = alIniciar;
+  };
+
+  // 2. TRANSICIÓN NATURAL CON SIMULACIÓN DE ESCRITURA (EFECTO HUMANO)
+  AgenteBry.prototype.transicionHaciaOrientacion = function () {
+    var self = this;
+    this.agregarMensaje('user', 'Empezar orientación', function () {
+      // Animación de escritura durante 1.5 segundos
+      self.mostrarEscribiendo(function () {
+        self.agregarMensaje('agent', MENSAJES_BRY.intro_tea, function () {
+          // Breve animación de escritura durante 1.2 segundos antes de la pregunta 1
+          self.mostrarEscribiendo(function () {
+            self.preguntaCondicion();
+          }, 1200);
+        });
+      }, 1500);
     });
   };
 
-  // PREGUNTA 1: tea_condicion
+  // 3. PREGUNTA 1: tea_condicion
   AgenteBry.prototype.preguntaCondicion = function () {
     var self = this;
     this.pasoActual = 'CONDICION';
-    this.mostrarEscribiendo(function () {
-      self.agregarMensaje('agent', MENSAJES_BRY.q_condicion, function () {
-        self.mostrarChips(OPCIONES_CONDICION, function (opt) {
-          self.responderCondicion(opt.value, opt.label);
-        });
+    self.agregarMensaje('agent', MENSAJES_BRY.q_condicion, function () {
+      self.mostrarChips(OPCIONES_CONDICION, function (opt) {
+        self.responderCondicion(opt.value, opt.label);
       });
     });
   };
@@ -383,13 +442,15 @@
       var ack = MENSAJES_BRY.ack_condicion[val] || 'Gracias por contarme. Continuemos.';
       self.mostrarEscribiendo(function () {
         self.agregarMensaje('agent', ack, function () {
-          if (val === 'no_visible') {
-            self.preguntaSubtipoNV();
-          } else {
-            self.preguntaArea();
-          }
+          self.mostrarEscribiendo(function () {
+            if (val === 'no_visible') {
+              self.preguntaSubtipoNV();
+            } else {
+              self.preguntaArea();
+            }
+          }, 1200);
         });
-      });
+      }, 1300);
     });
   };
 
@@ -397,19 +458,19 @@
   AgenteBry.prototype.preguntaSubtipoNV = function () {
     var self = this;
     this.pasoActual = 'SUBTIPO_NV';
-    this.mostrarEscribiendo(function () {
-      self.agregarMensaje('agent', MENSAJES_BRY.q_subtipo_nv, function () {
-        self.mostrarChips(OPCIONES_SUBTIPO_NV, function (opt) {
-          self.respuestas.tea_subtipo_nv = opt.value;
-          self.sincronizarConWizard();
-          self.agregarMensaje('user', opt.label, function () {
-            var ack = MENSAJES_BRY.ack_subtipo_nv[opt.value] || 'Gracias por contarlo.';
-            self.mostrarEscribiendo(function () {
-              self.agregarMensaje('agent', ack, function () {
+    self.agregarMensaje('agent', MENSAJES_BRY.q_subtipo_nv, function () {
+      self.mostrarChips(OPCIONES_SUBTIPO_NV, function (opt) {
+        self.respuestas.tea_subtipo_nv = opt.value;
+        self.sincronizarConWizard();
+        self.agregarMensaje('user', opt.label, function () {
+          var ack = MENSAJES_BRY.ack_subtipo_nv[opt.value] || 'Gracias por contarlo.';
+          self.mostrarEscribiendo(function () {
+            self.agregarMensaje('agent', ack, function () {
+              self.mostrarEscribiendo(function () {
                 self.preguntaArea();
-              });
+              }, 1200);
             });
-          });
+          }, 1300);
         });
       });
     });
@@ -419,19 +480,19 @@
   AgenteBry.prototype.preguntaArea = function () {
     var self = this;
     this.pasoActual = 'AREA';
-    this.mostrarEscribiendo(function () {
-      self.agregarMensaje('agent', MENSAJES_BRY.q_area, function () {
-        self.mostrarChips(OPCIONES_AREA, function (opt) {
-          self.respuestas.tea_area = opt.value;
-          self.sincronizarConWizard();
-          self.agregarMensaje('user', opt.label, function () {
-            var ack = MENSAJES_BRY.ack_area[opt.value] || 'Entendido.';
-            self.mostrarEscribiendo(function () {
-              self.agregarMensaje('agent', ack, function () {
+    self.agregarMensaje('agent', MENSAJES_BRY.q_area, function () {
+      self.mostrarChips(OPCIONES_AREA, function (opt) {
+        self.respuestas.tea_area = opt.value;
+        self.sincronizarConWizard();
+        self.agregarMensaje('user', opt.label, function () {
+          var ack = MENSAJES_BRY.ack_area[opt.value] || 'Entendido.';
+          self.mostrarEscribiendo(function () {
+            self.agregarMensaje('agent', ack, function () {
+              self.mostrarEscribiendo(function () {
                 self.preguntaEstado();
-              });
+              }, 1200);
             });
-          });
+          }, 1300);
         });
       });
     });
@@ -444,15 +505,15 @@
     var area = this.respuestas.tea_area || 'otro';
     var opciones = OPCIONES_ESTADO_POR_AREA[area] || OPCIONES_ESTADO_POR_AREA.otro;
 
-    this.mostrarEscribiendo(function () {
-      self.agregarMensaje('agent', MENSAJES_BRY.q_estado, function () {
-        self.mostrarChips(opciones, function (opt) {
-          self.respuestas.tea_estado = opt.value;
-          self.sincronizarConWizard();
-          self.agregarMensaje('user', opt.label, function () {
-            var ack = MENSAJES_BRY.ack_estado[opt.value] || 'Gracias por contarlo.';
-            self.mostrarEscribiendo(function () {
-              self.agregarMensaje('agent', ack, function () {
+    self.agregarMensaje('agent', MENSAJES_BRY.q_estado, function () {
+      self.mostrarChips(opciones, function (opt) {
+        self.respuestas.tea_estado = opt.value;
+        self.sincronizarConWizard();
+        self.agregarMensaje('user', opt.label, function () {
+          var ack = MENSAJES_BRY.ack_estado[opt.value] || 'Gracias por contarlo.';
+          self.mostrarEscribiendo(function () {
+            self.agregarMensaje('agent', ack, function () {
+              self.mostrarEscribiendo(function () {
                 if (opt.value === 'peticion_sin_respuesta') {
                   self.preguntaTutelaPrevia();
                 } else if (opt.value === 'tutela_incumplida') {
@@ -460,9 +521,9 @@
                 } else {
                   self.pasoContacto();
                 }
-              });
+              }, 1200);
             });
-          });
+          }, 1300);
         });
       });
     });
@@ -472,19 +533,19 @@
   AgenteBry.prototype.preguntaTutelaPrevia = function () {
     var self = this;
     this.pasoActual = 'TUTELA_PREVIA';
-    this.mostrarEscribiendo(function () {
-      self.agregarMensaje('agent', MENSAJES_BRY.q_tutela_previa, function () {
-        self.mostrarChips(OPCIONES_TUTELA_PREVIA, function (opt) {
-          self.respuestas.tutela_previa = opt.value;
-          self.sincronizarConWizard();
-          self.agregarMensaje('user', opt.label, function () {
-            var ack = opt.value === 'si' ? MENSAJES_BRY.alerta_temeridad : MENSAJES_BRY.ack_tutela_previa.no;
-            self.mostrarEscribiendo(function () {
-              self.agregarMensaje('agent', ack, function () {
+    self.agregarMensaje('agent', MENSAJES_BRY.q_tutela_previa, function () {
+      self.mostrarChips(OPCIONES_TUTELA_PREVIA, function (opt) {
+        self.respuestas.tutela_previa = opt.value;
+        self.sincronizarConWizard();
+        self.agregarMensaje('user', opt.label, function () {
+          var ack = opt.value === 'si' ? MENSAJES_BRY.alerta_temeridad : MENSAJES_BRY.ack_tutela_previa.no;
+          self.mostrarEscribiendo(function () {
+            self.agregarMensaje('agent', ack, function () {
+              self.mostrarEscribiendo(function () {
                 self.pasoContacto();
-              });
+              }, 1200);
             });
-          });
+          }, 1300);
         });
       });
     });
@@ -494,19 +555,19 @@
   AgenteBry.prototype.preguntaModalidad = function () {
     var self = this;
     this.pasoActual = 'MODALIDAD';
-    this.mostrarEscribiendo(function () {
-      self.agregarMensaje('agent', MENSAJES_BRY.q_modalidad, function () {
-        self.mostrarChips(OPCIONES_MODALIDAD_DESACATO, function (opt) {
-          self.respuestas.tea_modalidad = opt.value;
-          self.sincronizarConWizard();
-          self.agregarMensaje('user', opt.label, function () {
-            var ack = MENSAJES_BRY.ack_modalidad[opt.value] || 'Listo.';
-            self.mostrarEscribiendo(function () {
-              self.agregarMensaje('agent', ack, function () {
+    self.agregarMensaje('agent', MENSAJES_BRY.q_modalidad, function () {
+      self.mostrarChips(OPCIONES_MODALIDAD_DESACATO, function (opt) {
+        self.respuestas.tea_modalidad = opt.value;
+        self.sincronizarConWizard();
+        self.agregarMensaje('user', opt.label, function () {
+          var ack = MENSAJES_BRY.ack_modalidad[opt.value] || 'Listo.';
+          self.mostrarEscribiendo(function () {
+            self.agregarMensaje('agent', ack, function () {
+              self.mostrarEscribiendo(function () {
                 self.pasoContacto();
-              });
+              }, 1200);
             });
-          });
+          }, 1300);
         });
       });
     });
@@ -763,6 +824,29 @@
     this.inputElement.value = '';
     var textLower = rawText.toLowerCase();
 
+    var self = this;
+
+    // Si está en el saludo inicial de bienvenida y el usuario escribe directamente
+    if (this.pasoActual === 'BIENVENIDA') {
+      var box = document.getElementById('bry-start-action-box');
+      if (box) {
+        box.classList.add('bry-start-hidden');
+        setTimeout(function () {
+          if (box.parentNode) box.parentNode.removeChild(box);
+        }, 250);
+      }
+      this.agregarMensaje('user', rawText, function () {
+        self.mostrarEscribiendo(function () {
+          self.agregarMensaje('agent', MENSAJES_BRY.intro_tea, function () {
+            self.mostrarEscribiendo(function () {
+              self.preguntaCondicion();
+            }, 1200);
+          });
+        }, 1500);
+      });
+      return;
+    }
+
     // Si está en el paso de contacto, el formulario embebido es el camino prioritario
     if (this.pasoActual === 'CONTACTO') {
       var formNombre = document.getElementById('bry-f-nombre');
@@ -773,7 +857,6 @@
       }
     }
 
-    var self = this;
     var emparejado = false;
 
     // Reconocimiento según el paso actual
