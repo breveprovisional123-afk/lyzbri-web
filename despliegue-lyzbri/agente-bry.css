@@ -205,6 +205,18 @@
   margin-top: 6px;
   padding-left: 44px; /* Alineado con el cuerpo del mensaje de Bry */
   animation: bryFadeSlideUp 0.3s ease-out;
+  transition: opacity 0.25s ease, max-height 0.25s ease, margin 0.25s ease, padding 0.25s ease;
+}
+
+/* Compactación automática para evitar "muros de botones" (Experiencia Anti-Gravity) */
+.bry-quick-replies.bry-replies-hidden {
+  opacity: 0;
+  max-height: 0;
+  margin: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .bry-chip-btn {
@@ -242,6 +254,62 @@
   opacity: 0.6;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* Botón flotante / destacado de Apertura Limpia: "Empezar orientación" */
+.bry-start-action-container {
+  display: flex;
+  justify-content: flex-start;
+  padding-left: 44px;
+  margin-top: 8px;
+  animation: bryFadeSlideUp 0.35s ease-out;
+  transition: opacity 0.25s ease, max-height 0.25s ease;
+}
+
+.bry-start-action-container.bry-start-hidden {
+  opacity: 0;
+  max-height: 0;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bry-btn-start {
+  background: linear-gradient(135deg, #102A4C 0%, #173B6B 100%);
+  color: #FFFFFF;
+  border: 1.5px solid rgba(24, 184, 177, 0.5);
+  border-radius: 999px;
+  padding: 12px 22px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(16, 42, 76, 0.16), 0 0 0 3px rgba(24, 184, 177, 0.12);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 48px;
+}
+
+.bry-btn-start:hover {
+  background: #18B8B1;
+  color: #FFFFFF;
+  border-color: #18B8B1;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(24, 184, 177, 0.35);
+}
+
+.bry-btn-start svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  fill: none;
+  transition: transform 0.2s;
+}
+
+.bry-btn-start:hover svg {
+  transform: translateX(3px);
 }
 
 /* Indicador de escritura "Bry está escribiendo..." */
