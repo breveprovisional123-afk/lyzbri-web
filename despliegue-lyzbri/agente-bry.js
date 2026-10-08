@@ -5,6 +5,9 @@
  * Protocolo 3, Nivel U3 (Interacción).
  * Cumple con Ley 1581 de 2012 (sin datos a terceros antes de pago)
  * y Ley 1123 de 2007 (orientación jurídica sin promesas de resultado).
+ * 
+ * Flujo: Reemplazo de turno / Pantalla única sin scroll manual (Anti-Gravity).
+ * Cada paso hace desaparecer suavemente al anterior para darle paso al nuevo.
  * ============================================================================
  */
 
@@ -36,9 +39,9 @@
   }
 
   // 2. CATÁLOGO DE TEXTOS Y EMPATÍA PARAMETRIZADA (MENSAJES_BRY)
-  // Verbatim del documento: MAPA-PREGUNTAS-Y-GUION-BRY-tea-discapacidad-2026-10-07.md
+  // Nombre en negrita limpia sin asteriscos
   var MENSAJES_BRY = {
-    saludo: '¡Hola! Soy **Bry**, tu asistente legal virtual. Estoy aquí para acompañarte con calma y sin complicaciones. Cuéntame, ¿en qué puedo ayudarte hoy?',
+    saludo: '¡Hola! Soy <strong class="bry-bold-name">Bry</strong>, tu asistente legal virtual. Estoy aquí para acompañarte con calma y sin complicaciones. Cuéntame, ¿en qué puedo ayudarte hoy?',
     intro_tea: 'Gracias por confiarme esto. Vamos paso a paso; son solo unas preguntas y, al final, te muestro una orientación inicial gratuita.',
     q_condicion: 'Para orientarte bien, cuéntame: ¿cuál es la condición o discapacidad de la persona? Lo que me compartas es confidencial.',
     q_subtipo_nv: 'Gracias por la confianza. Las discapacidades no visibles tienen la misma protección que cualquier otra. ¿Dirías que es más bien…?',
@@ -163,7 +166,7 @@
     { value: 'acompanamiento', label: 'Con acompañamiento de abogada ($600.000)', keys: ['acompanamiento', 'abogada', '600000', '600'] }
   ];
 
-  // 4. MOTOR CONVERSACIONAL DE BRY
+  // 4. MOTOR CONVERSACIONAL DE BRY CON REEMPLAZO DE TURNO (PANTALLA ÚNICA)
   function AgenteBry(hostElement) {
     this.host = hostElement;
     this.respuestas = {
@@ -178,8 +181,10 @@
       correo: '',
       consiente: false
     };
-    this.pasoActual = 'INICIO';
+    this.pasoActual = 'BIENVENIDA';
+    this.historialPasos = [];
     this.fallosConsecutivos = 0;
+    this.etapaEl = null;
     this.inicializarUI();
   }
 
@@ -192,7 +197,7 @@
     container.className = 'bry-container';
     container.id = 'bry-chat-app';
 
-    // Encabezado
+    // Encabezado institucional
     var header = document.createElement('header');
     header.className = 'bry-header';
     header.innerHTML =
@@ -204,11 +209,11 @@
       '</div>';
     container.appendChild(header);
 
-    // Contenedor de mensajes
+    // Contenedor del escenario (Paso a paso sin scroll)
     this.chatBody = document.createElement('div');
     this.chatBody.className = 'bry-chat-messages';
-    this.chatBody.setAttribute('role', 'log');
-    this.chatBody.setAttribute('aria-live', 'polite');
+    this.chatBody.setAttribute('role', 'region');
+    this.chatBody.setAttribute('aria-label', 'Conversación con Bry');
     container.appendChild(this.chatBody);
 
     // Barra de entrada inferior (según interfaz.jpeg)
@@ -247,8 +252,7 @@
       }
     });
 
-    // Tooltip para iconos deshabilitados (Ley 1581)
-    var mostrarTooltip = function (e) {
+    var mostrarTooltip = function () {
       self.tooltip.textContent = 'Disponible próximamente en la siguiente fase';
       self.tooltip.classList.add('bry-tooltip-visible');
       setTimeout(function () { self.tooltip.classList.remove('bry-tooltip-visible'); }, 2200);
@@ -256,13 +260,62 @@
     this.clipBtn.addEventListener('click', mostrarTooltip);
     this.micBtn.addEventListener('click', mostrarTooltip);
 
-    // Iniciar flujo conversacional
-    this.iniciarConversacion();
+    // Iniciar flujo conversacional en el escenario
+    this.mostrarEtapaBienvenida();
   };
 
-  // Renderizar burbuja de mensaje
-  AgenteBry.prototype.agregarMensaje = function (emisor, textoHtml, callback) {
+  // Motor central de transición: el mensaje anterior desaparece de forma natural para darle paso al nuevo
+  AgenteBry.prototype.cambiarEtapa = function (renderFn) {
     var self = this;
+    var etapaVieja = this.etapaEl;
+
+    var montarNueva = function () {
+      var nuevaEtapa = document.createElement('div');
+      nuevaEtapa.className = 'bry-stage-container';
+      self.chatBody.appendChild(nuevaEtapa);
+      self.etapaEl = nuevaEtapa;
+
+      // Reset de scroll del visor y foco cómodo
+      if (self.chatBody) self.chatBody.scrollTop = 0;
+      if (self.host && typeof self.host.scrollIntoView === 'function') {
+        try { self.host.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+      }
+
+      renderFn(nuevaEtapa);
+    };
+
+    if (etapaVieja && etapaVieja.parentNode) {
+      etapaVieja.classList.add('bry-stage-exit');
+      setTimeout(function () {
+        if (etapaVieja.parentNode) etapaVieja.parentNode.removeChild(etapaVieja);
+        montarNueva();
+      }, 180);
+    } else {
+      montarNueva();
+    }
+  };
+
+  // Indicador de escritura animado dentro del escenario
+  AgenteBry.prototype.mostrarEscribiendoEnEtapa = function (container, callback, duracionMs) {
+    var self = this;
+    var duracion = duracionMs || AGENTE_BRY_CONFIG.tiempoRespuestaMs;
+
+    var row = document.createElement('div');
+    row.className = 'bry-message-row bry-agent bry-typing-row';
+    row.innerHTML =
+      '<div class="bry-avatar bry-agent-avatar"><img src="' + AGENTE_BRY_CONFIG.avatarAgenteUrl + '" alt="Bry"></div>' +
+      '<div class="bry-typing-indicator"><div class="bry-typing-dot"></div><div class="bry-typing-dot"></div><div class="bry-typing-dot"></div></div>';
+
+    container.appendChild(row);
+
+    setTimeout(function () {
+      if (row.parentNode) row.parentNode.removeChild(row);
+      if (callback) callback();
+    }, duracion);
+  };
+
+  // Crear burbuja de mensaje
+  AgenteBry.prototype.crearFilaMensaje = function (emisor, textoHtml) {
     var row = document.createElement('div');
     row.className = 'bry-message-row bry-' + emisor;
 
@@ -285,300 +338,355 @@
       row.appendChild(bubble);
       row.appendChild(avatar);
     }
-
-    this.chatBody.appendChild(row);
-    this.scrollToBottom();
-
-    if (callback) callback();
+    return row;
   };
 
-  // Indicador de escritura con simulación de efecto humano
-  AgenteBry.prototype.mostrarEscribiendo = function (callback, duracionMs) {
-    var self = this;
-    var duracion = duracionMs || AGENTE_BRY_CONFIG.tiempoRespuestaMs;
-    var row = document.createElement('div');
-    row.className = 'bry-message-row bry-agent bry-typing-row';
+  // Barra superior con botón "Volver al paso anterior" y resumen
+  AgenteBry.prototype.crearBarraSuperior = function (etiquetaResumen, alVolver) {
+    var topbar = document.createElement('div');
+    topbar.className = 'bry-stage-topbar';
 
-    var avatar = document.createElement('div');
-    avatar.className = 'bry-avatar bry-agent-avatar';
-    avatar.innerHTML = '<img src="' + AGENTE_BRY_CONFIG.avatarAgenteUrl + '" alt="Bry">';
+    var btnBack = document.createElement('button');
+    btnBack.type = 'button';
+    btnBack.className = 'bry-btn-back-step';
+    btnBack.innerHTML = '← Volver';
+    btnBack.addEventListener('click', alVolver);
+    topbar.appendChild(btnBack);
 
-    var indicator = document.createElement('div');
-    indicator.className = 'bry-typing-indicator';
-    indicator.innerHTML = '<div class="bry-typing-dot"></div><div class="bry-typing-dot"></div><div class="bry-typing-dot"></div>';
-
-    row.appendChild(avatar);
-    row.appendChild(indicator);
-    this.chatBody.appendChild(row);
-    this.scrollToBottom();
-
-    setTimeout(function () {
-      if (row.parentNode) row.parentNode.removeChild(row);
-      if (callback) callback();
-    }, duracion);
+    if (etiquetaResumen) {
+      var badge = document.createElement('div');
+      badge.className = 'bry-prev-badge';
+      badge.textContent = '✓ ' + etiquetaResumen;
+      badge.title = etiquetaResumen;
+      topbar.appendChild(badge);
+    }
+    return topbar;
   };
 
-  // Renderizar chips de respuesta rápida con compactación automática (Experiencia Anti-Gravity)
-  AgenteBry.prototype.mostrarChips = function (opciones, alSeleccionar) {
-    var self = this;
-    var container = document.createElement('div');
-    container.className = 'bry-quick-replies';
-
-    opciones.forEach(function (opt) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'bry-chip-btn';
-      btn.textContent = opt.label;
-      btn.addEventListener('click', function () {
-        // Desvanecer y retirar las opciones anteriores para evitar "muros de botones"
-        container.classList.add('bry-replies-hidden');
-        setTimeout(function () {
-          if (container.parentNode) container.parentNode.removeChild(container);
-        }, 260);
-        alSeleccionar(opt);
-      });
-      container.appendChild(btn);
-    });
-
-    this.chatBody.appendChild(container);
-    this.scrollToBottom();
-  };
-
-  // Autoscroll suave y continuo hacia abajo para acompañar al usuario sin scroll manual
-  AgenteBry.prototype.scrollToBottom = function (forceInstant) {
-    var self = this;
-    var scrollNow = function () {
-      if (!self.chatBody) return;
-      if (forceInstant || typeof self.chatBody.scrollTo !== 'function') {
-        self.chatBody.scrollTop = self.chatBody.scrollHeight;
-      } else {
-        try {
-          self.chatBody.scrollTo({
-            top: self.chatBody.scrollHeight + 150,
-            behavior: 'smooth'
-          });
-        } catch (e) {
-          self.chatBody.scrollTop = self.chatBody.scrollHeight;
-        }
-      }
-    };
-    scrollNow();
-    setTimeout(scrollNow, 40);
-    setTimeout(scrollNow, 120);
-    setTimeout(scrollNow, 280);
-  };
-
-  // 1. SALUDO INICIAL Y APERTURA LIMPIA
-  AgenteBry.prototype.iniciarConversacion = function () {
+  // ==========================================================================
+  // ETAPA 0: SALUDO INICIAL Y APERTURA LIMPIA
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaBienvenida = function () {
     var self = this;
     this.pasoActual = 'BIENVENIDA';
-    this.mostrarEscribiendo(function () {
-      self.agregarMensaje('agent', MENSAJES_BRY.saludo, function () {
-        self.mostrarBotonInicio();
-      });
-    }, 900);
-  };
+    this.historialPasos = [];
 
-  // Botón flotante de acción rápida: "Empezar orientación"
-  AgenteBry.prototype.mostrarBotonInicio = function () {
-    var self = this;
-    var container = document.createElement('div');
-    container.className = 'bry-start-action-container';
-    container.id = 'bry-start-action-box';
+    this.cambiarEtapa(function (stage) {
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        var msgRow = self.crearFilaMensaje('agent', MENSAJES_BRY.saludo);
+        stage.appendChild(msgRow);
 
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'bry-btn-start';
-    btn.innerHTML = '<span>Empezar orientación</span><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
+        var startBox = document.createElement('div');
+        startBox.className = 'bry-start-action-container';
+        startBox.innerHTML =
+          '<button type="button" class="bry-btn-start" id="bry-btn-empezar">' +
+            '<span>Empezar orientación</span>' +
+            '<svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>' +
+          '</button>';
 
-    var alIniciar = function () {
-      if (container.classList.contains('bry-start-hidden')) return;
-      container.classList.add('bry-start-hidden');
-      setTimeout(function () {
-        if (container.parentNode) container.parentNode.removeChild(container);
-      }, 250);
-      self.transicionHaciaOrientacion();
-    };
+        stage.appendChild(startBox);
 
-    btn.addEventListener('click', alIniciar);
-    container.appendChild(btn);
-    this.chatBody.appendChild(container);
-    this.scrollToBottom();
-    this.startActionHandler = alIniciar;
-  };
-
-  // 2. TRANSICIÓN NATURAL CON SIMULACIÓN DE ESCRITURA (EFECTO HUMANO)
-  AgenteBry.prototype.transicionHaciaOrientacion = function () {
-    var self = this;
-    this.agregarMensaje('user', 'Empezar orientación', function () {
-      // Animación de escritura durante 1.5 segundos
-      self.mostrarEscribiendo(function () {
-        self.agregarMensaje('agent', MENSAJES_BRY.intro_tea, function () {
-          // Breve animación de escritura durante 1.2 segundos antes de la pregunta 1
-          self.mostrarEscribiendo(function () {
-            self.preguntaCondicion();
-          }, 1200);
+        var btn = startBox.querySelector('#bry-btn-empezar');
+        btn.addEventListener('click', function () {
+          self.iniciarOrientacionDesdeBienvenida();
         });
-      }, 1500);
+      }, 700);
     });
   };
 
-  // 3. PREGUNTA 1: tea_condicion
-  AgenteBry.prototype.preguntaCondicion = function () {
+  AgenteBry.prototype.iniciarOrientacionDesdeBienvenida = function () {
+    var self = this;
+    // Transición natural: la bienvenida desaparece suavemente y entra la orientación con escritura
+    this.cambiarEtapa(function (stage) {
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        var msgIntro = self.crearFilaMensaje('agent', MENSAJES_BRY.intro_tea);
+        stage.appendChild(msgIntro);
+
+        self.mostrarEscribiendoEnEtapa(stage, function () {
+          self.mostrarEtapaCondicion();
+        }, 1200);
+      }, 1400);
+    });
+  };
+
+  // ==========================================================================
+  // ETAPA 1: CONDICIÓN O DISCAPACIDAD
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaCondicion = function () {
     var self = this;
     this.pasoActual = 'CONDICION';
-    self.agregarMensaje('agent', MENSAJES_BRY.q_condicion, function () {
-      self.mostrarChips(OPCIONES_CONDICION, function (opt) {
-        self.responderCondicion(opt.value, opt.label);
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior('Paso 1 de 4', function () {
+        self.mostrarEtapaBienvenida();
       });
+      stage.appendChild(topbar);
+
+      var qRow = self.crearFilaMensaje('agent', MENSAJES_BRY.q_condicion);
+      stage.appendChild(qRow);
+
+      var chipsContainer = document.createElement('div');
+      chipsContainer.className = 'bry-quick-replies';
+
+      OPCIONES_CONDICION.forEach(function (opt) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'bry-chip-btn';
+        btn.textContent = opt.label;
+        btn.addEventListener('click', function () {
+          self.responderCondicion(opt.value, opt.label);
+        });
+        chipsContainer.appendChild(btn);
+      });
+
+      stage.appendChild(chipsContainer);
     });
   };
 
-  AgenteBry.prototype.responderCondicion = function (val, textoVisible) {
-    var self = this;
+  AgenteBry.prototype.responderCondicion = function (val, label) {
     this.respuestas.tea_condicion = val;
     this.sincronizarConWizard();
-    this.agregarMensaje('user', textoVisible, function () {
-      var ack = MENSAJES_BRY.ack_condicion[val] || 'Gracias por contarme. Continuemos.';
-      self.mostrarEscribiendo(function () {
-        self.agregarMensaje('agent', ack, function () {
-          self.mostrarEscribiendo(function () {
-            if (val === 'no_visible') {
-              self.preguntaSubtipoNV();
-            } else {
-              self.preguntaArea();
-            }
-          }, 1200);
-        });
-      }, 1300);
-    });
+
+    if (val === 'no_visible') {
+      this.mostrarEtapaSubtipoNV(label);
+    } else {
+      this.mostrarEtapaArea(label);
+    }
   };
 
-  // PREGUNTA 1b: tea_subtipo_nv (Solo si no_visible)
-  AgenteBry.prototype.preguntaSubtipoNV = function () {
+  // ==========================================================================
+  // ETAPA 1b: SUBTIPO DISCAPACIDAD NO VISIBLE
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaSubtipoNV = function (prevLabel) {
     var self = this;
     this.pasoActual = 'SUBTIPO_NV';
-    self.agregarMensaje('agent', MENSAJES_BRY.q_subtipo_nv, function () {
-      self.mostrarChips(OPCIONES_SUBTIPO_NV, function (opt) {
-        self.respuestas.tea_subtipo_nv = opt.value;
-        self.sincronizarConWizard();
-        self.agregarMensaje('user', opt.label, function () {
-          var ack = MENSAJES_BRY.ack_subtipo_nv[opt.value] || 'Gracias por contarlo.';
-          self.mostrarEscribiendo(function () {
-            self.agregarMensaje('agent', ack, function () {
-              self.mostrarEscribiendo(function () {
-                self.preguntaArea();
-              }, 1200);
-            });
-          }, 1300);
-        });
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'No visible', function () {
+        self.mostrarEtapaCondicion();
       });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        var ack = MENSAJES_BRY.ack_condicion.no_visible;
+        stage.appendChild(self.crearFilaMensaje('agent', ack));
+
+        self.mostrarEscribiendoEnEtapa(stage, function () {
+          stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_subtipo_nv));
+
+          var chipsContainer = document.createElement('div');
+          chipsContainer.className = 'bry-quick-replies';
+
+          OPCIONES_SUBTIPO_NV.forEach(function (opt) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'bry-chip-btn';
+            btn.textContent = opt.label;
+            btn.addEventListener('click', function () {
+              self.respuestas.tea_subtipo_nv = opt.value;
+              self.sincronizarConWizard();
+              self.mostrarEtapaArea(opt.label);
+            });
+            chipsContainer.appendChild(btn);
+          });
+          stage.appendChild(chipsContainer);
+        }, 1100);
+      }, 1200);
     });
   };
 
-  // PREGUNTA 2: tea_area
-  AgenteBry.prototype.preguntaArea = function () {
+  // ==========================================================================
+  // ETAPA 2: ÁREA DE LA DIFICULTAD
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaArea = function (prevLabel) {
     var self = this;
     this.pasoActual = 'AREA';
-    self.agregarMensaje('agent', MENSAJES_BRY.q_area, function () {
-      self.mostrarChips(OPCIONES_AREA, function (opt) {
-        self.respuestas.tea_area = opt.value;
-        self.sincronizarConWizard();
-        self.agregarMensaje('user', opt.label, function () {
-          var ack = MENSAJES_BRY.ack_area[opt.value] || 'Entendido.';
-          self.mostrarEscribiendo(function () {
-            self.agregarMensaje('agent', ack, function () {
-              self.mostrarEscribiendo(function () {
-                self.preguntaEstado();
-              }, 1200);
-            });
-          }, 1300);
-        });
+    var condicionVal = this.respuestas.tea_condicion;
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'Condición elegida', function () {
+        self.mostrarEtapaCondicion();
       });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        var ack = MENSAJES_BRY.ack_condicion[condicionVal] || 'Gracias por contarme.';
+        stage.appendChild(self.crearFilaMensaje('agent', ack));
+
+        self.mostrarEscribiendoEnEtapa(stage, function () {
+          stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_area));
+
+          var chipsContainer = document.createElement('div');
+          chipsContainer.className = 'bry-quick-replies';
+
+          OPCIONES_AREA.forEach(function (opt) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'bry-chip-btn';
+            btn.textContent = opt.label;
+            btn.addEventListener('click', function () {
+              self.respuestas.tea_area = opt.value;
+              self.sincronizarConWizard();
+              self.mostrarEtapaEstado(opt.label);
+            });
+            chipsContainer.appendChild(btn);
+          });
+          stage.appendChild(chipsContainer);
+        }, 1100);
+      }, 1200);
     });
   };
 
-  // PREGUNTA 3: tea_estado
-  AgenteBry.prototype.preguntaEstado = function () {
+  // ==========================================================================
+  // ETAPA 3: QUÉ HA PASADO HASTA AHORA (ESTADO)
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaEstado = function (prevLabel) {
     var self = this;
     this.pasoActual = 'ESTADO';
     var area = this.respuestas.tea_area || 'otro';
     var opciones = OPCIONES_ESTADO_POR_AREA[area] || OPCIONES_ESTADO_POR_AREA.otro;
 
-    self.agregarMensaje('agent', MENSAJES_BRY.q_estado, function () {
-      self.mostrarChips(opciones, function (opt) {
-        self.respuestas.tea_estado = opt.value;
-        self.sincronizarConWizard();
-        self.agregarMensaje('user', opt.label, function () {
-          var ack = MENSAJES_BRY.ack_estado[opt.value] || 'Gracias por contarlo.';
-          self.mostrarEscribiendo(function () {
-            self.agregarMensaje('agent', ack, function () {
-              self.mostrarEscribiendo(function () {
-                if (opt.value === 'peticion_sin_respuesta') {
-                  self.preguntaTutelaPrevia();
-                } else if (opt.value === 'tutela_incumplida') {
-                  self.preguntaModalidad();
-                } else {
-                  self.pasoContacto();
-                }
-              }, 1200);
-            });
-          }, 1300);
-        });
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'Área elegida', function () {
+        self.mostrarEtapaArea();
       });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        var ack = MENSAJES_BRY.ack_area[area] || 'Entendido.';
+        stage.appendChild(self.crearFilaMensaje('agent', ack));
+
+        self.mostrarEscribiendoEnEtapa(stage, function () {
+          stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_estado));
+
+          var chipsContainer = document.createElement('div');
+          chipsContainer.className = 'bry-quick-replies';
+
+          opciones.forEach(function (opt) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'bry-chip-btn';
+            btn.textContent = opt.label;
+            btn.addEventListener('click', function () {
+              self.respuestas.tea_estado = opt.value;
+              self.sincronizarConWizard();
+
+              if (opt.value === 'peticion_sin_respuesta') {
+                self.mostrarEtapaTutelaPrevia(opt.label);
+              } else if (opt.value === 'tutela_incumplida') {
+                self.mostrarEtapaModalidad(opt.label);
+              } else {
+                self.mostrarEtapaContacto(opt.label);
+              }
+            });
+            chipsContainer.appendChild(btn);
+          });
+          stage.appendChild(chipsContainer);
+        }, 1100);
+      }, 1200);
     });
   };
 
-  // PREGUNTA 4a: tutela_previa (Solo si peticion_sin_respuesta)
-  AgenteBry.prototype.preguntaTutelaPrevia = function () {
+  // ==========================================================================
+  // ETAPA 4a: TUTELA PREVIA (Solo si peticion_sin_respuesta)
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaTutelaPrevia = function (prevLabel) {
     var self = this;
     this.pasoActual = 'TUTELA_PREVIA';
-    self.agregarMensaje('agent', MENSAJES_BRY.q_tutela_previa, function () {
-      self.mostrarChips(OPCIONES_TUTELA_PREVIA, function (opt) {
-        self.respuestas.tutela_previa = opt.value;
-        self.sincronizarConWizard();
-        self.agregarMensaje('user', opt.label, function () {
-          var ack = opt.value === 'si' ? MENSAJES_BRY.alerta_temeridad : MENSAJES_BRY.ack_tutela_previa.no;
-          self.mostrarEscribiendo(function () {
-            self.agregarMensaje('agent', ack, function () {
-              self.mostrarEscribiendo(function () {
-                self.pasoContacto();
-              }, 1200);
-            });
-          }, 1300);
-        });
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'Petición sin respuesta', function () {
+        self.mostrarEtapaEstado();
       });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        var ack = MENSAJES_BRY.ack_estado.peticion_sin_respuesta;
+        stage.appendChild(self.crearFilaMensaje('agent', ack));
+
+        self.mostrarEscribiendoEnEtapa(stage, function () {
+          stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_tutela_previa));
+
+          var chipsContainer = document.createElement('div');
+          chipsContainer.className = 'bry-quick-replies';
+
+          OPCIONES_TUTELA_PREVIA.forEach(function (opt) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'bry-chip-btn';
+            btn.textContent = opt.label;
+            btn.addEventListener('click', function () {
+              self.respuestas.tutela_previa = opt.value;
+              self.sincronizarConWizard();
+              self.mostrarEtapaContacto(opt.label);
+            });
+            chipsContainer.appendChild(btn);
+          });
+          stage.appendChild(chipsContainer);
+        }, 1100);
+      }, 1200);
     });
   };
 
-  // PREGUNTA 4b: tea_modalidad (Solo si tutela_incumplida)
-  AgenteBry.prototype.preguntaModalidad = function () {
+  // ==========================================================================
+  // ETAPA 4b: MODALIDAD DE DESACATO (Solo si tutela_incumplida)
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaModalidad = function (prevLabel) {
     var self = this;
     this.pasoActual = 'MODALIDAD';
-    self.agregarMensaje('agent', MENSAJES_BRY.q_modalidad, function () {
-      self.mostrarChips(OPCIONES_MODALIDAD_DESACATO, function (opt) {
-        self.respuestas.tea_modalidad = opt.value;
-        self.sincronizarConWizard();
-        self.agregarMensaje('user', opt.label, function () {
-          var ack = MENSAJES_BRY.ack_modalidad[opt.value] || 'Listo.';
-          self.mostrarEscribiendo(function () {
-            self.agregarMensaje('agent', ack, function () {
-              self.mostrarEscribiendo(function () {
-                self.pasoContacto();
-              }, 1200);
-            });
-          }, 1300);
-        });
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'Tutela incumplida', function () {
+        self.mostrarEtapaEstado();
       });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        var ack = MENSAJES_BRY.ack_estado.tutela_incumplida;
+        stage.appendChild(self.crearFilaMensaje('agent', ack));
+
+        self.mostrarEscribiendoEnEtapa(stage, function () {
+          stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_modalidad));
+
+          var chipsContainer = document.createElement('div');
+          chipsContainer.className = 'bry-quick-replies';
+
+          OPCIONES_MODALIDAD_DESACATO.forEach(function (opt) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'bry-chip-btn';
+            btn.textContent = opt.label;
+            btn.addEventListener('click', function () {
+              self.respuestas.tea_modalidad = opt.value;
+              self.sincronizarConWizard();
+              self.mostrarEtapaContacto(opt.label);
+            });
+            chipsContainer.appendChild(btn);
+          });
+          stage.appendChild(chipsContainer);
+        }, 1100);
+      }, 1200);
     });
   };
 
-  // PASO 5: DATOS DE CONTACTO (wz-nombre, wz-whatsapp, wz-correo, wz-consentimiento)
-  AgenteBry.prototype.pasoContacto = function () {
+  // ==========================================================================
+  // ETAPA 5: DATOS DE CONTACTO (wz-nombre, wz-whatsapp, wz-correo, wz-consentimiento)
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaContacto = function (prevLabel) {
     var self = this;
     this.pasoActual = 'CONTACTO';
-    this.mostrarEscribiendo(function () {
-      self.agregarMensaje('agent', MENSAJES_BRY.contacto, function () {
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'Paso previo', function () {
+        if (self.respuestas.tea_estado === 'peticion_sin_respuesta') self.mostrarEtapaTutelaPrevia();
+        else if (self.respuestas.tea_estado === 'tutela_incumplida') self.mostrarEtapaModalidad();
+        else self.mostrarEtapaEstado();
+      });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.contacto));
+
         var formCard = document.createElement('div');
         formCard.className = 'bry-card';
         formCard.innerHTML =
@@ -600,12 +708,11 @@
               '<span>Autorizo el tratamiento de mis datos de acuerdo con la <a href="#politica" style="color:var(--bry-turquoise);text-decoration:underline;">Política de Tratamiento de Datos de Lyzbri</a> (Ley 1581 de 2012).</span>' +
             '</label>' +
             '<button type="submit" class="bry-btn-primary" id="bry-btn-ver-resultado">' +
-              'Ver orientación gratuita' +
+              'Ver orientación gratuita →' +
             '</button>' +
           '</form>';
 
-        self.chatBody.appendChild(formCard);
-        self.scrollToBottom();
+        stage.appendChild(formCard);
 
         var form = formCard.querySelector('#bry-form-contacto');
         form.addEventListener('submit', function (e) {
@@ -630,27 +737,29 @@
           self.respuestas.consiente = true;
 
           self.sincronizarConWizard();
-          formCard.style.opacity = '0.7';
-          form.querySelector('#bry-btn-ver-resultado').disabled = true;
-
-          self.agregarMensaje('user', 'Mis datos: ' + nombre + ' (' + whatsapp + ')', function () {
-            self.mostrarResultadoFinal();
-          });
+          self.mostrarEtapaResultado();
         });
-      });
+      }, 1000);
     });
   };
 
-  // PASO 6 & 7: RESULTADO (EVALUACIÓN GRATUITA) + PASO AL PAGO
-  AgenteBry.prototype.mostrarResultadoFinal = function () {
+  // ==========================================================================
+  // ETAPA 6: RESULTADO FINAL (ORIENTACIÓN GRATUITA) + PASO AL PAGO
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaResultado = function () {
     var self = this;
     this.pasoActual = 'RESULTADO';
-
-    // Resolver producto y precio desde la lógica existente o cálculo compatible
     var evaluacion = this.calcularEvaluacion();
 
-    this.mostrarEscribiendo(function () {
-      self.agregarMensaje('agent', MENSAJES_BRY.resultado_intro, function () {
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior('Resultado legal', function () {
+        self.mostrarEtapaContacto();
+      });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.resultado_intro));
+
         var card = document.createElement('div');
         card.className = 'bry-card bry-card-result';
 
@@ -679,14 +788,13 @@
             'Continuar al pago seguro — ' + evaluacion.precioFormateado +
           '</button>';
 
-        self.chatBody.appendChild(card);
-        self.scrollToBottom();
+        stage.appendChild(card);
 
         var payBtn = card.querySelector('#bry-btn-continuar-pago');
         payBtn.addEventListener('click', function () {
           self.ejecutarSaltoAlPago(payBtn, evaluacion);
         });
-      });
+      }, 1200);
     });
   };
 
@@ -704,7 +812,6 @@
       correo: this.respuestas.correo
     };
 
-    // Si existen las funciones maestras de index.html, usarlas directamente
     if (typeof window.getResultado === 'function' && typeof window.resolverProducto === 'function') {
       var res = window.getResultado('tea', answers);
       var prod = window.resolverProducto('tea', answers);
@@ -724,7 +831,6 @@
       }
     }
 
-    // Fallback exacto idéntico al catálogo oficial de Lyzbri
     var precio = 149000;
     var nombreServicio = 'Derecho de petición (Gestión administrativa)';
     var titulo = 'Hay elementos para iniciar una solicitud formal de protección.';
@@ -767,7 +873,6 @@
     btn.disabled = true;
     btn.textContent = 'Preparando pago seguro con Bold...';
 
-    // 1. Si existe el botón real en index.html, transferir datos y disparar
     var payBtnReal = document.getElementById('resultado-pago');
     if (payBtnReal && typeof window.mostrarResultado === 'function') {
       this.sincronizarConWizard();
@@ -780,11 +885,7 @@
       return;
     }
 
-    // 2. Si es el entorno de pruebas autónomo
-    this.mostrarEscribiendo(function () {
-      btn.textContent = 'Pago simulado en entorno de pruebas ✅';
-      alert('¡Excelente! En producción este botón conecta con Bold (' + evaluacion.precioFormateado + '). Los datos fueron guardados y validados con éxito.');
-    });
+    alert('¡Excelente! En producción este botón conecta con Bold (' + evaluacion.precioFormateado + '). Los datos fueron guardados y validados con éxito.');
   };
 
   // Sincronización bidireccional con el Wizard tradicional (Contrato 3.4)
@@ -806,7 +907,6 @@
     if (this.respuestas.whatsapp) ans.whatsapp = this.respuestas.whatsapp;
     if (this.respuestas.correo) ans.correo = this.respuestas.correo;
 
-    // Sincronizar inputs HTML si existen en el DOM
     var setVal = function (id, val) {
       var el = document.getElementById(id);
       if (el && val) el.value = val;
@@ -816,38 +916,20 @@
     setVal('wz-correo', this.respuestas.correo);
   };
 
-  // Manejo de entrada de texto libre del usuario con detección inteligente
+  // Manejo de entrada de texto libre del usuario
   AgenteBry.prototype.manejarTextoUsuario = function () {
     var rawText = this.inputElement.value.trim();
     if (!rawText) return;
 
     this.inputElement.value = '';
     var textLower = rawText.toLowerCase();
-
     var self = this;
 
-    // Si está en el saludo inicial de bienvenida y el usuario escribe directamente
     if (this.pasoActual === 'BIENVENIDA') {
-      var box = document.getElementById('bry-start-action-box');
-      if (box) {
-        box.classList.add('bry-start-hidden');
-        setTimeout(function () {
-          if (box.parentNode) box.parentNode.removeChild(box);
-        }, 250);
-      }
-      this.agregarMensaje('user', rawText, function () {
-        self.mostrarEscribiendo(function () {
-          self.agregarMensaje('agent', MENSAJES_BRY.intro_tea, function () {
-            self.mostrarEscribiendo(function () {
-              self.preguntaCondicion();
-            }, 1200);
-          });
-        }, 1500);
-      });
+      this.iniciarOrientacionDesdeBienvenida();
       return;
     }
 
-    // Si está en el paso de contacto, el formulario embebido es el camino prioritario
     if (this.pasoActual === 'CONTACTO') {
       var formNombre = document.getElementById('bry-f-nombre');
       if (formNombre && !formNombre.value) {
@@ -859,13 +941,12 @@
 
     var emparejado = false;
 
-    // Reconocimiento según el paso actual
     if (this.pasoActual === 'CONDICION') {
       OPCIONES_CONDICION.forEach(function (opt) {
         opt.keys.forEach(function (k) {
           if (textLower.indexOf(k) !== -1 && !emparejado) {
             emparejado = true;
-            self.responderCondicion(opt.value, rawText);
+            self.responderCondicion(opt.value, opt.label);
           }
         });
       });
@@ -876,9 +957,7 @@
             emparejado = true;
             self.respuestas.tea_subtipo_nv = opt.value;
             self.sincronizarConWizard();
-            self.agregarMensaje('user', rawText, function () {
-              self.preguntaArea();
-            });
+            self.mostrarEtapaArea(opt.label);
           }
         });
       });
@@ -889,9 +968,7 @@
             emparejado = true;
             self.respuestas.tea_area = opt.value;
             self.sincronizarConWizard();
-            self.agregarMensaje('user', rawText, function () {
-              self.preguntaEstado();
-            });
+            self.mostrarEtapaEstado(opt.label);
           }
         });
       });
@@ -904,28 +981,21 @@
             emparejado = true;
             self.respuestas.tea_estado = opt.value;
             self.sincronizarConWizard();
-            self.agregarMensaje('user', rawText, function () {
-              if (opt.value === 'peticion_sin_respuesta') self.preguntaTutelaPrevia();
-              else if (opt.value === 'tutela_incumplida') self.preguntaModalidad();
-              else self.pasoContacto();
-            });
+            if (opt.value === 'peticion_sin_respuesta') self.mostrarEtapaTutelaPrevia(opt.label);
+            else if (opt.value === 'tutela_incumplida') self.mostrarEtapaModalidad(opt.label);
+            else self.mostrarEtapaContacto(opt.label);
           }
         });
       });
     }
 
     if (!emparejado) {
-      // Registrar fallo y verificar umbral anti-bucles (F3 B17)
       this.fallosConsecutivos++;
-      this.agregarMensaje('user', rawText, function () {
-        if (self.fallosConsecutivos >= 2) {
-          self.mostrarFallback();
-        } else {
-          self.mostrarEscribiendo(function () {
-            self.agregarMensaje('agent', 'Para asegurarme de orientarte con total precisión, por favor selecciona una de las opciones sugeridas arriba o cuéntame con otra palabra.');
-          });
-        }
-      });
+      if (this.fallosConsecutivos >= 2) {
+        this.mostrarFallback();
+      } else {
+        alert('Para orientarte con total precisión, por favor selecciona una de las opciones sugeridas en pantalla.');
+      }
     } else {
       this.fallosConsecutivos = 0;
     }
@@ -934,34 +1004,32 @@
   // Salida elegante / Fallback (F3 B17)
   AgenteBry.prototype.mostrarFallback = function () {
     var self = this;
-    this.mostrarEscribiendo(function () {
-      self.agregarMensaje('agent', MENSAJES_BRY.fallback, function () {
-        var card = document.createElement('div');
-        card.className = 'bry-card';
-        card.innerHTML =
-          '<p style="font-size:14px;color:var(--bry-text-main);margin-bottom:10px;font-weight:600;">Opciones de ayuda directa:</p>' +
-          '<button type="button" class="bry-btn-secondary" id="bry-btn-usar-formulario">' +
-            '📋 Abrir formulario clásico' +
-          '</button>' +
-          '<a href="https://wa.me/573000000000?text=Hola,%20deseo%20orientación%20jurídica%20para%20un%20caso%20de%20discapacidad/TEA" target="_blank" rel="noopener" class="bry-btn-secondary" style="display:flex;align-items:center;justify-content:center;text-decoration:none;gap:8px;">' +
-            '💬 Contactar asesora por WhatsApp' +
-          '</a>';
+    this.cambiarEtapa(function (stage) {
+      stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.fallback));
 
-        self.chatBody.appendChild(card);
-        self.scrollToBottom();
+      var card = document.createElement('div');
+      card.className = 'bry-card';
+      card.innerHTML =
+        '<p style="font-size:14px;color:var(--bry-text-main);margin-bottom:10px;font-weight:600;">Opciones de ayuda directa:</p>' +
+        '<button type="button" class="bry-btn-secondary" id="bry-btn-usar-formulario">' +
+          '📋 Abrir formulario clásico' +
+        '</button>' +
+        '<a href="https://wa.me/573000000000?text=Hola,%20deseo%20orientación%20jurídica%20para%20un%20caso%20de%20discapacidad/TEA" target="_blank" rel="noopener" class="bry-btn-secondary" style="display:flex;align-items:center;justify-content:center;text-decoration:none;gap:8px;">' +
+          '💬 Contactar asesora por WhatsApp' +
+        '</a>';
 
-        var btnForm = card.querySelector('#bry-btn-usar-formulario');
-        btnForm.addEventListener('click', function () {
-          // Mostrar wizard clásico si existe en el sitio
-          var cardWz = document.getElementById('wizard-card');
-          if (cardWz) {
-            self.host.style.display = 'none';
-            cardWz.style.display = 'block';
-            cardWz.scrollIntoView({ behavior: 'smooth' });
-          } else {
-            alert('Cambiando a vista de formulario clásico.');
-          }
-        });
+      stage.appendChild(card);
+
+      var btnForm = card.querySelector('#bry-btn-usar-formulario');
+      btnForm.addEventListener('click', function () {
+        var cardWz = document.getElementById('wizard-card');
+        if (cardWz) {
+          self.host.style.display = 'none';
+          cardWz.style.display = 'block';
+          cardWz.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          alert('Cambiando a vista de formulario clásico.');
+        }
       });
     });
   };

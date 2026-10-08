@@ -33,13 +33,13 @@
 /* Contenedor principal de la experiencia Bry */
 .bry-container {
   width: 100%;
-  max-width: 480px;
+  max-width: 490px;
   margin: 0 auto;
   background: var(--bry-bg-app);
   display: flex;
   flex-direction: column;
-  min-height: 600px;
-  height: 100%;
+  height: 590px; /* Altura ergonómica para que el visor no crezca indefinidamente */
+  max-height: 85vh;
   position: relative;
   overflow: hidden;
   border-radius: 28px;
@@ -124,6 +124,83 @@
   gap: 16px;
   scroll-behavior: smooth;
   background: #FFFFFF;
+}
+
+/* Escenario de paso a paso con reemplazo de turno (Flujo Anti-Gravity) */
+.bry-stage-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: bryStageEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+}
+
+.bry-stage-container.bry-stage-exit {
+  opacity: 0;
+  transform: translateY(-12px);
+  pointer-events: none;
+}
+
+@keyframes bryStageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bry-stage-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed rgba(226, 232, 240, 0.8);
+}
+
+.bry-btn-back-step {
+  background: none;
+  border: none;
+  color: var(--bry-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.bry-btn-back-step:hover {
+  background: #F0F4F8;
+  color: var(--bry-primary);
+}
+
+.bry-prev-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--bry-turquoise);
+  background: #F0F8F8;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(24, 184, 177, 0.2);
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bry-bold-name {
+  font-weight: 800;
+  color: #102A4C;
+  letter-spacing: 0.3px;
+  display: inline;
 }
 
 /* Fila de mensaje */
