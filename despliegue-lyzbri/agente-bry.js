@@ -44,11 +44,11 @@
     saludo: '¡Hola! Soy <strong class="bry-bold-name">Bry</strong>, tu asistente legal virtual. Estoy aquí para acompañarte con calma y sin complicaciones. Cuéntame, ¿en qué puedo ayudarte hoy?',
     intro_tea: 'Gracias por confiarme esto. Vamos paso a paso; son solo unas preguntas y, al final, te muestro una orientación inicial gratuita.',
     q_condicion: 'Para orientarte bien, cuéntame: ¿cuál es la condición o discapacidad de la persona? Lo que me compartas es confidencial.',
-    q_subtipo_nv: 'Gracias por la confianza. Las discapacidades no visibles tienen la misma protección que cualquier otra. ¿Dirías que es más bien…?',
+    q_subtipo_nv: 'Gracias por la confianza. Las discapacidades no visibles tienen la misma protección que cualquier otra. ¿En cuál de estas crees que encaja mejor...?',
     q_area: 'Entiendo. ¿En qué área se está presentando la dificultad ahora mismo?',
-    q_estado: '¿Y qué ha pasado hasta ahora con esta situación? Dime lo que más se parezca.',
-    q_tutela_previa: 'Una pregunta importante para cuidarte jurídicamente: ¿ya habías presentado antes una acción de tutela por estos mismos hechos?',
-    q_modalidad: 'Ya casi. ¿Cómo prefieres avanzar con el incidente de desacato?',
+    q_estado: 'Hablemos sobre lo que está pasando. Cuéntame, ¿cómo ha sido la situación hasta ahora? Elige la opción que mejor se adapte a tu caso',
+    q_tutela_previa: 'Entiendo lo frustrante que es no recibir respuesta. Para cuidarte jurídicamente: ¿ya habías presentado antes una acción de tutela por estos mismos hechos?',
+    q_modalidad: 'Lamento que no estén cumpliendo el fallo a tu favor; para eso existe el desacato. ¿Cómo prefieres avanzar con este proceso?',
     contacto: 'Ya casi terminamos. Para mostrarte tu resultado y poder acompañarte, ¿me compartes tu nombre y tu WhatsApp? El correo es opcional.',
     consentimiento: 'Para continuar necesito tu autorización para tratar tus datos conforme a la Política de Tratamiento de Datos de Lyzbri. ¿Me la das?',
     resultado_intro: 'Con lo que me contaste, esto es lo que identifico para tu caso:',
@@ -395,24 +395,14 @@
   };
 
   AgenteBry.prototype.iniciarOrientacionDesdeBienvenida = function () {
-    var self = this;
-    // Transición natural: la bienvenida desaparece suavemente y entra la orientación con escritura
-    this.cambiarEtapa(function (stage) {
-      self.mostrarEscribiendoEnEtapa(stage, function () {
-        var msgIntro = self.crearFilaMensaje('agent', MENSAJES_BRY.intro_tea);
-        stage.appendChild(msgIntro);
-
-        self.mostrarEscribiendoEnEtapa(stage, function () {
-          self.mostrarEtapaCondicion();
-        }, 1200);
-      }, 1400);
-    });
+    // Transición directa y fluida al Paso 1 con empatía y sin pantallas intermedias
+    this.mostrarEtapaCondicion(true);
   };
 
   // ==========================================================================
   // ETAPA 1: CONDICIÓN O DISCAPACIDAD
   // ==========================================================================
-  AgenteBry.prototype.mostrarEtapaCondicion = function () {
+  AgenteBry.prototype.mostrarEtapaCondicion = function (conIntro) {
     var self = this;
     this.pasoActual = 'CONDICION';
 
@@ -422,24 +412,27 @@
       });
       stage.appendChild(topbar);
 
-      var qRow = self.crearFilaMensaje('agent', MENSAJES_BRY.q_condicion);
-      stage.appendChild(qRow);
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        var textoCondicion = (conIntro ? (MENSAJES_BRY.intro_tea + ' ') : '') + MENSAJES_BRY.q_condicion;
+        var qRow = self.crearFilaMensaje('agent', textoCondicion);
+        stage.appendChild(qRow);
 
-      var chipsContainer = document.createElement('div');
-      chipsContainer.className = 'bry-quick-replies';
+        var chipsContainer = document.createElement('div');
+        chipsContainer.className = 'bry-quick-replies';
 
-      OPCIONES_CONDICION.forEach(function (opt) {
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'bry-chip-btn';
-        btn.textContent = opt.label;
-        btn.addEventListener('click', function () {
-          self.responderCondicion(opt.value, opt.label);
+        OPCIONES_CONDICION.forEach(function (opt) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bry-chip-btn';
+          btn.textContent = opt.label;
+          btn.addEventListener('click', function () {
+            self.responderCondicion(opt.value, opt.label);
+          });
+          chipsContainer.appendChild(btn);
         });
-        chipsContainer.appendChild(btn);
-      });
 
-      stage.appendChild(chipsContainer);
+        stage.appendChild(chipsContainer);
+      }, conIntro ? 900 : 500);
     });
   };
 
@@ -463,35 +456,31 @@
 
     this.cambiarEtapa(function (stage) {
       var topbar = self.crearBarraSuperior(prevLabel || 'No visible', function () {
-        self.mostrarEtapaCondicion();
+        self.mostrarEtapaCondicion(false);
       });
       stage.appendChild(topbar);
 
       self.mostrarEscribiendoEnEtapa(stage, function () {
-        var ack = MENSAJES_BRY.ack_condicion.no_visible;
-        stage.appendChild(self.crearFilaMensaje('agent', ack));
+        // Una sola burbuja con el texto exacto solicitado sin repetir frases
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_subtipo_nv));
 
-        self.mostrarEscribiendoEnEtapa(stage, function () {
-          stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_subtipo_nv));
+        var chipsContainer = document.createElement('div');
+        chipsContainer.className = 'bry-quick-replies';
 
-          var chipsContainer = document.createElement('div');
-          chipsContainer.className = 'bry-quick-replies';
-
-          OPCIONES_SUBTIPO_NV.forEach(function (opt) {
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'bry-chip-btn';
-            btn.textContent = opt.label;
-            btn.addEventListener('click', function () {
-              self.respuestas.tea_subtipo_nv = opt.value;
-              self.sincronizarConWizard();
-              self.mostrarEtapaArea(opt.label);
-            });
-            chipsContainer.appendChild(btn);
+        OPCIONES_SUBTIPO_NV.forEach(function (opt) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bry-chip-btn';
+          btn.textContent = opt.label;
+          btn.addEventListener('click', function () {
+            self.respuestas.tea_subtipo_nv = opt.value;
+            self.sincronizarConWizard();
+            self.mostrarEtapaArea(opt.label);
           });
-          stage.appendChild(chipsContainer);
-        }, 1100);
-      }, 1200);
+          chipsContainer.appendChild(btn);
+        });
+        stage.appendChild(chipsContainer);
+      }, 700);
     });
   };
 
@@ -501,39 +490,38 @@
   AgenteBry.prototype.mostrarEtapaArea = function (prevLabel) {
     var self = this;
     this.pasoActual = 'AREA';
-    var condicionVal = this.respuestas.tea_condicion;
 
     this.cambiarEtapa(function (stage) {
       var topbar = self.crearBarraSuperior(prevLabel || 'Condición elegida', function () {
-        self.mostrarEtapaCondicion();
+        if (self.respuestas.tea_condicion === 'no_visible') {
+          self.mostrarEtapaSubtipoNV();
+        } else {
+          self.mostrarEtapaCondicion(false);
+        }
       });
       stage.appendChild(topbar);
 
       self.mostrarEscribiendoEnEtapa(stage, function () {
-        var ack = MENSAJES_BRY.ack_condicion[condicionVal] || 'Gracias por contarme.';
-        stage.appendChild(self.crearFilaMensaje('agent', ack));
+        // Una sola burbuja clara y concisa sin repetir textos previos
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_area));
 
-        self.mostrarEscribiendoEnEtapa(stage, function () {
-          stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_area));
+        var chipsContainer = document.createElement('div');
+        chipsContainer.className = 'bry-quick-replies';
 
-          var chipsContainer = document.createElement('div');
-          chipsContainer.className = 'bry-quick-replies';
-
-          OPCIONES_AREA.forEach(function (opt) {
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'bry-chip-btn';
-            btn.textContent = opt.label;
-            btn.addEventListener('click', function () {
-              self.respuestas.tea_area = opt.value;
-              self.sincronizarConWizard();
-              self.mostrarEtapaEstado(opt.label);
-            });
-            chipsContainer.appendChild(btn);
+        OPCIONES_AREA.forEach(function (opt) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bry-chip-btn';
+          btn.textContent = opt.label;
+          btn.addEventListener('click', function () {
+            self.respuestas.tea_area = opt.value;
+            self.sincronizarConWizard();
+            self.mostrarEtapaEstado(opt.label);
           });
-          stage.appendChild(chipsContainer);
-        }, 1100);
-      }, 1200);
+          chipsContainer.appendChild(btn);
+        });
+        stage.appendChild(chipsContainer);
+      }, 700);
     });
   };
 
@@ -553,37 +541,33 @@
       stage.appendChild(topbar);
 
       self.mostrarEscribiendoEnEtapa(stage, function () {
-        var ack = MENSAJES_BRY.ack_area[area] || 'Entendido.';
-        stage.appendChild(self.crearFilaMensaje('agent', ack));
+        // Texto exacto solicitado por Liza: 'Hablemos sobre lo que está pasando. Cuéntame, ¿cómo ha sido la situación hasta ahora? Elige la opción que mejor se adapte a tu caso'
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_estado));
 
-        self.mostrarEscribiendoEnEtapa(stage, function () {
-          stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_estado));
+        var chipsContainer = document.createElement('div');
+        chipsContainer.className = 'bry-quick-replies';
 
-          var chipsContainer = document.createElement('div');
-          chipsContainer.className = 'bry-quick-replies';
+        opciones.forEach(function (opt) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bry-chip-btn';
+          btn.textContent = opt.label;
+          btn.addEventListener('click', function () {
+            self.respuestas.tea_estado = opt.value;
+            self.sincronizarConWizard();
 
-          opciones.forEach(function (opt) {
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'bry-chip-btn';
-            btn.textContent = opt.label;
-            btn.addEventListener('click', function () {
-              self.respuestas.tea_estado = opt.value;
-              self.sincronizarConWizard();
-
-              if (opt.value === 'peticion_sin_respuesta') {
-                self.mostrarEtapaTutelaPrevia(opt.label);
-              } else if (opt.value === 'tutela_incumplida') {
-                self.mostrarEtapaModalidad(opt.label);
-              } else {
-                self.mostrarEtapaContacto(opt.label);
-              }
-            });
-            chipsContainer.appendChild(btn);
+            if (opt.value === 'peticion_sin_respuesta') {
+              self.mostrarEtapaTutelaPrevia(opt.label);
+            } else if (opt.value === 'tutela_incumplida') {
+              self.mostrarEtapaModalidad(opt.label);
+            } else {
+              self.mostrarEtapaContacto(opt.label);
+            }
           });
-          stage.appendChild(chipsContainer);
-        }, 1100);
-      }, 1200);
+          chipsContainer.appendChild(btn);
+        });
+        stage.appendChild(chipsContainer);
+      }, 700);
     });
   };
 
@@ -601,30 +585,25 @@
       stage.appendChild(topbar);
 
       self.mostrarEscribiendoEnEtapa(stage, function () {
-        var ack = MENSAJES_BRY.ack_estado.peticion_sin_respuesta;
-        stage.appendChild(self.crearFilaMensaje('agent', ack));
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_tutela_previa));
 
-        self.mostrarEscribiendoEnEtapa(stage, function () {
-          stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_tutela_previa));
+        var chipsContainer = document.createElement('div');
+        chipsContainer.className = 'bry-quick-replies';
 
-          var chipsContainer = document.createElement('div');
-          chipsContainer.className = 'bry-quick-replies';
-
-          OPCIONES_TUTELA_PREVIA.forEach(function (opt) {
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'bry-chip-btn';
-            btn.textContent = opt.label;
-            btn.addEventListener('click', function () {
-              self.respuestas.tutela_previa = opt.value;
-              self.sincronizarConWizard();
-              self.mostrarEtapaContacto(opt.label);
-            });
-            chipsContainer.appendChild(btn);
+        OPCIONES_TUTELA_PREVIA.forEach(function (opt) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bry-chip-btn';
+          btn.textContent = opt.label;
+          btn.addEventListener('click', function () {
+            self.respuestas.tutela_previa = opt.value;
+            self.sincronizarConWizard();
+            self.mostrarEtapaContacto(opt.label);
           });
-          stage.appendChild(chipsContainer);
-        }, 1100);
-      }, 1200);
+          chipsContainer.appendChild(btn);
+        });
+        stage.appendChild(chipsContainer);
+      }, 700);
     });
   };
 
@@ -642,30 +621,25 @@
       stage.appendChild(topbar);
 
       self.mostrarEscribiendoEnEtapa(stage, function () {
-        var ack = MENSAJES_BRY.ack_estado.tutela_incumplida;
-        stage.appendChild(self.crearFilaMensaje('agent', ack));
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_modalidad));
 
-        self.mostrarEscribiendoEnEtapa(stage, function () {
-          stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_modalidad));
+        var chipsContainer = document.createElement('div');
+        chipsContainer.className = 'bry-quick-replies';
 
-          var chipsContainer = document.createElement('div');
-          chipsContainer.className = 'bry-quick-replies';
-
-          OPCIONES_MODALIDAD_DESACATO.forEach(function (opt) {
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'bry-chip-btn';
-            btn.textContent = opt.label;
-            btn.addEventListener('click', function () {
-              self.respuestas.tea_modalidad = opt.value;
-              self.sincronizarConWizard();
-              self.mostrarEtapaContacto(opt.label);
-            });
-            chipsContainer.appendChild(btn);
+        OPCIONES_MODALIDAD_DESACATO.forEach(function (opt) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bry-chip-btn';
+          btn.textContent = opt.label;
+          btn.addEventListener('click', function () {
+            self.respuestas.tea_modalidad = opt.value;
+            self.sincronizarConWizard();
+            self.mostrarEtapaContacto(opt.label);
           });
-          stage.appendChild(chipsContainer);
-        }, 1100);
-      }, 1200);
+          chipsContainer.appendChild(btn);
+        });
+        stage.appendChild(chipsContainer);
+      }, 700);
     });
   };
 
