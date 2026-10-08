@@ -1016,6 +1016,8 @@
   "email": "contacto@lyzbri.com"
 }
 </script>
+  <!-- Estilos Agente Inteligente Bry (Protocolo 3 / U3) -->
+  <link rel="stylesheet" href="agente-bry.css">
 </head>
 <body>
   <div class="topbar">
@@ -1617,6 +1619,9 @@
         </div>
 
         <!-- Wizard: una pregunta por pantalla, respuestas grandes, avance automático -->
+        <!-- Punto de montaje Agente Inteligente Bry (Protocolo 3 / U3) -->
+        <div id="bry-app" style="margin-top: 18px; display:none;"></div>
+
         <div id="wizard-card" class="card" style="margin-top: 18px; display:none;">
           <div class="wizard-head">
             <button type="button" class="btn-back" id="wizardBack" onclick="wizardBack()" style="visibility:hidden;">← Atrás</button>
@@ -2433,8 +2438,23 @@
       wz = { servicio: servicio, answers: {}, stepIndex: 0 };
       document.getElementById('service-picker').style.display = 'none';
       document.getElementById('form-confirmacion').style.display = 'none';
-      document.getElementById('wizard-card').style.display = 'block';
-      renderStep();
+
+      var bryMount = document.getElementById('bry-app');
+      var usarBry = (servicio === 'tea' && typeof window.AGENTE_BRY_CONFIG !== 'undefined' && window.AGENTE_BRY_CONFIG.activo !== false && bryMount);
+
+      if (usarBry) {
+        document.getElementById('wizard-card').style.display = 'none';
+        bryMount.style.display = 'block';
+        if (!bryMount.dataset.bryIniciado && typeof window.AgenteBry === 'function') {
+          bryMount.dataset.bryIniciado = 'true';
+          window.instanciaAgenteBry = new window.AgenteBry(bryMount);
+        }
+      } else {
+        if (bryMount) bryMount.style.display = 'none';
+        document.getElementById('wizard-card').style.display = 'block';
+        renderStep();
+      }
+
       var target = document.getElementById('contacto');
       if (target) target.scrollIntoView({ behavior: 'smooth' });
     }
@@ -3279,5 +3299,7 @@
       window.addEventListener('hashchange', abrirDesdeHash);
     })();
   </script>
+  <!-- Lógica Agente Inteligente Bry (Protocolo 3 / U3) -->
+  <script src="agente-bry.js"></script>
 </body>
 </html>
