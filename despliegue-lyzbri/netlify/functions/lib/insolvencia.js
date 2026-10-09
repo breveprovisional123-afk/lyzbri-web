@@ -299,10 +299,12 @@ function evaluarEmbudoEmpresarial(respuestas) {
 }
 
 // Generador del paquete de documentos y aviso de entrega post-pago (D10 / D11)
-function generarNotificacionPostPago(caseType, regimenClave, nombreCliente) {
-  var reg = LISTADOS_DOCUMENTOS[regimenClave] || LISTADOS_DOCUMENTOS.PN_NC_CGP;
-  var tiempo = TIEMPOS_ENTREGA[caseType] || '2 a 3 dias habiles';
-  var nombre = nombreCliente || 'Cliente';
+function generarNotificacionPostPago(caseTypeOrOpts, regimenClave, nombreCliente) {
+  var caseType = (typeof caseTypeOrOpts === 'object' && caseTypeOrOpts !== null) ? caseTypeOrOpts.case_type : caseTypeOrOpts;
+  var rKey = (typeof caseTypeOrOpts === 'object' && caseTypeOrOpts !== null) ? (caseTypeOrOpts.regimen || caseTypeOrOpts.regimenClave) : regimenClave;
+  var nombre = ((typeof caseTypeOrOpts === 'object' && caseTypeOrOpts !== null) ? (caseTypeOrOpts.nombre || caseTypeOrOpts.nombreCliente) : nombreCliente) || 'Cliente';
+  var reg = (rKey && LISTADOS_DOCUMENTOS[rKey]) ? LISTADOS_DOCUMENTOS[rKey] : LISTADOS_DOCUMENTOS.PN_NC_CGP;
+  var tiempo = (caseType && TIEMPOS_ENTREGA[caseType]) ? TIEMPOS_ENTREGA[caseType] : '2 a 3 dias habiles';
 
   var avisoEntrega = 'Al recibir tu documentación completa, entregamos en ' + tiempo + '. El reloj del tiempo de entrega inicia a partir del momento en que recibimos todos tus documentos y soportes completos.';
 
