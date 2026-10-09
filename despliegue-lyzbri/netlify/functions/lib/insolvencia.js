@@ -218,6 +218,17 @@ function evaluarEmbudoInsolvencia(respuestas) {
     };
   }
 
+    // Comerciante persona natural que busca representacion directa
+  if ((perfil === 'PN_COMERCIANTE' || perfil === 'comercio') &&
+      (objetivo === 'representacion' || objetivo === 'abogado' || objetivo === 'REPRESENTACION')) {
+    return {
+      route: 'DEUDAS_INSOLV_REP_NAT',
+      sku: 'REP_NAT',
+      case_type: 'INSOLV_REP_NAT',
+      regimen: 'PN_PC_CGP'
+    };
+  }
+
   // 3. Comerciante persona natural -> DIAG_NATURAL primero (clasificacion)
   if (perfil === 'PN_COMERCIANTE' || perfil === 'comercio') {
     return {
