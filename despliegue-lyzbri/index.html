@@ -2167,6 +2167,7 @@
       DEUDAS_INSOLV_SEG_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
       DEUDAS_INSOLV_REP_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
       DEUDAS_INSOLV_DIAG_EMP: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_EXP_EMP: 'Revisión manual de la abogada (alerta, sin documento automático)',
       MANUAL_REVIEW: 'Revisión manual de la abogada (alerta, sin documento automático)'
     };
     var ENVIOS_FORMULARIO = ['guardar-formulario', 'enviar-alimentos', 'enviar-documento'];
@@ -2259,6 +2260,10 @@
         processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_DIAG_EMP',
         form_key: 'insolv-diag-emp', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'diagnostico_empresarial',
         cta: 'Pagar diagnóstico empresarial y recibir listado de documentos' },
+      'DEUDAS|INSOLV_EXP_EMP': { nombre: 'Blindaje Legal y Protección de Activos (Ley 1116)', price: 1200000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_EXP_EMP',
+        form_key: 'insolv-exp-emp', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'blindaje_empresarial',
+        cta: 'Pagar blindaje empresarial y recibir listado de documentos' },
       'MARCA|FORMULARIO_REGISTRO': { nombre: 'Formulario de registro de marca (autogestión)', price: 199000,
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'MARCA',
         form_key: 'marca', submit: 'guardar-formulario', servicio_lyzbri: 'registro_marca' },
@@ -3052,6 +3057,7 @@
     CAMPOS_DETALLADOS['insolv-seg-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
     CAMPOS_DETALLADOS['insolv-rep-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
     CAMPOS_DETALLADOS['insolv-diag-emp'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
+    CAMPOS_DETALLADOS['insolv-exp-emp'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
 
     // Tutela y desacato usan los mismos campos de TEA más los datos propios de cada actuación.
     CAMPOS_DETALLADOS['tea-tutela'] = CAMPOS_DETALLADOS['tea'].concat([
