@@ -2166,6 +2166,7 @@
       DEUDAS_INSOLV_NEG_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
       DEUDAS_INSOLV_SEG_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
       DEUDAS_INSOLV_REP_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_DIAG_EMP: 'Revisión manual de la abogada (alerta, sin documento automático)',
       MANUAL_REVIEW: 'Revisión manual de la abogada (alerta, sin documento automático)'
     };
     var ENVIOS_FORMULARIO = ['guardar-formulario', 'enviar-alimentos', 'enviar-documento'];
@@ -2254,6 +2255,10 @@
         processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_REP_NAT',
         form_key: 'insolv-rep-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'pequeno_comerciante_representacion',
         cta: 'Solicitar representación y recibir contacto legal' },
+      'DEUDAS|INSOLV_DIAG_EMP': { nombre: 'Diagnóstico de Salvación Empresarial y Cesación de Pagos', price: 390000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_DIAG_EMP',
+        form_key: 'insolv-diag-emp', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'diagnostico_empresarial',
+        cta: 'Pagar diagnóstico empresarial y recibir listado de documentos' },
       'MARCA|FORMULARIO_REGISTRO': { nombre: 'Formulario de registro de marca (autogestión)', price: 199000,
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'MARCA',
         form_key: 'marca', submit: 'guardar-formulario', servicio_lyzbri: 'registro_marca' },
