@@ -294,6 +294,10 @@ function evaluarEmbudoEmpresarial(respuestas) {
   var operacion = respuestas.emp_operacion;
   var objetivo = respuestas.emp_objetivo;
 
+  if (crisis === 'tramite_en_curso' || objetivo === 'seguimiento' || objetivo === 'seguimiento_control') {
+    return { route: 'DEUDAS_INSOLV_SEG_EMP', sku: 'SEG_EMP', case_type: 'INSOLV_SEG_EMP', regimen: 'PJ_EMP' };
+  }
+
   if (objetivo === 'proceso_supersociedades') {
     return { route: 'DEUDAS_INSOLV_REORG_EMP', sku: 'REORG_EMP', case_type: 'INSOLV_REORG_EMP', regimen: 'PJ_EMP' };
   }
