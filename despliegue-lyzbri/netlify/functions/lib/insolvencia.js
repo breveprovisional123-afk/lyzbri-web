@@ -313,30 +313,41 @@ function evaluarEmbudoEmpresarial(respuestas) {
   return { route: 'DEUDAS_INSOLV_DIAG_EMP', sku: 'DIAG_EMPRESARIAL', case_type: 'INSOLV_DIAG_EMP', regimen: 'PJ_EMP' };
 }
 
-// Generador del paquete de documentos y aviso de entrega post-pago (D10 / D11)
+// Generador del paquete de documentos y aviso de entrega post-pago (D10 / D11 / V-M / V-O)
 function generarNotificacionPostPago(caseTypeOrOpts, regimenClave, nombreCliente) {
-  var caseType = (typeof caseTypeOrOpts === 'object' && caseTypeOrOpts !== null) ? caseTypeOrOpts.case_type : caseTypeOrOpts;
-  var rKey = (typeof caseTypeOrOpts === 'object' && caseTypeOrOpts !== null) ? (caseTypeOrOpts.regimen || caseTypeOrOpts.regimenClave) : regimenClave;
-  var nombre = ((typeof caseTypeOrOpts === 'object' && caseTypeOrOpts !== null) ? (caseTypeOrOpts.nombre || caseTypeOrOpts.nombreCliente) : nombreCliente) || 'Cliente';
+  var opts = (typeof caseTypeOrOpts === 'object' && caseTypeOrOpts !== null) ? caseTypeOrOpts : {};
+  var caseType = opts.case_type || caseTypeOrOpts;
+  var rKey = opts.regimen || opts.regimenClave || regimenClave;
+  var nombre = opts.nombre || opts.nombreCliente || nombreCliente || 'Cliente';
+  var radicado = opts.radicado || opts.referenciaPago || opts.referencia || 'RAD-PENDIENTE';
+  var email = opts.email || opts.correo || '';
+
   var reg = (rKey && LISTADOS_DOCUMENTOS[rKey]) ? LISTADOS_DOCUMENTOS[rKey] : LISTADOS_DOCUMENTOS.PN_NC_CGP;
-  var tiempo = (caseType && TIEMPOS_ENTREGA[caseType]) ? TIEMPOS_ENTREGA[caseType] : '2 a 3 dias habiles';
+  var tiempo = (caseType && TIEMPOS_ENTREGA[caseType]) ? TIEMPOS_ENTREGA[caseType] : '2 a 3 días hábiles';
 
   var avisoEntrega = 'Al recibir tu documentación completa, entregamos en ' + tiempo + '. El reloj del tiempo de entrega inicia a partir del momento en que recibimos todos tus documentos y soportes completos.';
 
-  var subject = 'Listado de documentos para tu tramite de insolvencia - Lyzbri';
+  var enlaceCarga = generarEnlaceCargaDocumentos(radicado, email);
+  var enlaceWhatsapp = generarEnlaceWhatsapp(radicado);
+
+  var subject = 'Listado de documentos para tu trámite de insolvencia (' + radicado + ') - Lyzbri';
 
   var bodyHtml = '<p>Hola, <b>' + nombre + '</b>:</p>' +
-    '<p>Hemos recibido tu pago y tus datos iniciales. Para avanzar con el estudio y estructuracion de tu caso bajo el regimen <b>' + reg.nombreRegimen + '</b>, requerimos los siguientes documentos:</p>' +
+    '<p>Hemos recibido tu pago y tus datos iniciales para el radicado <b>' + radicado + '</b>. Para avanzar con el estudio y estructuración de tu caso bajo el régimen <b>' + reg.nombreRegimen + '</b>, requerimos los siguientes documentos:</p>' +
     '<h4>1. Documentos obligatorios:</h4><ul>' +
     reg.obligatorios.map(function(d) { return '<li>' + d + '</li>'; }).join('') +
     '</ul>' +
-    '<h4>2. Requeridos para analisis:</h4><ul>' +
+    '<h4>2. Requeridos para análisis:</h4><ul>' +
     reg.requeridosAnalisis.map(function(d) { return '<li>' + d + '</li>'; }).join('') +
     '</ul>' +
     (reg.condicionales && reg.condicionales.length ? '<h4>3. Documentos condicionales (si aplican a tu caso):</h4><ul>' +
     reg.condicionales.map(function(d) { return '<li>' + d + '</li>'; }).join('') + '</ul>' : '') +
-    '<p style="background:#f8f9fa;padding:12px;border-left:4px solid #1a365d;font-weight:bold;">' + avisoEntrega + '</p>' +
-    '<p>Puedes remitir tus documentos escaneados o en PDF a este correo electronico o a traves de nuestra linea de atencion.</p>' +
+    '<div style="background:#f8f9fa;padding:14px;border-left:4px solid #1a365d;margin:16px 0;">' +
+    '<p style="margin:0 0 10px 0;font-weight:bold;">' + avisoEntrega + '</p>' +
+    '<p style="margin:0 0 10px 0;"><b>Sube tus documentos sin registrarte:</b> Se guardarán directamente en la carpeta de tu caso.</p>' +
+    '<p style="margin:0;"><a href="' + enlaceCarga + '" style="display:inline-block;padding:10px 18px;background:#1a365d;color:#ffffff;text-decoration:none;border-radius:4px;font-weight:bold;">Subir documentos a mi caso</a></p>' +
+    '</div>' +
+    '<p>Si tienes preguntas, contáctanos directamente por WhatsApp con tu radicado: <a href="' + enlaceWhatsapp + '">Soporte WhatsApp</a>.</p>' +
     '<p>Atentamente,<br><b>Equipo Lyzbri Legal</b></p>';
 
   return {
@@ -345,8 +356,26 @@ function generarNotificacionPostPago(caseTypeOrOpts, regimenClave, nombreCliente
     avisoEntrega: avisoEntrega,
     tiempoEntrega: tiempo,
     regimen: reg.nombreRegimen,
-    documentos: reg
+    documentos: reg,
+    enlaceCarga: enlaceCarga,
+    enlaceWhatsapp: enlaceWhatsapp,
+    radicado: radicado
   };
+}
+
+// Generador de enlace seguro de carga sin registro (Fillout / D13 / V-M / H3)
+// El enlace pre-popula el radicado y correo del caso, depositando en la carpeta Drive de ese radicado.
+function generarEnlaceCargaDocumentos(radicado, email) {
+  var r = encodeURIComponent(radicado || '');
+  var e = encodeURIComponent(email || '');
+  return 'https://forms.fillout.com/t/lyzbri-insolvencia-upload?radicado=' + r + (email ? '&email=' + e : '');
+}
+
+// Canal directo de soporte WhatsApp con radicado obligatorio (V-O)
+function generarEnlaceWhatsapp(radicado) {
+  var rad = radicado ? String(radicado) : 'PENDIENTE';
+  var msg = encodeURIComponent('Hola Liza, tengo una consulta sobre mi caso de insolvencia con radicado ' + rad);
+  return 'https://wa.me/573000000000?text=' + msg;
 }
 
 module.exports = {
@@ -355,5 +384,7 @@ module.exports = {
   calcularPrecioInsolvencia: calcularPrecioInsolvencia,
   evaluarEmbudoInsolvencia: evaluarEmbudoInsolvencia,
   evaluarEmbudoEmpresarial: evaluarEmbudoEmpresarial,
-  generarNotificacionPostPago: generarNotificacionPostPago
+  generarNotificacionPostPago: generarNotificacionPostPago,
+  generarEnlaceCargaDocumentos: generarEnlaceCargaDocumentos,
+  generarEnlaceWhatsapp: generarEnlaceWhatsapp
 };

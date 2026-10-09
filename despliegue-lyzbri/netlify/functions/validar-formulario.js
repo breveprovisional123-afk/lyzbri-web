@@ -60,10 +60,16 @@ exports.handler = async (event) => {
     const clave = contact.properties.lyzbri_service_code && contact.properties.lyzbri_case_type
       ? `${contact.properties.lyzbri_service_code}|${contact.properties.lyzbri_case_type}` : null;
     if (clave) {
+      // Rechazar checkout online de servicios no autorizados (D19: estrictamente los 4 SKUs naturales)
+      const permitidosDeudas = ['DEUDAS|INSOLV_DIAG_NAT', 'DEUDAS|INSOLV_MOD_NAT', 'DEUDAS|INSOLV_NEG_NAT', 'DEUDAS|INSOLV_SEG_NAT'];
+      if (clave.startsWith('DEUDAS|') && !permitidosDeudas.includes(clave)) {
+        return { statusCode: 400, body: JSON.stringify({ valid: false, reason: 'producto_requiere_contacto_manual', referenciaPago }) };
+      }
+
       const cantAcreedores = contact.properties.cant_acreedores || contact.properties.deuda_cantidad || contact.properties.numero_obligaciones || 1;
       const v = await verificarPago(referenciaPago, clave, cantAcreedores);
       if (!v.aprobado) {
-        return { statusCode: 200, body: JSON.stringify({ valid: false, reason: v.reason, referenciaPago }) };
+        return { statusCode: 400, body: JSON.stringify({ valid: false, reason: v.reason, referenciaPago }) };
       }
     }
 

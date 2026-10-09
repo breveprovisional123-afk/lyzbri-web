@@ -261,7 +261,21 @@ exports.handler = async (event) => {
         return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_create_failed', detail: errText }) };
       }
       const avisoMakeRespaldo = await avisarAMake(correo, referenciaPago);
-      return { statusCode: 200, body: JSON.stringify({ ok: true, creadoComoRespaldo: true, avisoMake: avisoMakeRespaldo }) };
+      let notifInsolvencia = null;
+      const esDeudasRespaldo = payload.servicio === 'deudas' || (campos && (campos.regimen_insolvencia || campos.monto_total_adeudado));
+      if (esDeudasRespaldo) {
+        const caseType = (campos && campos.lyzbri_case_type) || 'INSOLV_DIAG_NAT';
+        const regimen = (campos && campos.regimen_insolvencia) || 'PN_NC_CGP';
+        const nombreCliente = (campos && campos.nombre_deudor) || 'Cliente';
+        notifInsolvencia = generarNotificacionPostPago({
+          case_type: caseType,
+          regimen: regimen,
+          nombre: nombreCliente,
+          radicado: referenciaPago,
+          email: correo
+        });
+      }
+      return { statusCode: 200, body: JSON.stringify({ ok: true, creadoComoRespaldo: true, avisoMake: avisoMakeRespaldo, notifInsolvencia }) };
     }
 
     // 2c. El valor pagado en Bold debe corresponder al producto registrado en el caso.
@@ -296,7 +310,21 @@ exports.handler = async (event) => {
 
     const emailContacto = correo || (contact.properties && contact.properties.email) || null;
     const avisoMake = await avisarAMake(emailContacto, referenciaPago);
-    return { statusCode: 200, body: JSON.stringify({ ok: true, avisoMake }) };
+    let notifInsolvencia = null;
+    const esDeudas = payload.servicio === 'deudas' || (clave && clave.startsWith('DEUDAS|')) || (pc.lyzbri_service_code === 'deudas') || (campos && campos.regimen_insolvencia);
+    if (esDeudas) {
+      const caseType = pc.lyzbri_case_type || (campos && campos.lyzbri_case_type) || 'INSOLV_DIAG_NAT';
+      const regimen = pc.regimen_insolvencia || (campos && campos.regimen_insolvencia) || 'PN_NC_CGP';
+      const nombreCliente = pc.firstname || pc.nombre_deudor || (campos && (campos.nombre_deudor || campos.firstname)) || 'Cliente';
+      notifInsolvencia = generarNotificacionPostPago({
+        case_type: caseType,
+        regimen: regimen,
+        nombre: nombreCliente,
+        radicado: referenciaPago,
+        email: emailContacto
+      });
+    }
+    return { statusCode: 200, body: JSON.stringify({ ok: true, avisoMake, notifInsolvencia }) };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ ok: false, reason: 'server_error', message: err.message }) };
   }
