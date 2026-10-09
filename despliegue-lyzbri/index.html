@@ -1644,7 +1644,7 @@
                 <h4 id="resultado-producto-nombre" style="margin: 8px 0 0; font-size: 1.28rem; color: #0f172a; font-weight: 700; line-height: 1.35;"></h4>
               </div>
               <div id="resultado-precio-container" style="text-align: right; min-width: 170px; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                <span id="resultado-precio-label" style="font-size: 0.8rem; color: #64748b; display: block; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Valor del servicio</span>
+                <span id="resultado-precio-label" style="font-size: 0.8rem; color: #64748b; display: block; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Precio del servicio</span>
                 <div id="resultado-precio-valor" style="font-size: 1.65rem; font-weight: 800; color: #1e3a8a; line-height: 1.2; margin-top: 2px;"></div>
                 <span id="resultado-precio-sub" style="font-size: 0.78rem; color: #64748b; display: block; margin-top: 2px;">Pesos Colombianos (COP)</span>
               </div>
@@ -2300,9 +2300,15 @@
         form_key: 'insolv-neg-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'expediente_negociacion',
         cta: 'Pagar preparación de expediente y recibir listado de documentos' },
       'DEUDAS|INSOLV_SEG_NAT': { nombre: 'Gestión y Control de Tu Trámite (Seguimiento)', price: 29000,
+        descripcion: 'Servicio mensual de seguimiento, control y verificación informativa del estado procesal de tu trámite, audiencias y actuaciones en centros de conciliación o juzgados.',
         processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_SEG_NAT',
         form_key: 'insolv-seg-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'seguimiento_natural',
         cta: 'Pagar mes de seguimiento y recibir alertas' },
+      'DEUDAS|INSOLV_SEG_NAT_VALIDACION': { nombre: 'Validación de Trámite en Curso para Servicio de Seguimiento', price: 0,
+        descripcion: 'Servicio mensual de seguimiento, control y verificación informativa del estado procesal de tu trámite, audiencias y actuaciones en centros de conciliación o juzgados.',
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'LEAD_CONTACTO', make_route: 'DEUDAS_INSOLV_SEG_NAT',
+        form_key: 'insolv-seg-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'seguimiento_natural',
+        cta: 'Iniciar valoración profesional con la abogada' },
       'DEUDAS|INSOLV_REP_NAT': { nombre: 'Abogado de Insolvencia PN / Pequeño Comerciante (Representación)', price: 2000000,
         processing_mode: 'EVALUACION_HUMANA', delivery_type: 'LEAD_CONTACTO', make_route: 'DEUDAS_INSOLV_REP_NAT',
         form_key: 'insolv-rep-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'pequeno_comerciante_representacion',
@@ -2383,7 +2389,14 @@
           } else if ((a.p1_perfil === 'comercio' || a.p1_perfil === 'PN_COMERCIANTE') && (a.p3_objetivo === 'representacion' || a.p3_objetivo === 'abogado')) {
             clave = 'DEUDAS|INSOLV_REP_NAT';
           } else if (a.p2_situacion === 'caso_existente' || a.p2_situacion === 'CASO_EXISTENTE') {
-            clave = 'DEUDAS|INSOLV_SEG_NAT';
+            // Regla comercial aprobada (Liza): INSOLV_SEG_NAT bloqueado en catálogo abierto inicial.
+            // Solo se habilita si el cliente ya adquirió Expediente/Representación o viene de enlace posterior.
+            var urlParams = (typeof window !== 'undefined' && window.location && window.location.search) ? new URLSearchParams(window.location.search) : null;
+            var tieneDesbloqueoSeguimiento = Boolean(
+              (urlParams && (urlParams.get('desbloqueo') === 'seguimiento' || urlParams.get('sku') === 'INSOLV_SEG_NAT' || urlParams.get('cliente_activo') === 'true')) ||
+              (a && (a.desbloqueo_seguimiento || a.tiene_expediente_previo))
+            );
+            clave = tieneDesbloqueoSeguimiento ? 'DEUDAS|INSOLV_SEG_NAT' : 'DEUDAS|INSOLV_SEG_NAT_VALIDACION';
           } else if ((a.p1_perfil === 'no_comercio' || a.p1_perfil === 'PN_NO_COMERCIANTE') &&
                      (a.p2_situacion === 'mora_cobros' || a.p2_situacion === 'MORA_DECLARADA') &&
                      (a.p3_objetivo === 'propuesta_pago' || a.p3_objetivo === 'PROPUESTA_PAGO')) {
@@ -2640,10 +2653,10 @@
             tier: 'A'
           };
         }
-        if (ct === 'INSOLV_SEG_NAT') {
+        if (ct === 'INSOLV_SEG_NAT' || (prodRes && prodRes.clave === 'DEUDAS|INSOLV_SEG_NAT_VALIDACION')) {
           return {
-            titulo: 'Gestión y Control de Tu Trámite de Insolvencia',
-            descripcion: 'Seguimiento legal activo a las audiencias, acuerdos y cumplimiento de las etapas de tu procedimiento de insolvencia en curso.',
+            titulo: (prodRes && prodRes.clave === 'DEUDAS|INSOLV_SEG_NAT_VALIDACION') ? 'Validación de Trámite en Curso para Servicio de Seguimiento' : 'Gestión y Control de Tu Trámite (Seguimiento)',
+            descripcion: 'Servicio mensual de seguimiento, control y verificación informativa del estado procesal de tu trámite, audiencias y actuaciones en centros de conciliación o juzgados.',
             tier: 'A'
           };
         }
@@ -2858,7 +2871,7 @@
       if (descEl) {
         descEl.style.display = esInsolvencia ? 'none' : 'block';
       }
-      var esContacto = (producto && (producto.delivery_type === 'LEAD_CONTACTO' || ['INSOLV_DIAG_EMP', 'INSOLV_EXP_EMP', 'INSOLV_REORG_EMP', 'INSOLV_REP_NAT', 'INSOLV_SEG_EMP'].indexOf(producto.case_type) >= 0));
+      var esContacto = (producto && (producto.delivery_type === 'LEAD_CONTACTO' || ['INSOLV_DIAG_EMP', 'INSOLV_EXP_EMP', 'INSOLV_REORG_EMP', 'INSOLV_REP_NAT', 'INSOLV_SEG_EMP'].indexOf(producto.case_type) >= 0 || producto.clave === 'DEUDAS|INSOLV_SEG_NAT_VALIDACION'));
 
       if (prodNombreEl) prodNombreEl.textContent = producto ? producto.nombre : resultado.titulo;
       if (prodDescEl) prodDescEl.textContent = resultado.descripcion || (producto ? producto.nombre : '');
@@ -2872,35 +2885,36 @@
 
       if (esInsolvencia) {
         if (esContacto) {
-          // Requisito 3: Productos empresariales y de representación (contacto jurídico, sin precio ni botón de cobro en línea)
-          if (precioLabelEl) precioLabelEl.textContent = 'Modalidad';
-          if (precioValorEl) {
-            precioValorEl.textContent = 'Contacto Jurídico';
-            precioValorEl.style.fontSize = '1.25rem';
-            precioValorEl.style.color = '#1e3a8a';
-          }
-          if (precioSubEl) precioSubEl.textContent = 'Sin cobro en línea';
+          // Requisito: Productos empresariales, representación y validación (Lead High-Ticket personalizado sin pasarela de cobro abierta)
+          if (precioContainer) precioContainer.style.display = 'none';
           if (acreedoresDetalle) acreedoresDetalle.style.display = 'none';
           if (contactoDetalle) {
             contactoDetalle.style.display = 'block';
-            contactoDetalle.innerHTML = '<strong>Solicitud de contacto jurídico:</strong> Este servicio empresarial o de representación legal requiere evaluación especializada de la abogada. No se realiza cobro automatizado en línea ni pasarela de pago.';
+            contactoDetalle.innerHTML = '<div style="margin-bottom:8px;font-size:1.06rem;font-weight:700;color:#0f172a;">Atención Jurídica Senior y Personalizada</div>' +
+              '<p style="margin:0;color:#334155;line-height:1.6;font-size:0.95rem;">Este nivel de servicio requiere un diagnóstico y evaluación jurídica especializada junto a nuestros expertos. Comienza hoy tu proceso de valoración profesional y asegura el respaldo estratégico que tu patrimonio exige.</p>';
           }
           if (bannerPausa) bannerPausa.style.display = 'none';
           if (pagoNota) pagoNota.style.display = 'none';
 
           payBtn.style.display = 'inline-block';
-          payBtn.textContent = (producto && producto.cta) ? producto.cta : 'Solicitar evaluación y contacto legal';
-          payBtn.href = '#contacto-confirmado';
+          payBtn.textContent = (producto && producto.cta) ? producto.cta : 'Iniciar valoración profesional con la abogada';
+          var msgContacto = encodeURIComponent('Hola Liza / Equipo Lyzbri, acabo de solicitar la valoración para ' + (producto ? producto.nombre : 'Insolvencia / Representación') + ' bajo el radicado ' + reference + '. Deseo iniciar la atención jurídica senior personalizada.');
+          payBtn.href = 'https://wa.me/573115872929?text=' + msgContacto;
+          payBtn.target = '_blank';
           payBtn.onclick = function (e) {
-            e.preventDefault();
-            payBtn.style.display = 'none';
-            if (contactoDetalle) {
-              contactoDetalle.innerHTML = '<div style="background:#edf2f7;border-left:4px solid #1a365d;padding:12px;margin-top:10px;border-radius:4px;color:#0f172a;"><strong>¡Solicitud registrada con éxito!</strong><br>Radicado de contacto: <code>' + reference + '</code><br><br>Hemos recibido los datos de tu empresa o caso de representación. Un miembro del equipo jurídico de Lyzbri se comunicará contigo vía WhatsApp o correo electrónico para continuar con la evaluación legal.</div>';
-            }
+            setTimeout(function () {
+              if (contactoDetalle) {
+                contactoDetalle.innerHTML = '<div style="background:#f0fdf4;border-left:4px solid #16a34a;padding:14px;border-radius:6px;color:#14532d;line-height:1.5;">' +
+                  '<strong>¡Solicitud de valoración radicada con éxito!</strong><br>' +
+                  'Radicado: <code>' + reference + '</code><br><br>' +
+                  'Hemos abierto tu canal prioritario en WhatsApp con la abogada. Si tu aplicación no abrió automáticamente, <a href="https://wa.me/573115872929?text=' + msgContacto + '" target="_blank" style="color:#15803d;font-weight:700;text-decoration:underline;">haz clic aquí para abrir WhatsApp</a>.</div>';
+              }
+            }, 300);
           };
         } else {
-          // Requisito 1 y 2: Productos naturales de insolvencia (precio en COP visible + acreedores)
-          if (precioLabelEl) precioLabelEl.textContent = PAUSA_VENTAS_INSOLVENCIA ? 'Precio informativo' : 'Precio del servicio';
+          // Requisito 1 y 2: Productos naturales de insolvencia (precio visible + acreedores)
+          if (precioContainer) precioContainer.style.display = 'block';
+          if (precioLabelEl) precioLabelEl.textContent = 'Precio del servicio';
           if (precioValorEl) {
             precioValorEl.textContent = formatCOP(monto);
             precioValorEl.style.fontSize = '1.65rem';
@@ -2918,7 +2932,7 @@
               bannerPausa.style.display = 'block';
               bannerPausa.innerHTML = '<strong>Pausa preventiva de admisiones:</strong><br>' +
                 'Para garantizar la atención jurídica personalizada y el cumplimiento estricto de los tiempos de entrega, la recepción de nuevos pagos en línea para este servicio se encuentra temporalmente en pausa preventiva.<br><br>' +
-                '<strong>Precio informativo cotizado para tu caso: ' + formatCOP(monto) + ' COP</strong> (base: ' + etiquetaAcreedores + ').<br>' +
+                '<strong>Precio del servicio cotizado para tu caso: ' + formatCOP(monto) + ' COP</strong> (base: ' + etiquetaAcreedores + ').<br>' +
                 'Tus respuestas han sido registradas bajo el radicado <code>' + reference + '</code> para asignarte turno prioritario en lista de espera.';
             }
             if (pagoNota) pagoNota.style.display = 'none';
@@ -2926,7 +2940,7 @@
             payBtn.style.display = 'inline-block';
             payBtn.textContent = 'Unirme a la lista de espera por WhatsApp (' + formatCOP(monto) + ')';
             var msgWaitlist = encodeURIComponent('Hola Liza, completé mi evaluación de insolvencia con radicado ' + reference + ' para ' + (producto ? producto.nombre : 'Insolvencia') + ' con ' + etiquetaAcreedores + ' (valor cotizado: ' + formatCOP(monto) + '). Deseo unirme a la lista de espera prioritaria.');
-            payBtn.href = 'https://wa.me/573000000000?text=' + msgWaitlist;
+            payBtn.href = 'https://wa.me/573115872929?text=' + msgWaitlist;
             payBtn.target = '_blank';
             payBtn.onclick = null;
           } else {

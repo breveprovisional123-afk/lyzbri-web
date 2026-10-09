@@ -988,7 +988,7 @@
         '<button type="button" class="bry-btn-secondary" id="bry-btn-usar-formulario">' +
           '📋 Abrir formulario clásico' +
         '</button>' +
-        '<a href="https://wa.me/573000000000?text=Hola,%20deseo%20orientación%20jurídica%20para%20un%20caso%20de%20discapacidad/TEA" target="_blank" rel="noopener" class="bry-btn-secondary" style="display:flex;align-items:center;justify-content:center;text-decoration:none;gap:8px;">' +
+        '<a href="https://wa.me/573115872929?text=Hola,%20deseo%20orientación%20jurídica%20para%20un%20caso%20de%20discapacidad/TEA" target="_blank" rel="noopener" class="bry-btn-secondary" style="display:flex;align-items:center;justify-content:center;text-decoration:none;gap:8px;">' +
           '💬 Contactar asesora por WhatsApp' +
         '</a>';
 

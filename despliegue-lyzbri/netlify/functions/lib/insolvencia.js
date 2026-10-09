@@ -368,7 +368,7 @@ function generarEnlaceCargaDocumentos(radicado, email) {
 function generarEnlaceWhatsapp(radicado) {
   var rad = radicado ? String(radicado) : 'PENDIENTE';
   var msg = encodeURIComponent('Hola Liza, tengo una consulta sobre mi caso de insolvencia con radicado ' + rad);
-  return 'https://wa.me/573000000000?text=' + msg;
+  return 'https://wa.me/573115872929?text=' + msg;
 }
 
 module.exports = {
