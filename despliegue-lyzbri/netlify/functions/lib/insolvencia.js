@@ -132,7 +132,7 @@ const LISTADOS_DOCUMENTOS = {
   }
 };
 
-// Calculo server-side de precio escalonado anti-manipulacion (Regla 3-A / D9)
+// Calculo server-side de precio escalonado anti-manipulacion (Regla comercial aprobada / 5 tramos)
 function calcularPrecioInsolvencia(caseType, cantAcreedores) {
   var n = parseInt(cantAcreedores, 10);
   if (isNaN(n) || n < 1) n = 1;
@@ -142,45 +142,38 @@ function calcularPrecioInsolvencia(caseType, cantAcreedores) {
     case 'INSOLV_MOD_NAT':
       if (n <= 2) return 89000;
       if (n <= 5) return 179000;
-      var bloquesNat = Math.ceil((n - 5) / 2);
-      return 179000 + (bloquesNat * 89000);
+      if (n <= 7) return 268000;
+      if (n <= 9) return 357000;
+      return 446000;
 
     case 'INSOLV_NEG_NAT':
       if (n <= 2) return 249000;
       if (n <= 5) return 499000;
-      var bloquesExp = Math.ceil((n - 5) / 2);
-      return 499000 + (bloquesExp * 249000);
+      if (n <= 7) return 748000;
+      if (n <= 9) return 998000;
+      return 1247000;
 
     case 'INSOLV_SEG_NAT':
       if (n <= 2) return 29000;
       if (n <= 5) return 59000;
-      var bloquesSeg = Math.ceil((n - 5) / 2);
-      return 59000 + (bloquesSeg * 29000);
+      if (n <= 7) return 88000;
+      if (n <= 9) return 117000;
+      return 146000;
 
     case 'INSOLV_REP_NAT':
-      if (n <= 2) return 2000000;
-      var bloquesRep = Math.ceil((n - 2) / 2);
-      return 2000000 + (bloquesRep * 2000000);
+      return 2000000;
 
     case 'INSOLV_DIAG_EMP':
-      if (n <= 2) return 390000;
-      if (n <= 5) return 790000;
-      var bloquesDiagEmp = Math.ceil((n - 5) / 2);
-      return 790000 + (bloquesDiagEmp * 390000);
+      return 390000;
 
     case 'INSOLV_EXP_EMP':
-      if (n <= 2) return 1200000;
-      if (n <= 5) return 2900000;
-      var bloquesExpEmp = Math.ceil((n - 5) / 2);
-      return 2900000 + (bloquesExpEmp * 1200000);
+      return 1200000;
 
     case 'INSOLV_REORG_EMP':
-      return 15000000; // Tarifa base referencial / cotizacion asistida
+      return 15000000;
 
     case 'INSOLV_SEG_EMP':
-      if (n <= 2) return 149000;
-      var bloquesSegEmp = Math.ceil((n - 2) / 2);
-      return 149000 + (bloquesSegEmp * 149000);
+      return 149000;
 
     default:
       return null;

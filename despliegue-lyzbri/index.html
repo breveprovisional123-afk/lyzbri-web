@@ -1634,17 +1634,45 @@
         <!-- Resultado: una sola acción hacia el pago -->
         <article id="form-confirmacion" class="card" style="margin-top: 18px; display:none;">
           <span class="tag" id="resultado-etiqueta">Resultado inicial</span>
-          <h3 id="resultado-titulo">Tu evaluación inicial está lista.</h3>
+          <h3 id="resultado-titulo" style="margin-top: 8px; margin-bottom: 14px;">Tu evaluación inicial está lista.</h3>
+
+          <!-- Detalle visible del producto y precio seleccionado -->
+          <div id="resultado-producto-box" style="margin: 20px 0; padding: 22px; border-radius: 10px; background: #ffffff; border: 1.5px solid #cbd5e1; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05); color: #0f172a;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 14px;">
+              <div style="flex: 1 1 280px;">
+                <span class="tag" id="resultado-tag-producto" style="background:#e0f2fe; color:#0369a1; font-weight:600; font-size:0.8rem; padding: 3px 10px; border-radius: 12px;">Servicio determinado</span>
+                <h4 id="resultado-producto-nombre" style="margin: 8px 0 0; font-size: 1.28rem; color: #0f172a; font-weight: 700; line-height: 1.35;"></h4>
+              </div>
+              <div id="resultado-precio-container" style="text-align: right; min-width: 170px; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <span id="resultado-precio-label" style="font-size: 0.8rem; color: #64748b; display: block; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Valor del servicio</span>
+                <div id="resultado-precio-valor" style="font-size: 1.65rem; font-weight: 800; color: #1e3a8a; line-height: 1.2; margin-top: 2px;"></div>
+                <span id="resultado-precio-sub" style="font-size: 0.78rem; color: #64748b; display: block; margin-top: 2px;">Pesos Colombianos (COP)</span>
+              </div>
+            </div>
+
+            <p id="resultado-producto-desc" style="margin: 0 0 16px 0; color: #334155; font-size: 0.96rem; line-height: 1.55;"></p>
+
+            <div id="resultado-acreedores-detalle" style="padding: 10px 14px; background: #f1f5f9; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.92rem; color: #334155; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+              <span><strong>Base de cálculo:</strong> <span id="resultado-acreedores-texto">1 a 2 acreedores</span></span>
+              <span id="resultado-tarifa-tipo" style="font-size: 0.8rem; background: #e2e8f0; color: #334155; padding: 2px 10px; border-radius: 12px; font-weight: 600;">Tarifa escalonada oficial</span>
+            </div>
+
+            <div id="resultado-contacto-detalle" style="display: none; padding: 12px 14px; background: #eff6ff; border-radius: 6px; border-left: 4px solid #2563eb; font-size: 0.93rem; color: #1e3a8a; line-height: 1.5;">
+              <strong>Atención jurídica personalizada:</strong> Este servicio requiere diagnóstico y evaluación jurídica especializada. La solicitud es de contacto jurídico, sin cobro en línea ni pasarela de pago.
+            </div>
+          </div>
+
           <p id="resultado-descripcion"></p>
           <div id="resultado-alerta-tutela" style="display:none; margin: 16px 0; padding: 14px 16px; border-radius: 8px; background: rgba(220, 53, 69, 0.12); border-left: 4px solid #dc3545; color: #fff; line-height: 1.5; font-size: 0.95rem;">
             <strong>Atención jurídica importante:</strong> Presentar una nueva tutela por los mismos hechos ante otro juez puede considerarse actuación temeraria (Art. 38 Decreto 2591 de 1991) y acarrear sanciones legales.<br><br>
             En Lyzbri tramitamos este caso bajo revisión manual previa de una abogada para verificar la procedencia antes de cualquier radicación. Por favor envíe copia del fallo o del radicado de su tutela anterior a nuestro correo oficial: <a href="mailto:contacto@lyzbri.com" style="color: #64b5f6; text-decoration: underline;">contacto@lyzbri.com</a>
           </div>
+          <div id="aviso-pausa-insolvencia" style="display:none; background:#fff8e6; border-left:4px solid #d97706; padding:14px; margin:16px 0; border-radius:4px; color:#92400e; font-size:0.95rem; line-height:1.5;"></div>
           <p class="fine-print" id="resultado-nota">Este resultado organiza la información disponible; la viabilidad jurídica y el alcance final requieren revisión profesional.</p>
           <div class="form-actions" style="margin-top:18px;">
             <a class="btn btn-primary" id="resultado-pago" href="#" target="_blank" rel="noopener">Continuar al pago</a>
           </div>
-          <p class="fine-print">El pago se procesa de forma segura a través de Bold: podrás pagar con tarjeta débito o crédito, PSE y los demás medios que Bold tenga habilitados.</p>
+          <p class="fine-print" id="resultado-pago-nota">El pago se procesa de forma segura a través de Bold: podrás pagar con tarjeta débito o crédito, PSE y los demás medios que Bold tenga habilitados.</p>
         </article>
       </div>
     </section>
@@ -2192,38 +2220,47 @@
       if (caseType === 'INSOLV_DIAG_NAT' || caseType === 'INSOLV_MOD_NAT') {
         if (n <= 2) return 89000;
         if (n <= 5) return 179000;
-        return 179000 + Math.ceil((n - 5) / 2) * 89000;
+        if (n <= 7) return 268000;
+        if (n <= 9) return 357000;
+        return 446000;
       }
       if (caseType === 'INSOLV_NEG_NAT') {
         if (n <= 2) return 249000;
         if (n <= 5) return 499000;
-        return 499000 + Math.ceil((n - 5) / 2) * 249000;
+        if (n <= 7) return 748000;
+        if (n <= 9) return 998000;
+        return 1247000;
       }
       if (caseType === 'INSOLV_SEG_NAT') {
         if (n <= 2) return 29000;
         if (n <= 5) return 59000;
-        return 59000 + Math.ceil((n - 5) / 2) * 29000;
+        if (n <= 7) return 88000;
+        if (n <= 9) return 117000;
+        return 146000;
       }
       if (caseType === 'INSOLV_REP_NAT') {
-        if (n <= 2) return 2000000;
-        return 2000000 + Math.ceil((n - 2) / 2) * 2000000;
+        return 2000000;
       }
       if (caseType === 'INSOLV_DIAG_EMP') {
-        if (n <= 2) return 390000;
-        if (n <= 5) return 790000;
-        return 790000 + Math.ceil((n - 5) / 2) * 390000;
+        return 390000;
       }
       if (caseType === 'INSOLV_EXP_EMP') {
-        if (n <= 2) return 1200000;
-        if (n <= 5) return 2900000;
-        return 2900000 + Math.ceil((n - 5) / 2) * 1200000;
+        return 1200000;
       }
       if (caseType === 'INSOLV_REORG_EMP') return 15000000;
       if (caseType === 'INSOLV_SEG_EMP') {
-        if (n <= 2) return 149000;
-        return 149000 + Math.ceil((n - 2) / 2) * 149000;
+        return 149000;
       }
       return 89000;
+    }
+
+    function obtenerEtiquetaAcreedores(cant) {
+      var n = parseInt(cant, 10);
+      if (isNaN(n) || n <= 2) return '1 a 2 acreedores';
+      if (n <= 5) return '3 a 5 acreedores';
+      if (n <= 7) return '6 a 7 acreedores';
+      if (n <= 9) return '8 a 9 acreedores';
+      return '10 o más acreedores';
     }
 
     var CATALOGO = {
@@ -2334,16 +2371,26 @@
           clave = 'DEUDAS|CARTA_NEGOCIACION';
         } else if (a && a.p1_perfil) {
           if (a.p1_perfil === 'juridica' || a.p1_perfil === 'PERSONA_JURIDICA') {
-            clave = 'DEUDAS|INSOLV_DIAG_EMP';
+            if (a.p2_situacion === 'caso_existente' || a.p2_situacion === 'CASO_EXISTENTE') {
+              clave = 'DEUDAS|INSOLV_SEG_EMP';
+            } else if (a.p3_objetivo === 'liquidacion' || a.p3_objetivo === 'reorganizacion') {
+              clave = 'DEUDAS|INSOLV_REORG_EMP';
+            } else if ((a.p2_situacion === 'mora_cobros' || a.p2_situacion === 'MORA_DECLARADA') && (a.p3_objetivo === 'propuesta_pago' || a.p3_objetivo === 'PROPUESTA_PAGO')) {
+              clave = 'DEUDAS|INSOLV_EXP_EMP';
+            } else {
+              clave = 'DEUDAS|INSOLV_DIAG_EMP';
+            }
+          } else if ((a.p1_perfil === 'comercio' || a.p1_perfil === 'PN_COMERCIANTE') && (a.p3_objetivo === 'representacion' || a.p3_objetivo === 'abogado')) {
+            clave = 'DEUDAS|INSOLV_REP_NAT';
           } else if (a.p2_situacion === 'caso_existente' || a.p2_situacion === 'CASO_EXISTENTE') {
-            clave = (CATALOGO['DEUDAS|INSOLV_SEG_NAT']) ? 'DEUDAS|INSOLV_SEG_NAT' : 'DEUDAS|INSOLV_DIAG_NAT';
+            clave = 'DEUDAS|INSOLV_SEG_NAT';
           } else if ((a.p1_perfil === 'no_comercio' || a.p1_perfil === 'PN_NO_COMERCIANTE') &&
                      (a.p2_situacion === 'mora_cobros' || a.p2_situacion === 'MORA_DECLARADA') &&
                      (a.p3_objetivo === 'propuesta_pago' || a.p3_objetivo === 'PROPUESTA_PAGO')) {
-            clave = (CATALOGO['DEUDAS|INSOLV_NEG_NAT']) ? 'DEUDAS|INSOLV_NEG_NAT' : 'DEUDAS|INSOLV_DIAG_NAT';
+            clave = 'DEUDAS|INSOLV_NEG_NAT';
           } else if ((a.p2_situacion === 'mora_cobros' || a.p2_situacion === 'MORA_DECLARADA') &&
                      (a.p3_objetivo === 'liquidacion' || a.p3_objetivo === 'revisar_acuerdo')) {
-            clave = (CATALOGO['DEUDAS|INSOLV_MOD_NAT']) ? 'DEUDAS|INSOLV_MOD_NAT' : 'DEUDAS|INSOLV_DIAG_NAT';
+            clave = 'DEUDAS|INSOLV_MOD_NAT';
           } else {
             clave = 'DEUDAS|INSOLV_DIAG_NAT';
           }
@@ -2542,44 +2589,67 @@
         return { titulo: 'Resultado de tu evaluación inicial', descripcion: HD_RESULTADOS[ctHD] || '', tier: 'B' };
       }
       if (servicio === 'deudas') {
-        if (a && a.p1_perfil) {
-          if (a.p1_perfil === 'juridica' || a.p1_perfil === 'PERSONA_JURIDICA') {
-            return {
-              titulo: 'Tu caso requiere una verificación empresarial especializada.',
-              descripcion: 'Para sociedades y entidades jurídicas analizamos la viabilidad y requisitos conforme a la Ley 1116 de 2006.',
-              tier: 'B'
-            };
-          }
-          if (a.p3_objetivo === 'liquidacion' || a.p3_objetivo === 'revisar_acuerdo') {
-            return {
-              titulo: 'Estrategia Legal: Negociación de Deudas vs. Liquidación Patrimonial.',
-              descripcion: 'Evaluamos cuál es la vía jurídica más conveniente para tu caso entre acuerdo de pagos o liquidación patrimonial.',
-              tier: 'A'
-            };
-          }
-          if (a.p3_objetivo === 'propuesta_pago') {
-            return {
-              titulo: 'Preparación de Expediente y Defensa para Negociación de Deudas.',
-              descripcion: 'Estructuramos tu expediente completo y propuesta financiera conforme al Código General del Proceso (Ley 2445 de 2025).',
-              tier: 'A'
-            };
-          }
-          if (a.p2_situacion === 'caso_existente') {
-            return {
-              titulo: 'Gestión y Control de Tu Trámite de Insolvencia.',
-              descripcion: 'Seguimiento y control de hitos, audiencias y calendario de pagos para trámites de insolvencia en curso.',
-              tier: 'A'
-            };
-          }
+        var prodRes = resolverProducto(servicio, a);
+        var ct = prodRes ? prodRes.case_type : null;
+        if (ct === 'INSOLV_DIAG_EMP') {
           return {
-            titulo: 'Diagnóstico de Insolvencia: Evalúa Si Puedes Detener Embargos.',
-            descripcion: 'Evaluamos si cumples los requisitos legales para suspender cobros y acudir a los mecanismos de insolvencia de persona natural.',
+            titulo: 'Diagnóstico de Salvación Empresarial y Cesación de Pagos',
+            descripcion: 'Evaluamos el estado contable, deudas financieras y operativas de tu empresa bajo el régimen de insolvencia empresarial (Ley 1116 de 2006).',
+            tier: 'B'
+          };
+        }
+        if (ct === 'INSOLV_EXP_EMP') {
+          return {
+            titulo: 'Blindaje Legal y Protección de Activos (Ley 1116)',
+            descripcion: 'Estructuración integral del expediente de insolvencia y cesación de pagos para suspender cobros ejecutivos y salvaguardar la operación empresarial.',
+            tier: 'B'
+          };
+        }
+        if (ct === 'INSOLV_REORG_EMP') {
+          return {
+            titulo: 'Reorganización Empresarial Ley 1116 (Representación)',
+            descripcion: 'Representación legal especializada ante la Superintendencia de Sociedades o Juzgados Civiles del Circuito para trámite de rescate empresarial.',
+            tier: 'B'
+          };
+        }
+        if (ct === 'INSOLV_SEG_EMP') {
+          return {
+            titulo: 'Seguimiento y Control Empresarial en Insolvencia',
+            descripcion: 'Supervisión jurídica activa del calendario de acreencias, cumplimiento de acuerdos y defensa contra incidentes en procesos en curso.',
+            tier: 'B'
+          };
+        }
+        if (ct === 'INSOLV_REP_NAT') {
+          return {
+            titulo: 'Abogado de Insolvencia PN / Pequeño Comerciante (Representación)',
+            descripcion: 'Representación jurídica directa y defensa en audiencias de negociación de deudas conforme al Código General del Proceso (Ley 2445 de 2025).',
+            tier: 'B'
+          };
+        }
+        if (ct === 'INSOLV_MOD_NAT') {
+          return {
+            titulo: 'Estrategia Legal: Negociación de Deudas vs. Liquidación',
+            descripcion: 'Evaluamos si para tu situación de mora conviene una renegociación con acreedores o acudir a la liquidación patrimonial para extinguir las deudas.',
+            tier: 'A'
+          };
+        }
+        if (ct === 'INSOLV_NEG_NAT') {
+          return {
+            titulo: 'Preparación de Expediente y Defensa para Negociación de Deudas',
+            descripcion: 'Estructuramos tu expediente completo y propuesta financiera de pagos conforme al Código General del Proceso (Ley 2445 de 2025) para suspender embargos.',
+            tier: 'A'
+          };
+        }
+        if (ct === 'INSOLV_SEG_NAT') {
+          return {
+            titulo: 'Gestión y Control de Tu Trámite de Insolvencia',
+            descripcion: 'Seguimiento legal activo a las audiencias, acuerdos y cumplimiento de las etapas de tu procedimiento de insolvencia en curso.',
             tier: 'A'
           };
         }
         return {
           titulo: 'Diagnóstico de Insolvencia: Evalúa Si Puedes Detener Embargos',
-          descripcion: 'Evaluamos tus obligaciones, acreedores y situación patrimonial para definir la ruta legal aplicable bajo el régimen de insolvencia económica.',
+          descripcion: 'Evaluamos tus obligaciones, acreedores y situación patrimonial para definir la viabilidad legal de suspender cobros y acogerte a la ley de insolvencia.',
           tier: 'A'
         };
       }
@@ -2754,7 +2824,7 @@
 
     function mostrarResultado() {
       var resultado = getResultado(wz.servicio, wz.answers);
-      // El producto (y su precio) sale SOLO del catálogo; sin producto válido no hay cobro.
+      // El producto (y su precio) sale del catálogo; sin producto válido no hay cobro.
       var producto = resolverProducto(wz.servicio, wz.answers);
       var validacion = validarProducto(producto);
       var monto = validacion.ok ? producto.price : 0;
@@ -2764,45 +2834,157 @@
       conf.style.display = 'block';
 
       document.getElementById('resultado-etiqueta').textContent = 'Resultado inicial';
-      document.getElementById('resultado-titulo').textContent = resultado.titulo;
+      document.getElementById('resultado-titulo').textContent = resultado.titulo || (producto ? producto.nombre : 'Tu evaluación inicial está lista.');
       var descEl = document.getElementById('resultado-descripcion');
-      descEl.textContent = resultado.descripcion;
+      descEl.textContent = resultado.descripcion || '';
       descEl.style.whiteSpace = 'pre-line';
+
+      // Actualización visual explícita e inmediata del producto determinado
+      var prodBox = document.getElementById('resultado-producto-box');
+      var prodNombreEl = document.getElementById('resultado-producto-nombre');
+      var prodDescEl = document.getElementById('resultado-producto-desc');
+      var precioContainer = document.getElementById('resultado-precio-container');
+      var precioLabelEl = document.getElementById('resultado-precio-label');
+      var precioValorEl = document.getElementById('resultado-precio-valor');
+      var precioSubEl = document.getElementById('resultado-precio-sub');
+      var acreedoresDetalle = document.getElementById('resultado-acreedores-detalle');
+      var acreedoresTexto = document.getElementById('resultado-acreedores-texto');
+      var contactoDetalle = document.getElementById('resultado-contacto-detalle');
+      var payBtn = document.getElementById('resultado-pago');
+      var pagoNota = document.getElementById('resultado-pago-nota');
+      var bannerPausa = document.getElementById('aviso-pausa-insolvencia');
+
+      var esInsolvencia = (wz.servicio === 'deudas' || (producto && producto.clave && producto.clave.indexOf('DEUDAS|') === 0));
+      if (descEl) {
+        descEl.style.display = esInsolvencia ? 'none' : 'block';
+      }
+      var esContacto = (producto && (producto.delivery_type === 'LEAD_CONTACTO' || ['INSOLV_DIAG_EMP', 'INSOLV_EXP_EMP', 'INSOLV_REORG_EMP', 'INSOLV_REP_NAT', 'INSOLV_SEG_EMP'].indexOf(producto.case_type) >= 0));
+
+      if (prodNombreEl) prodNombreEl.textContent = producto ? producto.nombre : resultado.titulo;
+      if (prodDescEl) prodDescEl.textContent = resultado.descripcion || (producto ? producto.nombre : '');
+
+      var nAcreedRaw = (wz.answers && (wz.answers.cant_acreedores || wz.answers.deuda_cantidad)) || 2;
+      var etiquetaAcreedores = obtenerEtiquetaAcreedores(nAcreedRaw);
+
+      var reference = wz.servicio + '-' + Date.now();
+      var servicioLyzbri = validacion.ok ? producto.servicio_lyzbri : (SERVICIO_A_HUBSPOT[wz.servicio] || wz.servicio);
+      var servicioForm = validacion.ok ? producto.form_key : wz.servicio;
+
+      if (esInsolvencia) {
+        if (esContacto) {
+          // Requisito 3: Productos empresariales y de representación (contacto jurídico, sin precio ni botón de cobro en línea)
+          if (precioLabelEl) precioLabelEl.textContent = 'Modalidad';
+          if (precioValorEl) {
+            precioValorEl.textContent = 'Contacto Jurídico';
+            precioValorEl.style.fontSize = '1.25rem';
+            precioValorEl.style.color = '#1e3a8a';
+          }
+          if (precioSubEl) precioSubEl.textContent = 'Sin cobro en línea';
+          if (acreedoresDetalle) acreedoresDetalle.style.display = 'none';
+          if (contactoDetalle) {
+            contactoDetalle.style.display = 'block';
+            contactoDetalle.innerHTML = '<strong>Solicitud de contacto jurídico:</strong> Este servicio empresarial o de representación legal requiere evaluación especializada de la abogada. No se realiza cobro automatizado en línea ni pasarela de pago.';
+          }
+          if (bannerPausa) bannerPausa.style.display = 'none';
+          if (pagoNota) pagoNota.style.display = 'none';
+
+          payBtn.style.display = 'inline-block';
+          payBtn.textContent = (producto && producto.cta) ? producto.cta : 'Solicitar evaluación y contacto legal';
+          payBtn.href = '#contacto-confirmado';
+          payBtn.onclick = function (e) {
+            e.preventDefault();
+            payBtn.style.display = 'none';
+            if (contactoDetalle) {
+              contactoDetalle.innerHTML = '<div style="background:#edf2f7;border-left:4px solid #1a365d;padding:12px;margin-top:10px;border-radius:4px;color:#0f172a;"><strong>¡Solicitud registrada con éxito!</strong><br>Radicado de contacto: <code>' + reference + '</code><br><br>Hemos recibido los datos de tu empresa o caso de representación. Un miembro del equipo jurídico de Lyzbri se comunicará contigo vía WhatsApp o correo electrónico para continuar con la evaluación legal.</div>';
+            }
+          };
+        } else {
+          // Requisito 1 y 2: Productos naturales de insolvencia (precio en COP visible + acreedores)
+          if (precioLabelEl) precioLabelEl.textContent = PAUSA_VENTAS_INSOLVENCIA ? 'Precio informativo' : 'Precio del servicio';
+          if (precioValorEl) {
+            precioValorEl.textContent = formatCOP(monto);
+            precioValorEl.style.fontSize = '1.65rem';
+            precioValorEl.style.color = '#1e3a8a';
+          }
+          if (precioSubEl) precioSubEl.textContent = 'Pesos Colombianos (COP)';
+          if (acreedoresDetalle) {
+            acreedoresDetalle.style.display = 'flex';
+            if (acreedoresTexto) acreedoresTexto.textContent = etiquetaAcreedores;
+          }
+          if (contactoDetalle) contactoDetalle.style.display = 'none';
+
+          if (PAUSA_VENTAS_INSOLVENCIA) {
+            if (bannerPausa) {
+              bannerPausa.style.display = 'block';
+              bannerPausa.innerHTML = '<strong>Pausa preventiva de admisiones:</strong><br>' +
+                'Para garantizar la atención jurídica personalizada y el cumplimiento estricto de los tiempos de entrega, la recepción de nuevos pagos en línea para este servicio se encuentra temporalmente en pausa preventiva.<br><br>' +
+                '<strong>Precio informativo cotizado para tu caso: ' + formatCOP(monto) + ' COP</strong> (base: ' + etiquetaAcreedores + ').<br>' +
+                'Tus respuestas han sido registradas bajo el radicado <code>' + reference + '</code> para asignarte turno prioritario en lista de espera.';
+            }
+            if (pagoNota) pagoNota.style.display = 'none';
+
+            payBtn.style.display = 'inline-block';
+            payBtn.textContent = 'Unirme a la lista de espera por WhatsApp (' + formatCOP(monto) + ')';
+            var msgWaitlist = encodeURIComponent('Hola Liza, completé mi evaluación de insolvencia con radicado ' + reference + ' para ' + (producto ? producto.nombre : 'Insolvencia') + ' con ' + etiquetaAcreedores + ' (valor cotizado: ' + formatCOP(monto) + '). Deseo unirme a la lista de espera prioritaria.');
+            payBtn.href = 'https://wa.me/573000000000?text=' + msgWaitlist;
+            payBtn.target = '_blank';
+            payBtn.onclick = null;
+          } else {
+            if (bannerPausa) bannerPausa.style.display = 'none';
+            if (pagoNota) pagoNota.style.display = 'block';
+
+            payBtn.style.display = 'inline-block';
+            payBtn.textContent = (producto.cta ? producto.cta : 'Continuar al pago') + ' — ' + formatCOP(monto);
+            var extraPago = { cantAcreedores: wz.answers.cant_acreedores };
+            payBtn.href = '#pago';
+            payBtn.target = '_self';
+            payBtn.dataset.retorno = urlRetornoPago(reference, servicioForm, extraPago);
+            payBtn.onclick = function (e) {
+              e.preventDefault();
+              pagarConBold(payBtn, producto.clave, reference, servicioForm, extraPago, producto.nombre);
+            };
+          }
+        }
+      } else {
+        // Otros servicios: Hábeas Data, Alimentos, TEA, Marca
+        if (precioLabelEl) precioLabelEl.textContent = 'Precio del servicio';
+        if (precioValorEl) {
+          precioValorEl.textContent = formatCOP(monto);
+          precioValorEl.style.fontSize = '1.65rem';
+          precioValorEl.style.color = '#1e3a8a';
+        }
+        if (precioSubEl) precioSubEl.textContent = 'Pesos Colombianos (COP)';
+        if (acreedoresDetalle) acreedoresDetalle.style.display = 'none';
+        if (contactoDetalle) contactoDetalle.style.display = 'none';
+        if (bannerPausa) bannerPausa.style.display = 'none';
+        if (pagoNota) pagoNota.style.display = 'block';
+
+        payBtn.style.display = 'inline-block';
+        payBtn.textContent = (producto.cta ? producto.cta : 'Continuar al pago') + ' — ' + formatCOP(monto);
+        var extraPagoOtros = wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : null;
+        payBtn.href = '#pago';
+        payBtn.target = '_self';
+        payBtn.dataset.retorno = urlRetornoPago(reference, servicioForm, extraPagoOtros);
+        payBtn.onclick = function (e) {
+          e.preventDefault();
+          pagarConBold(payBtn, producto.clave, reference, servicioForm, extraPagoOtros, producto.nombre);
+        };
+      }
 
       var alertaTutela = document.getElementById('resultado-alerta-tutela');
       if (alertaTutela) {
         alertaTutela.style.display = (wz.answers.tutela_previa === 'si') ? 'block' : 'none';
       }
 
-      var reference = wz.servicio + '-' + Date.now();
-      // Servicio real (texto libre en HubSpot: servicio_lyzbri) y formulario post-pago.
-      var servicioLyzbri = validacion.ok ? producto.servicio_lyzbri : (SERVICIO_A_HUBSPOT[wz.servicio] || wz.servicio);
-      var servicioForm = validacion.ok ? producto.form_key : wz.servicio;
-
-      // Guardamos el caso localmente ANTES de salir a pagar, porque al volver
-      // (redirect-url) esta página se recarga desde cero y se pierde wz.answers
-      // en memoria. Esto es respaldo del ?referencia=/&servicio= que ya viaja
-      // en la URL de retorno — cubre el caso de que se abra en otra pestaña/dispositivo.
       try {
         localStorage.setItem('lyzbri_caso_' + reference, JSON.stringify({
           servicio: servicioForm, answers: wz.answers, referencia: reference, monto: monto,
           producto: validacion.ok ? producto.clave : null
         }));
-      } catch (e) { /* localStorage puede fallar en modo privado — no es bloqueante */ }
+      } catch (e) { }
 
-      // Enviar el caso a HubSpot ANTES de salir a pagar — sin esto, cuando la
-      // persona vuelve del pago no existe ningún contacto que buscar por
-      // referencia_pago. No bloquea el botón de pago si falla (queda el
-      // respaldo de localStorage), pero se intenta de inmediato.
-      // El wizard de TEA usa internamente las claves tea_condicion/tea_area
-      // (así están definidas las tablas TEA_CONDICION/TEA_DATA más arriba),
-      // pero en HubSpot esos datos ya existen como propiedades con otro
-      // nombre: categoria_condicion_tea / area_caso_tea. Se traduce aquí,
-      // justo antes de enviar, sin tocar la lógica interna del wizard.
+      // Enviar el caso a HubSpot en segundo plano sin bloquear la UI ni ocultar precios
       var respuestasParaHubspot = Object.assign({}, wz.answers);
-      // Los códigos cortos del wizard no siempre coinciden con los valores
-      // internos de las listas de HubSpot; un valor que no exista en la lista
-      // hace que HubSpot rechace el caso completo, así que se traducen aquí.
       var CONDICION_A_HUBSPOT = { tea: 'tea', neuro: 'otro_neurodesarrollo', intelectual: 'down_intelectual',
         fisica: 'fisica_motora', visual: 'otra', sordera: 'sordera', mudez: 'mudez', no_visible: 'no_visible' };
       var AREA_A_HUBSPOT = { salud: 'salud', educacion: 'educacion', deporte: 'deporte', cuidado: 'otra_area', otro: 'otra_area' };
@@ -2823,10 +3005,7 @@
         respuestasParaHubspot.modalidad_servicio = wz.answers.ali_modalidad || 'autogestion';
       }
       ['tea_subtipo_nv', 'tea_modalidad', 'ali_tipo', 'ali_rol', 'ali_modalidad'].forEach(function (k) { delete respuestasParaHubspot[k]; });
-      // Sub-caso de Hábeas Data: es el que decide qué plantilla usa Make.
-      // Solo se escribe cuando el catálogo lo define (lista cerrada en HubSpot).
       if (validacion.ok && producto.sub_caso) respuestasParaHubspot.sub_caso = producto.sub_caso;
-      // Trazabilidad: lo que la página ofrece = lo que se cobra = lo que HubSpot registra = ruta de Make.
       if (validacion.ok) {
         respuestasParaHubspot.lyzbri_service_code = producto.service_code;
         respuestasParaHubspot.lyzbri_case_type = producto.case_type;
@@ -2836,10 +3015,8 @@
       } else {
         respuestasParaHubspot.estado_revision = 'REQUIERE_DEFINICION';
       }
-      // Nombre completo: es el campo que usan los documentos generados.
       if (wz.answers.nombre) respuestasParaHubspot.nombre_completo = wz.answers.nombre;
-      var payBtn = document.getElementById('resultado-pago');
-      payBtn.style.display = 'none';
+
       fetch('/.netlify/functions/crear-caso', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2852,68 +3029,10 @@
           referenciaPago: reference,
           respuestasWizard: respuestasParaHubspot
         })
-      }).then(function (response) {
-        if (!response.ok) throw new Error('crear-caso respondió HTTP ' + response.status);
-        return response.json();
-      }).then(function (data) {
-        if (!data || data.ok !== true) throw new Error('crear-caso no confirmó la creación del caso');
-        if (!validacion.ok) {
-          // Opción sin producto completo en el catálogo: NO se publica como cobrable.
-          console.error('Producto no cobrable:', validacion.errores);
-          descEl.textContent = resultado.descripcion + '\n\nEsta opción todavía no está disponible para pago en línea. Escríbenos por WhatsApp y te orientamos.';
-          return;
-        }
-
-        // Pausa temporal preventiva de ventas en línea para la línea de insolvencia (sin bloquear otros servicios ni casos ya pagados)
-        if (PAUSA_VENTAS_INSOLVENCIA && (wz.servicio === 'deudas' || (producto && producto.clave && producto.clave.indexOf('DEUDAS|') === 0))) {
-          payBtn.style.display = '';
-          payBtn.textContent = 'Unirme a la lista de espera por WhatsApp';
-          var msgWaitlist = encodeURIComponent('Hola Liza, completé mi evaluación de insolvencia con radicado ' + reference + ' para ' + producto.nombre + '. Deseo unirme a la lista de espera prioritaria.');
-          payBtn.href = 'https://wa.me/573000000000?text=' + msgWaitlist;
-          payBtn.target = '_blank';
-          payBtn.onclick = function (e) {
-            // Permite navegación directa a WhatsApp sin cobro en pasarela
-          };
-          var bannerPausa = document.getElementById('aviso-pausa-insolvencia');
-          if (!bannerPausa) {
-            bannerPausa = document.createElement('div');
-            bannerPausa.id = 'aviso-pausa-insolvencia';
-            bannerPausa.style.cssText = 'background:#fff8e6;border-left:4px solid #d97706;padding:14px;margin-top:16px;border-radius:4px;color:#92400e;font-size:0.95rem;line-height:1.5;';
-            descEl.parentNode.insertBefore(bannerPausa, payBtn);
-          }
-          bannerPausa.innerHTML = '<strong>Pausa preventiva de admisiones:</strong><br>' +
-            'Para garantizar la atención jurídica personalizada y el cumplimiento estricto de los tiempos de entrega, la recepción de nuevos pagos en línea para este servicio se encuentra temporalmente en pausa preventiva.<br><br>' +
-            'Tu radicado <code>' + reference + '</code> y respuestas fueron registrados en el sistema. Puedes comunicarte directamente por WhatsApp para solicitar turno prioritario.';
-          return;
-        }
-
-        // Si el servicio es de acompañamiento / contacto manual (D1, D3, D5, D19):
-        if (producto.delivery_type === 'LEAD_CONTACTO') {
-          payBtn.style.display = '';
-          payBtn.textContent = producto.cta ? producto.cta : 'Solicitar evaluación y contacto legal';
-          payBtn.href = '#contacto-confirmado';
-          payBtn.onclick = function (e) {
-            e.preventDefault();
-            payBtn.style.display = 'none';
-            descEl.innerHTML = '<div style="background:#edf2f7;border-left:4px solid #1a365d;padding:12px;margin-top:10px;border-radius:4px;"><strong>¡Solicitud registrada con éxito!</strong><br>Radicado / Referencia: <code>' + reference + '</code><br><br>Hemos recibido tus datos completos. Un miembro del equipo jurídico de Lyzbri se comunicará contigo vía WhatsApp o correo electrónico para continuar con la evaluación legal de tu caso.</div>';
-          };
-          return;
-        }
-
-        payBtn.style.display = '';
-        payBtn.textContent = (producto.cta ? producto.cta : 'Continuar al pago') + ' — ' + formatCOP(monto);
-        var extraPago = wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : (wz.servicio === 'deudas' ? { cantAcreedores: wz.answers.cant_acreedores } : null);
-        payBtn.href = '#pago';
-        payBtn.dataset.retorno = urlRetornoPago(reference, servicioForm, extraPago);
-        payBtn.onclick = function (e) {
-          e.preventDefault();
-          pagarConBold(payBtn, producto.clave, reference, servicioForm, extraPago, producto.nombre);
-        };
       }).catch(function (err) {
-        console.error('No se pudo preparar el caso antes del pago:', err);
-        payBtn.style.display = 'none';
-        descEl.textContent = resultado.descripcion + '\n\nNo pudimos preparar tu caso para el pago. Inténtalo de nuevo más tarde o escríbenos por WhatsApp para recibir ayuda.';
+        console.warn('Registro en HubSpot diferido:', err);
       });
+
       conf.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
