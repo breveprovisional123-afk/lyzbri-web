@@ -59,7 +59,7 @@ exports.handler = async (event) => {
     // Trazabilidad (Corrección crítica 27-sep-2026): identificador estable del
     // producto vendido y ruta de procesamiento. Make enruta por lyzbri_make_route.
     'lyzbri_service_code', 'lyzbri_case_type', 'lyzbri_processing_mode', 'lyzbri_delivery_type',
-    'lyzbri_make_route'];
+    'lyzbri_make_route', 'cant_acreedores', 'p1_perfil', 'p2_situacion', 'p3_objetivo', 'regimen_insolvencia'];
   // Condicion C7 (A2): La marca de revision manual por tutela previa se calcula
   // en el servidor. El cliente no puede inyectar ni modificar estado_revision.
   if (respuestasWizard) {

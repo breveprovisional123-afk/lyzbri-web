@@ -2164,6 +2164,47 @@
       MANUAL_REVIEW: 'Revisión manual de la abogada (alerta, sin documento automático)'
     };
     var ENVIOS_FORMULARIO = ['guardar-formulario', 'enviar-alimentos', 'enviar-documento'];
+    
+    function calcularPrecioInsolvenciaFront(caseType, cant) {
+      var n = parseInt(cant, 10);
+      if (isNaN(n) || n < 1) n = 1;
+      if (caseType === 'INSOLV_DIAG_NAT' || caseType === 'INSOLV_MOD_NAT') {
+        if (n <= 2) return 89000;
+        if (n <= 5) return 179000;
+        return 179000 + Math.ceil((n - 5) / 2) * 89000;
+      }
+      if (caseType === 'INSOLV_NEG_NAT') {
+        if (n <= 2) return 249000;
+        if (n <= 5) return 499000;
+        return 499000 + Math.ceil((n - 5) / 2) * 249000;
+      }
+      if (caseType === 'INSOLV_SEG_NAT') {
+        if (n <= 2) return 29000;
+        if (n <= 5) return 59000;
+        return 59000 + Math.ceil((n - 5) / 2) * 29000;
+      }
+      if (caseType === 'INSOLV_REP_NAT') {
+        if (n <= 2) return 2000000;
+        return 2000000 + Math.ceil((n - 2) / 2) * 2000000;
+      }
+      if (caseType === 'INSOLV_DIAG_EMP') {
+        if (n <= 2) return 390000;
+        if (n <= 5) return 790000;
+        return 790000 + Math.ceil((n - 5) / 2) * 390000;
+      }
+      if (caseType === 'INSOLV_EXP_EMP') {
+        if (n <= 2) return 1200000;
+        if (n <= 5) return 2900000;
+        return 2900000 + Math.ceil((n - 5) / 2) * 1200000;
+      }
+      if (caseType === 'INSOLV_REORG_EMP') return 15000000;
+      if (caseType === 'INSOLV_SEG_EMP') {
+        if (n <= 2) return 149000;
+        return 149000 + Math.ceil((n - 2) / 2) * 149000;
+      }
+      return 89000;
+    }
+
     var CATALOGO = {
       'HABEAS_DATA|PAGO_HISTORICO': { nombre: 'Reclamo por actualización de reporte negativo', price: 229000,
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'HD_PAGO_HISTORICO',
@@ -2231,7 +2272,26 @@
     function resolverProducto(servicio, a) {
       var clave = null;
       if (servicio === 'habeas-data' && HD_CASE_TYPE[a.hd_problema]) clave = 'HABEAS_DATA|' + HD_CASE_TYPE[a.hd_problema];
-      else if (servicio === 'deudas') clave = 'DEUDAS|CARTA_NEGOCIACION';
+      else if (servicio === 'deudas') {
+        if (a && a.p1_perfil) {
+          if (a.p1_perfil === 'juridica' || a.p1_perfil === 'PERSONA_JURIDICA') {
+            clave = 'DEUDAS|INSOLV_DIAG_EMP';
+          } else if (a.p2_situacion === 'caso_existente' || a.p2_situacion === 'CASO_EXISTENTE') {
+            clave = (CATALOGO['DEUDAS|INSOLV_SEG_NAT']) ? 'DEUDAS|INSOLV_SEG_NAT' : 'DEUDAS|INSOLV_DIAG_NAT';
+          } else if ((a.p1_perfil === 'no_comercio' || a.p1_perfil === 'PN_NO_COMERCIANTE') &&
+                     (a.p2_situacion === 'mora_cobros' || a.p2_situacion === 'MORA_DECLARADA') &&
+                     (a.p3_objetivo === 'propuesta_pago' || a.p3_objetivo === 'PROPUESTA_PAGO')) {
+            clave = (CATALOGO['DEUDAS|INSOLV_NEG_NAT']) ? 'DEUDAS|INSOLV_NEG_NAT' : 'DEUDAS|INSOLV_DIAG_NAT';
+          } else if ((a.p2_situacion === 'mora_cobros' || a.p2_situacion === 'MORA_DECLARADA') &&
+                     (a.p3_objetivo === 'liquidacion' || a.p3_objetivo === 'revisar_acuerdo')) {
+            clave = (CATALOGO['DEUDAS|INSOLV_MOD_NAT']) ? 'DEUDAS|INSOLV_MOD_NAT' : 'DEUDAS|INSOLV_DIAG_NAT';
+          } else {
+            clave = 'DEUDAS|INSOLV_DIAG_NAT';
+          }
+        } else {
+          clave = 'DEUDAS|CARTA_NEGOCIACION';
+        }
+      }
       else if (servicio === 'marca') clave = 'MARCA|FORMULARIO_REGISTRO';
       else if (servicio === 'tea') {
         if (a.tea_estado === 'tutela_incumplida') {
@@ -2789,6 +2849,53 @@
         { id: 'monto_obligacion', label: 'Monto (si aplica)', type: 'number', optional: true },
         { id: 'hechos_adicionales_hd', label: 'Hechos adicionales / observaciones', type: 'textarea', maxLength: 800 }
       ],
+      
+      'insolvencia-diag-natural': [
+        { id: 'nombre_deudor', label: 'Nombre completo del solicitante', type: 'text' },
+        { id: 'tipo_documento', label: 'Tipo de documento', type: 'select', options: [{v:'cc',l:'Cédula de Ciudadanía'}, {v:'ce',l:'Cédula de Extranjería'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}] },
+        { id: 'numero_documento', label: 'Número de documento', type: 'text' },
+        { id: 'domicilio_ciudad', label: 'Ciudad de residencia o domicilio principal', type: 'text' },
+        { id: 'domicilio_departamento', label: 'Departamento', type: 'text' },
+        { id: 'cant_acreedores', label: 'Número aproximado de acreedores diferentes', type: 'number' },
+        { id: 'acreedores', label: 'Relación o nombres de los principales acreedores', type: 'textarea' },
+        { id: 'numero_obligaciones', label: 'Número aproximado de obligaciones diferentes', type: 'text' },
+        { id: 'fecha_vencimiento_antigua', label: 'Fecha desde la cual está vencida la obligación más antigua en mora', type: 'date' },
+        { id: 'monto_total_adeudado', label: 'Valor aproximado total del capital adeudado (COP)', type: 'number' },
+        { id: 'porcentaje_pasivo_mora', label: 'Porcentaje aproximado del pasivo que está en mora o cobro', type: 'select', options: [
+          {v:'menos_10',l:'Menos del 10%'}, {v:'10_20',l:'Entre el 10% y menos del 20%'}, {v:'20_30',l:'Entre el 20% y menos del 30%'},
+          {v:'30_50',l:'Entre el 30% y menos del 50% (Cumple umbral legal)'}, {v:'50_70',l:'Entre el 50% y 70%'}, {v:'70_mas',l:'Más del 70%'}, {v:'no_se',l:'No estoy seguro(a)'}
+        ]},
+        { id: 'tiene_libranzas', label: '¿Tienes libranzas o descuentos de nómina por estas deudas?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'soporte_abonos_libranza', label: 'Si tienes libranzas, ¿tienes soporte de abonos al acreedor?', type: 'select', options: [{v:'no_aplica',l:'No aplica'}, {v:'si',l:'Sí'}, {v:'no',l:'No'}] },
+        { id: 'es_comerciante', label: '¿Ejerces habitualmente el comercio o tienes negocio registrado?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'matricula_mercantil', label: 'Si eres comerciante, ¿tienes matrícula mercantil vigente?', type: 'select', options: [{v:'no_aplica',l:'No aplica'}, {v:'si',l:'Sí'}, {v:'no',l:'No'}] },
+        { id: 'activos_computables_smmlv', label: 'Rango de activos computables (excluyendo vivienda familiar y vehículo de trabajo)', type: 'select', options: [
+          {v:'menos_1000',l:'Menos de 1.000 SMMLV (Aplica trámite CGP)'}, {v:'1000_mas',l:'1.000 SMMLV o más (Régimen empresarial)'}, {v:'no_se',l:'No sé / por verificar'}
+        ]},
+        { id: 'sociedad_relacionada', label: '¿Tienes sociedad o persona jurídica relacionada con tus deudas?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'grupo_empresarial', label: '¿Tienes vinculación o control en algún grupo empresarial?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'regimen_especial', label: '¿Tu actividad o sector está sometido a régimen especial de vigilancia?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'tiene_bienes', label: '¿Tienes bienes muebles o inmuebles a tu nombre?', type: 'select', options: [{v:'si',l:'Sí'}, {v:'no',l:'No'}, {v:'no_se',l:'No sé'}] },
+        { id: 'vivienda_familiar_vehiculo_trabajo', label: '¿Tienes vivienda familiar o vehículo que sea tu instrumento de trabajo?', type: 'select', options: [{v:'si',l:'Sí'}, {v:'no',l:'No'}, {v:'no_se',l:'No sé'}] },
+        { id: 'bienes_con_gravamen', label: '¿Tienes bienes con hipoteca, prenda, garantía mobiliaria o embargo?', type: 'select', options: [{v:'si',l:'Sí'}, {v:'no',l:'No'}, {v:'no_se',l:'No sé'}] },
+        { id: 'discusion_bienes', label: '¿Existe alguna disputa judicial sobre la propiedad o validez de garantías?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'obligaciones_alimentarias', label: '¿Tienes obligaciones alimentarias legales o personas a cargo?', type: 'select', options: [{v:'si',l:'Sí'}, {v:'no',l:'No'}] },
+        { id: 'sociedad_conyugal_vigente', label: '¿Tienes sociedad conyugal vigente o liquidada recientemente?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'operaciones_recientes_bienes', label: '¿Has vendido o transferido bienes importantes en los últimos meses?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}] },
+        { id: 'otros_procesos_cobros', label: '¿Tienes procesos judiciales ejecutivos o cobros en curso?', type: 'select', options: [{v:'si',l:'Sí'}, {v:'no',l:'No'}, {v:'no_se',l:'No sé'}] },
+        { id: 'tramite_anterior_insolvencia', label: '¿Presentaste anteriormente alguna solicitud de insolvencia?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}] },
+        { id: 'acuerdo_privado_vigente', label: '¿Tienes actualmente algún acuerdo privado con tus acreedores?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}] },
+        { id: 'ingreso_mensual_promedio', label: 'Ingreso mensual promedio disponible (COP)', type: 'select', options: [
+          {v:'menos_1.5m',l:'Menos de $1.500.000'}, {v:'1.5m_3m',l:'$1.500.000 a $3.000.000'}, {v:'3m_5m',l:'$3.000.000 a $5.000.000'},
+          {v:'5m_10m',l:'$5.000.000 a $10.000.000'}, {v:'mas_10m',l:'Más de $10.000.000'}, {v:'no_seguro',l:'No estoy seguro(a)'}
+        ]},
+        { id: 'gasto_mensual_subsistencia', label: 'Gastos mensuales indispensables de subsistencia (COP)', type: 'select', options: [
+          {v:'menos_1m',l:'Menos de $1.000.000'}, {v:'1m_2m',l:'$1.000.000 a $2.000.000'}, {v:'2m_3m',l:'$2.000.000 a $3.000.000'},
+          {v:'3m_5m',l:'$3.000.000 a $5.000.000'}, {v:'mas_5m',l:'Más de $5.000.000'}
+        ]},
+        { id: 'objetivo_evaluacion', label: '¿Qué buscas lograr prioritariamente con este diagnóstico?', type: 'textarea' },
+        { id: 'acepta_alcance_preliminar', label: 'Acepto que esta evaluación es preliminar y que no garantiza admisión judicial, suspensión automática de embargos ni condonación de deudas.', type: 'checkbox' }
+      ],
       'deudas': [
         { id: 'tipo_documento', label: 'Tipo de documento', type: 'select', options: [{v:'cc',l:'C.C.'}, {v:'ce',l:'C.E.'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}, {v:'pep',l:'PEP'}, {v:'nit',l:'NIT'}] },
         { id: 'numero_documento', label: 'N° de documento', type: 'text' },
@@ -3168,7 +3275,20 @@
             });
           }
           if (!res.ok) throw new Error(endpoint + ' respondió ' + res.status);
-          estado.textContent = 'Listo. Recibimos tu información y en breve te enviaremos el documento a tu correo.';
+          if (r && r.revisionManual && r.notifInsolvencia) {
+            var nInfo = r.notifInsolvencia;
+            var listadoHtml = '<div style="margin-top:16px;padding:16px;background:#f0f7ff;border:1px solid #cce3ff;border-radius:8px;text-align:left;">' +
+              '<h4 style="margin:0 0 8px;color:#102a4c;">¡Recibimos tu información y tu pago!</h4>' +
+              '<p style="font-size:0.95rem;margin:0 0 12px;color:#2c3e50;">Hemos enviado a tu correo el listado de documentos de tu régimen (<b>' + nInfo.regimen + '</b>). Te entregaremos tu documento en <b>' + nInfo.tiempoEntrega + '</b>. El plazo de entrega inicia a partir de la recepción completa de tus documentos.</p>' +
+              '<h5 style="margin:8px 0 4px;color:#102a4c;">Documentos obligatorios requeridos:</h5><ul style="font-size:0.85rem;color:#4a5568;padding-left:18px;">' +
+              nInfo.documentos.obligatorios.map(function(d){ return '<li>' + d + '</li>'; }).join('') +
+              '</ul>' +
+              '<p style="font-size:0.85rem;margin:10px 0 0;color:#6b7c96;">Envía tus soportes a <b>contacto@lyzbri.com</b> o compártelos con la abogada por WhatsApp.</p>' +
+              '</div>';
+            estado.innerHTML = listadoHtml;
+          } else {
+            estado.textContent = 'Listo. Recibimos tu información y en breve te enviaremos el documento a tu correo.';
+          }
           document.getElementById('fd_form').querySelectorAll('input,select,textarea,button').forEach(function (el) { el.disabled = true; });
         }).catch(function (err) {
           if (err && err.manejado) return;
