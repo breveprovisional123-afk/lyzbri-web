@@ -46,7 +46,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
         properties: ['servicio_comprado', 'servicio_lyzbri', 'hechos_completos', 'tipo_solicitud_alimentos',
-          'lyzbri_service_code', 'lyzbri_case_type']
+          'lyzbri_service_code', 'lyzbri_case_type', 'cant_acreedores', 'deuda_cantidad', 'numero_obligaciones']
       })
     });
     const hsData = await hsRes.json();
@@ -60,9 +60,16 @@ exports.handler = async (event) => {
     const clave = contact.properties.lyzbri_service_code && contact.properties.lyzbri_case_type
       ? `${contact.properties.lyzbri_service_code}|${contact.properties.lyzbri_case_type}` : null;
     if (clave) {
-      const v = await verificarPago(referenciaPago, clave);
+      // Rechazar checkout online de servicios no autorizados (D19: estrictamente los 4 SKUs naturales)
+      const permitidosDeudas = ['DEUDAS|INSOLV_DIAG_NAT', 'DEUDAS|INSOLV_MOD_NAT', 'DEUDAS|INSOLV_NEG_NAT', 'DEUDAS|INSOLV_SEG_NAT'];
+      if (clave.startsWith('DEUDAS|') && !permitidosDeudas.includes(clave)) {
+        return { statusCode: 400, body: JSON.stringify({ valid: false, reason: 'producto_requiere_contacto_manual', referenciaPago }) };
+      }
+
+      const cantAcreedores = contact.properties.cant_acreedores || contact.properties.deuda_cantidad || contact.properties.numero_obligaciones || 1;
+      const v = await verificarPago(referenciaPago, clave, cantAcreedores);
       if (!v.aprobado) {
-        return { statusCode: 200, body: JSON.stringify({ valid: false, reason: v.reason, referenciaPago }) };
+        return { statusCode: 400, body: JSON.stringify({ valid: false, reason: v.reason, referenciaPago }) };
       }
     }
 

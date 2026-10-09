@@ -1,3 +1,4 @@
+const { calcularPrecioInsolvencia, generarNotificacionPostPago } = require('./lib/insolvencia');
 
 // =============================================================================
 // LISTA BLANCA DE CAMPOS POR SERVICIO (Condición C9 / Hallazgo B4)
@@ -19,7 +20,19 @@ const WHITELIST_POR_SERVICIO = {
   'deudas': [
     'tipo_documento', 'numero_documento', 'acreedores',
     'numero_obligaciones', 'monto_total_adeudado', 'objetivo_negociacion',
-    'observaciones_deudas', ...CAMPOS_COMUNES
+    'observaciones_deudas', 'nombre_deudor', 'tipo_sujeto', 'cant_acreedores',
+    'fecha_vencimiento_antigua', 'porcentaje_pasivo_mora', 'tiene_libranzas',
+    'soporte_abonos_libranza', 'es_comerciante', 'matricula_mercantil',
+    'activos_computables_smmlv', 'sociedad_relacionada', 'grupo_empresarial',
+    'regimen_especial', 'domicilio_ciudad', 'domicilio_departamento',
+    'tiene_bienes', 'vivienda_familiar_vehiculo_trabajo', 'bienes_con_gravamen',
+    'discusion_bienes', 'obligaciones_alimentarias', 'sociedad_conyugal_vigente',
+    'operaciones_recientes_bienes', 'otros_procesos_cobros',
+    'tramite_anterior_insolvencia', 'acuerdo_privado_vigente',
+    'ingreso_mensual_promedio', 'gasto_mensual_subsistencia',
+    'objetivo_evaluacion', 'acepta_alcance_preliminar', 'hechos_adicionales_deudas',
+    'regimen_insolvencia', 'emp_tipo_entidad', 'emp_crisis', 'emp_materialidad',
+    'emp_activos', 'emp_operacion', 'emp_objetivo', ...CAMPOS_COMUNES
   ],
   'marca': [
     'nombre_marca', 'denominacion_signo', 'tipo_signo_especial',
@@ -248,7 +261,21 @@ exports.handler = async (event) => {
         return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_create_failed', detail: errText }) };
       }
       const avisoMakeRespaldo = await avisarAMake(correo, referenciaPago);
-      return { statusCode: 200, body: JSON.stringify({ ok: true, creadoComoRespaldo: true, avisoMake: avisoMakeRespaldo }) };
+      let notifInsolvencia = null;
+      const esDeudasRespaldo = payload.servicio === 'deudas' || (campos && (campos.regimen_insolvencia || campos.monto_total_adeudado));
+      if (esDeudasRespaldo) {
+        const caseType = (campos && campos.lyzbri_case_type) || 'INSOLV_DIAG_NAT';
+        const regimen = (campos && campos.regimen_insolvencia) || 'PN_NC_CGP';
+        const nombreCliente = (campos && campos.nombre_deudor) || 'Cliente';
+        notifInsolvencia = generarNotificacionPostPago({
+          case_type: caseType,
+          regimen: regimen,
+          nombre: nombreCliente,
+          radicado: referenciaPago,
+          email: correo
+        });
+      }
+      return { statusCode: 200, body: JSON.stringify({ ok: true, creadoComoRespaldo: true, avisoMake: avisoMakeRespaldo, notifInsolvencia }) };
     }
 
     // 2c. El valor pagado en Bold debe corresponder al producto registrado en el caso.
@@ -283,7 +310,21 @@ exports.handler = async (event) => {
 
     const emailContacto = correo || (contact.properties && contact.properties.email) || null;
     const avisoMake = await avisarAMake(emailContacto, referenciaPago);
-    return { statusCode: 200, body: JSON.stringify({ ok: true, avisoMake }) };
+    let notifInsolvencia = null;
+    const esDeudas = payload.servicio === 'deudas' || (clave && clave.startsWith('DEUDAS|')) || (pc.lyzbri_service_code === 'deudas') || (campos && campos.regimen_insolvencia);
+    if (esDeudas) {
+      const caseType = pc.lyzbri_case_type || (campos && campos.lyzbri_case_type) || 'INSOLV_DIAG_NAT';
+      const regimen = pc.regimen_insolvencia || (campos && campos.regimen_insolvencia) || 'PN_NC_CGP';
+      const nombreCliente = pc.firstname || pc.nombre_deudor || (campos && (campos.nombre_deudor || campos.firstname)) || 'Cliente';
+      notifInsolvencia = generarNotificacionPostPago({
+        case_type: caseType,
+        regimen: regimen,
+        nombre: nombreCliente,
+        radicado: referenciaPago,
+        email: emailContacto
+      });
+    }
+    return { statusCode: 200, body: JSON.stringify({ ok: true, avisoMake, notifInsolvencia }) };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ ok: false, reason: 'server_error', message: err.message }) };
   }

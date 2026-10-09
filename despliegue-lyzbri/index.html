@@ -2161,9 +2161,59 @@
       DOC_HD_OBLIGACION_NO_RECONOCIDA: 'Documentos directos', DOC_HD_CASO_INCIERTO: 'Documentos directos',
       DOC_TEA_DENUNCIA_DEPORTIVA: 'Documentos directos',
       ALIMENTOS: 'Alimentos (6385260)',
+      DEUDAS_INSOLV_DIAG_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_MOD_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_NEG_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_SEG_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_REP_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_DIAG_EMP: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_EXP_EMP: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_REORG_EMP: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_SEG_EMP: 'Revisión manual de la abogada (alerta, sin documento automático)',
       MANUAL_REVIEW: 'Revisión manual de la abogada (alerta, sin documento automático)'
     };
     var ENVIOS_FORMULARIO = ['guardar-formulario', 'enviar-alimentos', 'enviar-documento'];
+    
+    function calcularPrecioInsolvenciaFront(caseType, cant) {
+      var n = parseInt(cant, 10);
+      if (isNaN(n) || n < 1) n = 1;
+      if (caseType === 'INSOLV_DIAG_NAT' || caseType === 'INSOLV_MOD_NAT') {
+        if (n <= 2) return 89000;
+        if (n <= 5) return 179000;
+        return 179000 + Math.ceil((n - 5) / 2) * 89000;
+      }
+      if (caseType === 'INSOLV_NEG_NAT') {
+        if (n <= 2) return 249000;
+        if (n <= 5) return 499000;
+        return 499000 + Math.ceil((n - 5) / 2) * 249000;
+      }
+      if (caseType === 'INSOLV_SEG_NAT') {
+        if (n <= 2) return 29000;
+        if (n <= 5) return 59000;
+        return 59000 + Math.ceil((n - 5) / 2) * 29000;
+      }
+      if (caseType === 'INSOLV_REP_NAT') {
+        if (n <= 2) return 2000000;
+        return 2000000 + Math.ceil((n - 2) / 2) * 2000000;
+      }
+      if (caseType === 'INSOLV_DIAG_EMP') {
+        if (n <= 2) return 390000;
+        if (n <= 5) return 790000;
+        return 790000 + Math.ceil((n - 5) / 2) * 390000;
+      }
+      if (caseType === 'INSOLV_EXP_EMP') {
+        if (n <= 2) return 1200000;
+        if (n <= 5) return 2900000;
+        return 2900000 + Math.ceil((n - 5) / 2) * 1200000;
+      }
+      if (caseType === 'INSOLV_REORG_EMP') return 15000000;
+      if (caseType === 'INSOLV_SEG_EMP') {
+        if (n <= 2) return 149000;
+        return 149000 + Math.ceil((n - 2) / 2) * 149000;
+      }
+      return 89000;
+    }
+
     var CATALOGO = {
       'HABEAS_DATA|PAGO_HISTORICO': { nombre: 'Reclamo por actualización de reporte negativo', price: 229000,
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'HD_PAGO_HISTORICO',
@@ -2188,6 +2238,42 @@
       'DEUDAS|CARTA_NEGOCIACION': { nombre: 'Carta de negociación de deudas', price: 129000,
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'DEUDAS',
         form_key: 'deudas', submit: 'guardar-formulario', servicio_lyzbri: 'deudas' },
+      'DEUDAS|INSOLV_DIAG_NAT': { nombre: 'Diagnóstico de Insolvencia: Evalúa Si Puedes Detener Embargos', price: 89000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_DIAG_NAT',
+        form_key: 'insolv-diag-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'diagnostico_natural',
+        cta: 'Pagar diagnóstico y recibir listado de documentos' },
+      'DEUDAS|INSOLV_MOD_NAT': { nombre: 'Estrategia Legal: Negociación de Deudas vs. Liquidación', price: 89000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_MOD_NAT',
+        form_key: 'insolv-mod-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'estrategia_modalidad',
+        cta: 'Pagar evaluación estratégica y recibir listado de documentos' },
+      'DEUDAS|INSOLV_NEG_NAT': { nombre: 'Preparación de Expediente y Defensa para Negociación de Deudas', price: 249000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_NEG_NAT',
+        form_key: 'insolv-neg-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'expediente_negociacion',
+        cta: 'Pagar preparación de expediente y recibir listado de documentos' },
+      'DEUDAS|INSOLV_SEG_NAT': { nombre: 'Gestión y Control de Tu Trámite (Seguimiento)', price: 29000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_SEG_NAT',
+        form_key: 'insolv-seg-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'seguimiento_natural',
+        cta: 'Pagar mes de seguimiento y recibir alertas' },
+      'DEUDAS|INSOLV_REP_NAT': { nombre: 'Abogado de Insolvencia PN / Pequeño Comerciante (Representación)', price: 2000000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'LEAD_CONTACTO', make_route: 'DEUDAS_INSOLV_REP_NAT',
+        form_key: 'insolv-rep-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'pequeno_comerciante_representacion',
+        cta: 'Solicitar representación y recibir contacto legal' },
+      'DEUDAS|INSOLV_DIAG_EMP': { nombre: 'Diagnóstico de Salvación Empresarial y Cesación de Pagos', price: 390000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'LEAD_CONTACTO', make_route: 'DEUDAS_INSOLV_DIAG_EMP',
+        form_key: 'insolv-diag-emp', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'diagnostico_empresarial',
+        cta: 'Solicitar diagnóstico empresarial y contacto legal' },
+      'DEUDAS|INSOLV_EXP_EMP': { nombre: 'Blindaje Legal y Protección de Activos (Ley 1116)', price: 1200000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'LEAD_CONTACTO', make_route: 'DEUDAS_INSOLV_EXP_EMP',
+        form_key: 'insolv-exp-emp', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'blindaje_empresarial',
+        cta: 'Solicitar blindaje legal y contacto legal' },
+      'DEUDAS|INSOLV_REORG_EMP': { nombre: 'Reorganización Empresarial Ley 1116 (Representación)', price: 15000000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'LEAD_CONTACTO', make_route: 'DEUDAS_INSOLV_REORG_EMP',
+        form_key: 'insolv-reorg-emp', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'reorganizacion_empresarial',
+        cta: 'Solicitar representación y recibir contacto legal' },
+      'DEUDAS|INSOLV_SEG_EMP': { nombre: 'Seguimiento Empresarial (Suscripción)', price: 149000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'LEAD_CONTACTO', make_route: 'DEUDAS_INSOLV_SEG_EMP',
+        form_key: 'insolv-seg-emp', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'seguimiento_empresarial',
+        cta: 'Solicitar seguimiento empresarial y contacto legal' },
       'MARCA|FORMULARIO_REGISTRO': { nombre: 'Formulario de registro de marca (autogestión)', price: 199000,
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'MARCA',
         form_key: 'marca', submit: 'guardar-formulario', servicio_lyzbri: 'registro_marca' },
@@ -2231,7 +2317,28 @@
     function resolverProducto(servicio, a) {
       var clave = null;
       if (servicio === 'habeas-data' && HD_CASE_TYPE[a.hd_problema]) clave = 'HABEAS_DATA|' + HD_CASE_TYPE[a.hd_problema];
-      else if (servicio === 'deudas') clave = 'DEUDAS|CARTA_NEGOCIACION';
+      else if (servicio === 'deudas') {
+        if (a && (a.sub_servicio === 'carta_negociacion' || a.deudas_opcion === 'carta' || a.p1_perfil === 'carta')) {
+          clave = 'DEUDAS|CARTA_NEGOCIACION';
+        } else if (a && a.p1_perfil) {
+          if (a.p1_perfil === 'juridica' || a.p1_perfil === 'PERSONA_JURIDICA') {
+            clave = 'DEUDAS|INSOLV_DIAG_EMP';
+          } else if (a.p2_situacion === 'caso_existente' || a.p2_situacion === 'CASO_EXISTENTE') {
+            clave = (CATALOGO['DEUDAS|INSOLV_SEG_NAT']) ? 'DEUDAS|INSOLV_SEG_NAT' : 'DEUDAS|INSOLV_DIAG_NAT';
+          } else if ((a.p1_perfil === 'no_comercio' || a.p1_perfil === 'PN_NO_COMERCIANTE') &&
+                     (a.p2_situacion === 'mora_cobros' || a.p2_situacion === 'MORA_DECLARADA') &&
+                     (a.p3_objetivo === 'propuesta_pago' || a.p3_objetivo === 'PROPUESTA_PAGO')) {
+            clave = (CATALOGO['DEUDAS|INSOLV_NEG_NAT']) ? 'DEUDAS|INSOLV_NEG_NAT' : 'DEUDAS|INSOLV_DIAG_NAT';
+          } else if ((a.p2_situacion === 'mora_cobros' || a.p2_situacion === 'MORA_DECLARADA') &&
+                     (a.p3_objetivo === 'liquidacion' || a.p3_objetivo === 'revisar_acuerdo')) {
+            clave = (CATALOGO['DEUDAS|INSOLV_MOD_NAT']) ? 'DEUDAS|INSOLV_MOD_NAT' : 'DEUDAS|INSOLV_DIAG_NAT';
+          } else {
+            clave = 'DEUDAS|INSOLV_DIAG_NAT';
+          }
+        } else {
+          clave = 'DEUDAS|INSOLV_DIAG_NAT';
+        }
+      }
       else if (servicio === 'marca') clave = 'MARCA|FORMULARIO_REGISTRO';
       else if (servicio === 'tea') {
         if (a.tea_estado === 'tutela_incumplida') {
@@ -2384,6 +2491,41 @@
         return { titulo: 'Resultado de tu evaluación inicial', descripcion: HD_RESULTADOS[ctHD] || '', tier: 'B' };
       }
       if (servicio === 'deudas') {
+        if (a && a.p1_perfil) {
+          if (a.p1_perfil === 'juridica' || a.p1_perfil === 'PERSONA_JURIDICA') {
+            return {
+              titulo: 'Tu caso requiere una verificación empresarial especializada.',
+              descripcion: 'Para sociedades y entidades jurídicas analizamos la viabilidad y requisitos conforme a la Ley 1116 de 2006.',
+              tier: 'B'
+            };
+          }
+          if (a.p3_objetivo === 'liquidacion' || a.p3_objetivo === 'revisar_acuerdo') {
+            return {
+              titulo: 'Estrategia Legal: Negociación de Deudas vs. Liquidación Patrimonial.',
+              descripcion: 'Evaluamos cuál es la vía jurídica más conveniente para tu caso entre acuerdo de pagos o liquidación patrimonial.',
+              tier: 'A'
+            };
+          }
+          if (a.p3_objetivo === 'propuesta_pago') {
+            return {
+              titulo: 'Preparación de Expediente y Defensa para Negociación de Deudas.',
+              descripcion: 'Estructuramos tu expediente completo y propuesta financiera conforme al Código General del Proceso (Ley 2445 de 2025).',
+              tier: 'A'
+            };
+          }
+          if (a.p2_situacion === 'caso_existente') {
+            return {
+              titulo: 'Gestión y Control de Tu Trámite de Insolvencia.',
+              descripcion: 'Seguimiento y control de hitos, audiencias y calendario de pagos para trámites de insolvencia en curso.',
+              tier: 'A'
+            };
+          }
+          return {
+            titulo: 'Diagnóstico de Insolvencia: Evalúa Si Puedes Detener Embargos.',
+            descripcion: 'Evaluamos si cumples los requisitos legales para suspender cobros y acudir a los mecanismos de insolvencia de persona natural.',
+            tier: 'A'
+          };
+        }
         return { titulo: 'Tu caso corresponde a una carta de negociación de deudas.',
                   descripcion: 'Con los datos de tus obligaciones, su estado de mora y tus acreedores, elaboramos la carta de negociación dirigida a tus acreedores.',
                   tier: 'A' };
@@ -2668,6 +2810,20 @@
           descEl.textContent = resultado.descripcion + '\n\nEsta opción todavía no está disponible para pago en línea. Escríbenos por WhatsApp y te orientamos.';
           return;
         }
+
+        // Si el servicio es de acompañamiento / contacto manual (D1, D3, D5, D19):
+        if (producto.delivery_type === 'LEAD_CONTACTO') {
+          payBtn.style.display = '';
+          payBtn.textContent = producto.cta ? producto.cta : 'Solicitar evaluación y contacto legal';
+          payBtn.href = '#contacto-confirmado';
+          payBtn.onclick = function (e) {
+            e.preventDefault();
+            payBtn.style.display = 'none';
+            descEl.innerHTML = '<div style="background:#edf2f7;border-left:4px solid #1a365d;padding:12px;margin-top:10px;border-radius:4px;"><strong>¡Solicitud registrada con éxito!</strong><br>Radicado / Referencia: <code>' + reference + '</code><br><br>Hemos recibido tus datos completos. Un miembro del equipo jurídico de Lyzbri se comunicará contigo vía WhatsApp o correo electrónico para continuar con la evaluación legal de tu caso.</div>';
+          };
+          return;
+        }
+
         payBtn.style.display = '';
         payBtn.textContent = (producto.cta ? producto.cta : 'Continuar al pago') + ' — ' + formatCOP(monto);
         var extraPago = wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : null;
@@ -2789,6 +2945,53 @@
         { id: 'monto_obligacion', label: 'Monto (si aplica)', type: 'number', optional: true },
         { id: 'hechos_adicionales_hd', label: 'Hechos adicionales / observaciones', type: 'textarea', maxLength: 800 }
       ],
+      
+      'insolvencia-diag-natural': [
+        { id: 'nombre_deudor', label: 'Nombre completo del solicitante', type: 'text' },
+        { id: 'tipo_documento', label: 'Tipo de documento', type: 'select', options: [{v:'cc',l:'Cédula de Ciudadanía'}, {v:'ce',l:'Cédula de Extranjería'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}] },
+        { id: 'numero_documento', label: 'Número de documento', type: 'text' },
+        { id: 'domicilio_ciudad', label: 'Ciudad de residencia o domicilio principal', type: 'text' },
+        { id: 'domicilio_departamento', label: 'Departamento', type: 'text' },
+        { id: 'cant_acreedores', label: 'Número aproximado de acreedores diferentes', type: 'number' },
+        { id: 'acreedores', label: 'Relación o nombres de los principales acreedores', type: 'textarea' },
+        { id: 'numero_obligaciones', label: 'Número aproximado de obligaciones diferentes', type: 'text' },
+        { id: 'fecha_vencimiento_antigua', label: 'Fecha desde la cual está vencida la obligación más antigua en mora', type: 'date' },
+        { id: 'monto_total_adeudado', label: 'Valor aproximado total del capital adeudado (COP)', type: 'number' },
+        { id: 'porcentaje_pasivo_mora', label: 'Porcentaje aproximado del pasivo que está en mora o cobro', type: 'select', options: [
+          {v:'menos_10',l:'Menos del 10%'}, {v:'10_20',l:'Entre el 10% y menos del 20%'}, {v:'20_30',l:'Entre el 20% y menos del 30%'},
+          {v:'30_50',l:'Entre el 30% y menos del 50% (Cumple umbral legal)'}, {v:'50_70',l:'Entre el 50% y 70%'}, {v:'70_mas',l:'Más del 70%'}, {v:'no_se',l:'No estoy seguro(a)'}
+        ]},
+        { id: 'tiene_libranzas', label: '¿Tienes libranzas o descuentos de nómina por estas deudas?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'soporte_abonos_libranza', label: 'Si tienes libranzas, ¿tienes soporte de abonos al acreedor?', type: 'select', options: [{v:'no_aplica',l:'No aplica'}, {v:'si',l:'Sí'}, {v:'no',l:'No'}] },
+        { id: 'es_comerciante', label: '¿Ejerces habitualmente el comercio o tienes negocio registrado?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'matricula_mercantil', label: 'Si eres comerciante, ¿tienes matrícula mercantil vigente?', type: 'select', options: [{v:'no_aplica',l:'No aplica'}, {v:'si',l:'Sí'}, {v:'no',l:'No'}] },
+        { id: 'activos_computables_smmlv', label: 'Rango de activos computables (excluyendo vivienda familiar y vehículo de trabajo)', type: 'select', options: [
+          {v:'menos_1000',l:'Menos de 1.000 SMMLV (Aplica trámite CGP)'}, {v:'1000_mas',l:'1.000 SMMLV o más (Régimen empresarial)'}, {v:'no_se',l:'No sé / por verificar'}
+        ]},
+        { id: 'sociedad_relacionada', label: '¿Tienes sociedad o persona jurídica relacionada con tus deudas?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'grupo_empresarial', label: '¿Tienes vinculación o control en algún grupo empresarial?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'regimen_especial', label: '¿Tu actividad o sector está sometido a régimen especial de vigilancia?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'tiene_bienes', label: '¿Tienes bienes muebles o inmuebles a tu nombre?', type: 'select', options: [{v:'si',l:'Sí'}, {v:'no',l:'No'}, {v:'no_se',l:'No sé'}] },
+        { id: 'vivienda_familiar_vehiculo_trabajo', label: '¿Tienes vivienda familiar o vehículo que sea tu instrumento de trabajo?', type: 'select', options: [{v:'si',l:'Sí'}, {v:'no',l:'No'}, {v:'no_se',l:'No sé'}] },
+        { id: 'bienes_con_gravamen', label: '¿Tienes bienes con hipoteca, prenda, garantía mobiliaria o embargo?', type: 'select', options: [{v:'si',l:'Sí'}, {v:'no',l:'No'}, {v:'no_se',l:'No sé'}] },
+        { id: 'discusion_bienes', label: '¿Existe alguna disputa judicial sobre la propiedad o validez de garantías?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'obligaciones_alimentarias', label: '¿Tienes obligaciones alimentarias legales o personas a cargo?', type: 'select', options: [{v:'si',l:'Sí'}, {v:'no',l:'No'}] },
+        { id: 'sociedad_conyugal_vigente', label: '¿Tienes sociedad conyugal vigente o liquidada recientemente?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}, {v:'no_se',l:'No sé'}] },
+        { id: 'operaciones_recientes_bienes', label: '¿Has vendido o transferido bienes importantes en los últimos meses?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}] },
+        { id: 'otros_procesos_cobros', label: '¿Tienes procesos judiciales ejecutivos o cobros en curso?', type: 'select', options: [{v:'si',l:'Sí'}, {v:'no',l:'No'}, {v:'no_se',l:'No sé'}] },
+        { id: 'tramite_anterior_insolvencia', label: '¿Presentaste anteriormente alguna solicitud de insolvencia?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}] },
+        { id: 'acuerdo_privado_vigente', label: '¿Tienes actualmente algún acuerdo privado con tus acreedores?', type: 'select', options: [{v:'no',l:'No'}, {v:'si',l:'Sí'}] },
+        { id: 'ingreso_mensual_promedio', label: 'Ingreso mensual promedio disponible (COP)', type: 'select', options: [
+          {v:'menos_1.5m',l:'Menos de $1.500.000'}, {v:'1.5m_3m',l:'$1.500.000 a $3.000.000'}, {v:'3m_5m',l:'$3.000.000 a $5.000.000'},
+          {v:'5m_10m',l:'$5.000.000 a $10.000.000'}, {v:'mas_10m',l:'Más de $10.000.000'}, {v:'no_seguro',l:'No estoy seguro(a)'}
+        ]},
+        { id: 'gasto_mensual_subsistencia', label: 'Gastos mensuales indispensables de subsistencia (COP)', type: 'select', options: [
+          {v:'menos_1m',l:'Menos de $1.000.000'}, {v:'1m_2m',l:'$1.000.000 a $2.000.000'}, {v:'2m_3m',l:'$2.000.000 a $3.000.000'},
+          {v:'3m_5m',l:'$3.000.000 a $5.000.000'}, {v:'mas_5m',l:'Más de $5.000.000'}
+        ]},
+        { id: 'objetivo_evaluacion', label: '¿Qué buscas lograr prioritariamente con este diagnóstico?', type: 'textarea' },
+        { id: 'acepta_alcance_preliminar', label: 'Acepto que esta evaluación es preliminar y que no garantiza admisión judicial, suspensión automática de embargos ni condonación de deudas.', type: 'checkbox' }
+      ],
       'deudas': [
         { id: 'tipo_documento', label: 'Tipo de documento', type: 'select', options: [{v:'cc',l:'C.C.'}, {v:'ce',l:'C.E.'}, {v:'pasaporte',l:'Pasaporte'}, {v:'ppt',l:'PPT'}, {v:'pep',l:'PEP'}, {v:'nit',l:'NIT'}] },
         { id: 'numero_documento', label: 'N° de documento', type: 'text' },
@@ -2873,6 +3076,16 @@
       { id: 'city', label: 'Ciudad', type: 'text' },
       { id: 'state', label: 'Departamento', type: 'text' }
     ];
+
+    CAMPOS_DETALLADOS['insolv-diag-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
+    CAMPOS_DETALLADOS['insolv-mod-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
+    CAMPOS_DETALLADOS['insolv-neg-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
+    CAMPOS_DETALLADOS['insolv-seg-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
+    CAMPOS_DETALLADOS['insolv-rep-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
+    CAMPOS_DETALLADOS['insolv-diag-emp'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
+    CAMPOS_DETALLADOS['insolv-exp-emp'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
+    CAMPOS_DETALLADOS['insolv-reorg-emp'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
+    CAMPOS_DETALLADOS['insolv-seg-emp'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
 
     // Tutela y desacato usan los mismos campos de TEA más los datos propios de cada actuación.
     CAMPOS_DETALLADOS['tea-tutela'] = CAMPOS_DETALLADOS['tea'].concat([
@@ -3168,7 +3381,26 @@
             });
           }
           if (!res.ok) throw new Error(endpoint + ' respondió ' + res.status);
-          estado.textContent = 'Listo. Recibimos tu información y en breve te enviaremos el documento a tu correo.';
+          return res.json();
+        }).then(function (r) {
+          if (r && r.notifInsolvencia) {
+            var nInfo = r.notifInsolvencia;
+            var listadoHtml = '<div style="margin-top:16px;padding:16px;background:#f0f7ff;border:1px solid #cce3ff;border-radius:8px;text-align:left;">' +
+              '<h4 style="margin:0 0 8px;color:#102a4c;">¡Recibimos tu información y tu pago!</h4>' +
+              '<p style="font-size:0.95rem;margin:0 0 12px;color:#2c3e50;">Hemos enviado a tu correo el listado de documentos de tu régimen (<b>' + (nInfo.regimen || 'Insolvencia') + '</b>). Te entregaremos tu documento en <b>' + nInfo.tiempoEntrega + '</b>. El plazo de entrega inicia a partir de la recepción completa de tus documentos.</p>' +
+              '<h5 style="margin:8px 0 4px;color:#102a4c;">Documentos obligatorios requeridos:</h5><ul style="font-size:0.85rem;color:#4a5568;padding-left:18px;">' +
+              nInfo.documentos.obligatorios.map(function(d){ return '<li>' + d + '</li>'; }).join('') +
+              '</ul>' +
+              '<div style="margin:14px 0;padding:12px;background:#ffffff;border:1px solid #b8daff;border-radius:6px;">' +
+              '<p style="margin:0 0 8px;font-size:0.9rem;color:#102a4c;font-weight:bold;">Sube tus documentos sin registrarte:</p>' +
+              '<a href="' + (nInfo.enlaceCarga || '#') + '" target="_blank" rel="noopener" style="display:inline-block;padding:8px 16px;background:#1a365d;color:#ffffff;text-decoration:none;border-radius:4px;font-weight:bold;font-size:0.9rem;">Subir documentos a mi caso &rarr;</a>' +
+              '</div>' +
+              '<p style="font-size:0.85rem;margin:10px 0 0;color:#6b7c96;">¿Dudas? Contáctanos directamente por WhatsApp con tu radicado: <a href="' + (nInfo.enlaceWhatsapp || '#') + '" target="_blank" rel="noopener">Soporte WhatsApp</a>.</p>' +
+              '</div>';
+            estado.innerHTML = listadoHtml;
+          } else {
+            estado.textContent = 'Listo. Recibimos tu información y en breve te enviaremos el documento a tu correo.';
+          }
           document.getElementById('fd_form').querySelectorAll('input,select,textarea,button').forEach(function (el) { el.disabled = true; });
         }).catch(function (err) {
           if (err && err.manejado) return;
