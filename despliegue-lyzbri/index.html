@@ -2164,6 +2164,7 @@
       DEUDAS_INSOLV_DIAG_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
       DEUDAS_INSOLV_MOD_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
       DEUDAS_INSOLV_NEG_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_SEG_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
       MANUAL_REVIEW: 'Revisión manual de la abogada (alerta, sin documento automático)'
     };
     var ENVIOS_FORMULARIO = ['guardar-formulario', 'enviar-alimentos', 'enviar-documento'];
@@ -2244,6 +2245,10 @@
         processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_NEG_NAT',
         form_key: 'insolv-neg-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'expediente_negociacion',
         cta: 'Pagar preparación de expediente y recibir listado de documentos' },
+      'DEUDAS|INSOLV_SEG_NAT': { nombre: 'Gestión y Control de Tu Trámite (Seguimiento)', price: 29000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_SEG_NAT',
+        form_key: 'insolv-seg-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'seguimiento_natural',
+        cta: 'Pagar mes de seguimiento y recibir alertas' },
       'MARCA|FORMULARIO_REGISTRO': { nombre: 'Formulario de registro de marca (autogestión)', price: 199000,
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'MARCA',
         form_key: 'marca', submit: 'guardar-formulario', servicio_lyzbri: 'registro_marca' },
@@ -3034,6 +3039,7 @@
     CAMPOS_DETALLADOS['insolv-diag-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
     CAMPOS_DETALLADOS['insolv-mod-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
     CAMPOS_DETALLADOS['insolv-neg-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
+    CAMPOS_DETALLADOS['insolv-seg-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
 
     // Tutela y desacato usan los mismos campos de TEA más los datos propios de cada actuación.
     CAMPOS_DETALLADOS['tea-tutela'] = CAMPOS_DETALLADOS['tea'].concat([
