@@ -1,3 +1,4 @@
+const { calcularPrecioInsolvencia } = require('./insolvencia');
 // Utilidades de pago con Bold (Botón de pagos, integración manual).
 // Lo usan bold-firma.js, validar-formulario.js, guardar-formulario.js,
 // enviar-alimentos.js y enviar-documento.js.
@@ -24,7 +25,16 @@ const PRECIOS = {
   'HABEAS_DATA|DATOS_INCORRECTOS': 229000,
   'HABEAS_DATA|OBLIGACION_NO_RECONOCIDA': 229000,
   'HABEAS_DATA|CASO_INCIERTO': 229000,
-  'DEUDAS|CARTA_NEGOCIACION': 129000,
+    'DEUDAS|CARTA_NEGOCIACION': 129000,
+  'DEUDAS|INSOLV_DIAG_NAT': 89000,
+  'DEUDAS|INSOLV_MOD_NAT': 89000,
+  'DEUDAS|INSOLV_NEG_NAT': 249000,
+  'DEUDAS|INSOLV_SEG_NAT': 29000,
+  'DEUDAS|INSOLV_REP_NAT': 2000000,
+  'DEUDAS|INSOLV_DIAG_EMP': 390000,
+  'DEUDAS|INSOLV_EXP_EMP': 1200000,
+  'DEUDAS|INSOLV_REORG_EMP': 15000000,
+  'DEUDAS|INSOLV_SEG_EMP': 149000,
   'MARCA|FORMULARIO_REGISTRO': 199000,
   'TEA|DERECHO_PETICION': 149000,
   'TEA|TUTELA': 420000,

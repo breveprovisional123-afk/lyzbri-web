@@ -46,7 +46,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
         properties: ['servicio_comprado', 'servicio_lyzbri', 'hechos_completos', 'tipo_solicitud_alimentos',
-          'lyzbri_service_code', 'lyzbri_case_type']
+          'lyzbri_service_code', 'lyzbri_case_type', 'cant_acreedores', 'deuda_cantidad', 'numero_obligaciones']
       })
     });
     const hsData = await hsRes.json();

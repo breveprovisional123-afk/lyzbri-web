@@ -1,3 +1,4 @@
+const { calcularPrecioInsolvencia, generarNotificacionPostPago } = require('./lib/insolvencia');
 
 // =============================================================================
 // LISTA BLANCA DE CAMPOS POR SERVICIO (Condición C9 / Hallazgo B4)
@@ -19,7 +20,19 @@ const WHITELIST_POR_SERVICIO = {
   'deudas': [
     'tipo_documento', 'numero_documento', 'acreedores',
     'numero_obligaciones', 'monto_total_adeudado', 'objetivo_negociacion',
-    'observaciones_deudas', ...CAMPOS_COMUNES
+    'observaciones_deudas', 'nombre_deudor', 'tipo_sujeto', 'cant_acreedores',
+    'fecha_vencimiento_antigua', 'porcentaje_pasivo_mora', 'tiene_libranzas',
+    'soporte_abonos_libranza', 'es_comerciante', 'matricula_mercantil',
+    'activos_computables_smmlv', 'sociedad_relacionada', 'grupo_empresarial',
+    'regimen_especial', 'domicilio_ciudad', 'domicilio_departamento',
+    'tiene_bienes', 'vivienda_familiar_vehiculo_trabajo', 'bienes_con_gravamen',
+    'discusion_bienes', 'obligaciones_alimentarias', 'sociedad_conyugal_vigente',
+    'operaciones_recientes_bienes', 'otros_procesos_cobros',
+    'tramite_anterior_insolvencia', 'acuerdo_privado_vigente',
+    'ingreso_mensual_promedio', 'gasto_mensual_subsistencia',
+    'objetivo_evaluacion', 'acepta_alcance_preliminar', 'hechos_adicionales_deudas',
+    'regimen_insolvencia', 'emp_tipo_entidad', 'emp_crisis', 'emp_materialidad',
+    'emp_activos', 'emp_operacion', 'emp_objetivo', ...CAMPOS_COMUNES
   ],
   'marca': [
     'nombre_marca', 'denominacion_signo', 'tipo_signo_especial',
