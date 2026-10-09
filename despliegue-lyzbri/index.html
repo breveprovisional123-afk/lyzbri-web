@@ -2161,6 +2161,8 @@
       DOC_HD_OBLIGACION_NO_RECONOCIDA: 'Documentos directos', DOC_HD_CASO_INCIERTO: 'Documentos directos',
       DOC_TEA_DENUNCIA_DEPORTIVA: 'Documentos directos',
       ALIMENTOS: 'Alimentos (6385260)',
+      DEUDAS_INSOLV_DIAG_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
+      DEUDAS_INSOLV_MOD_NAT: 'Revisión manual de la abogada (alerta, sin documento automático)',
       MANUAL_REVIEW: 'Revisión manual de la abogada (alerta, sin documento automático)'
     };
     var ENVIOS_FORMULARIO = ['guardar-formulario', 'enviar-alimentos', 'enviar-documento'];
@@ -2229,6 +2231,14 @@
       'DEUDAS|CARTA_NEGOCIACION': { nombre: 'Carta de negociación de deudas', price: 129000,
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'DEUDAS',
         form_key: 'deudas', submit: 'guardar-formulario', servicio_lyzbri: 'deudas' },
+      'DEUDAS|INSOLV_DIAG_NAT': { nombre: 'Diagnóstico de Insolvencia: Evalúa Si Puedes Detener Embargos', price: 89000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_DIAG_NAT',
+        form_key: 'insolv-diag-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'diagnostico_natural',
+        cta: 'Pagar diagnóstico y recibir listado de documentos' },
+      'DEUDAS|INSOLV_MOD_NAT': { nombre: 'Estrategia Legal: Negociación de Deudas vs. Liquidación', price: 89000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_MOD_NAT',
+        form_key: 'insolv-mod-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'estrategia_modalidad',
+        cta: 'Pagar evaluación estratégica y recibir listado de documentos' },
       'MARCA|FORMULARIO_REGISTRO': { nombre: 'Formulario de registro de marca (autogestión)', price: 199000,
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'MARCA',
         form_key: 'marca', submit: 'guardar-formulario', servicio_lyzbri: 'registro_marca' },
@@ -2444,6 +2454,41 @@
         return { titulo: 'Resultado de tu evaluación inicial', descripcion: HD_RESULTADOS[ctHD] || '', tier: 'B' };
       }
       if (servicio === 'deudas') {
+        if (a && a.p1_perfil) {
+          if (a.p1_perfil === 'juridica' || a.p1_perfil === 'PERSONA_JURIDICA') {
+            return {
+              titulo: 'Tu caso requiere una verificación empresarial especializada.',
+              descripcion: 'Para sociedades y entidades jurídicas analizamos la viabilidad y requisitos conforme a la Ley 1116 de 2006.',
+              tier: 'B'
+            };
+          }
+          if (a.p3_objetivo === 'liquidacion' || a.p3_objetivo === 'revisar_acuerdo') {
+            return {
+              titulo: 'Estrategia Legal: Negociación de Deudas vs. Liquidación Patrimonial.',
+              descripcion: 'Evaluamos cuál es la vía jurídica más conveniente para tu caso entre acuerdo de pagos o liquidación patrimonial.',
+              tier: 'A'
+            };
+          }
+          if (a.p3_objetivo === 'propuesta_pago') {
+            return {
+              titulo: 'Preparación de Expediente y Defensa para Negociación de Deudas.',
+              descripcion: 'Estructuramos tu expediente completo y propuesta financiera conforme al Código General del Proceso (Ley 2445 de 2025).',
+              tier: 'A'
+            };
+          }
+          if (a.p2_situacion === 'caso_existente') {
+            return {
+              titulo: 'Gestión y Control de Tu Trámite de Insolvencia.',
+              descripcion: 'Seguimiento y control de hitos, audiencias y calendario de pagos para trámites de insolvencia en curso.',
+              tier: 'A'
+            };
+          }
+          return {
+            titulo: 'Diagnóstico de Insolvencia: Evalúa Si Puedes Detener Embargos.',
+            descripcion: 'Evaluamos si cumples los requisitos legales para suspender cobros y acudir a los mecanismos de insolvencia de persona natural.',
+            tier: 'A'
+          };
+        }
         return { titulo: 'Tu caso corresponde a una carta de negociación de deudas.',
                   descripcion: 'Con los datos de tus obligaciones, su estado de mora y tus acreedores, elaboramos la carta de negociación dirigida a tus acreedores.',
                   tier: 'A' };
@@ -2980,6 +3025,9 @@
       { id: 'city', label: 'Ciudad', type: 'text' },
       { id: 'state', label: 'Departamento', type: 'text' }
     ];
+
+    CAMPOS_DETALLADOS['insolv-diag-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
+    CAMPOS_DETALLADOS['insolv-mod-nat'] = CAMPOS_DETALLADOS['insolvencia-diag-natural'];
 
     // Tutela y desacato usan los mismos campos de TEA más los datos propios de cada actuación.
     CAMPOS_DETALLADOS['tea-tutela'] = CAMPOS_DETALLADOS['tea'].concat([

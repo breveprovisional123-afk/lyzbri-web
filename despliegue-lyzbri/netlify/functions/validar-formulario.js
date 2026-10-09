@@ -60,7 +60,8 @@ exports.handler = async (event) => {
     const clave = contact.properties.lyzbri_service_code && contact.properties.lyzbri_case_type
       ? `${contact.properties.lyzbri_service_code}|${contact.properties.lyzbri_case_type}` : null;
     if (clave) {
-      const v = await verificarPago(referenciaPago, clave);
+      const cantAcreedores = contact.properties.cant_acreedores || contact.properties.deuda_cantidad || contact.properties.numero_obligaciones || 1;
+      const v = await verificarPago(referenciaPago, clave, cantAcreedores);
       if (!v.aprobado) {
         return { statusCode: 200, body: JSON.stringify({ valid: false, reason: v.reason, referenciaPago }) };
       }
