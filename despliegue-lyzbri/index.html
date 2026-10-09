@@ -2235,9 +2235,6 @@
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'WORD_ADJUNTO_EMAIL + ANEXO', make_route: 'DOC_HD_CASO_INCIERTO',
         form_key: 'hd-caso-incierto', submit: 'enviar-documento', servicio_lyzbri: 'habeas_data',
         cta: 'Continuar con el pago y generar mi solicitud' },
-      'DEUDAS|CARTA_NEGOCIACION': { nombre: 'Carta de negociación de deudas', price: 129000,
-        processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'DEUDAS',
-        form_key: 'deudas', submit: 'guardar-formulario', servicio_lyzbri: 'deudas' },
       'DEUDAS|INSOLV_DIAG_NAT': { nombre: 'Diagnóstico de Insolvencia: Evalúa Si Puedes Detener Embargos', price: 89000,
         processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'DEUDAS_INSOLV_DIAG_NAT',
         form_key: 'insolv-diag-nat', submit: 'guardar-formulario', servicio_lyzbri: 'deudas', sub_caso: 'diagnostico_natural',
@@ -2334,7 +2331,7 @@
             clave = 'DEUDAS|INSOLV_DIAG_NAT';
           }
         } else {
-          clave = 'DEUDAS|CARTA_NEGOCIACION';
+          clave = 'DEUDAS|INSOLV_DIAG_NAT';
         }
       }
       else if (servicio === 'marca') clave = 'MARCA|FORMULARIO_REGISTRO';
