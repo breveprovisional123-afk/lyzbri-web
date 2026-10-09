@@ -97,15 +97,19 @@ async function consultarPago(referencia, intentos) {
 }
 
 // Pago aprobado y, si se conoce el producto, por el valor completo.
-async function verificarPago(referencia, clave) {
+async function verificarPago(referencia, clave, cantAcreedores) {
   const c = await consultarPago(referencia);
   if (!c.ok) return { aprobado: false, reason: c.reason };
   if (c.status !== 'APPROVED') return { aprobado: false, reason: 'payment_not_approved', status: c.status };
-  const esperado = clave ? PRECIOS[clave] : null;
+  let esperado = clave ? PRECIOS[clave] : null;
+  if (clave && clave.startsWith('DEUDAS|INSOLV_') && cantAcreedores) {
+    const caseType = clave.split('|')[1];
+    esperado = calcularPrecioInsolvencia(caseType, cantAcreedores);
+  }
   if (esperado && !(c.total >= esperado)) {
     return { aprobado: false, reason: 'monto_no_coincide', total: c.total, esperado };
   }
-  return { aprobado: true, total: c.total, transaccion: c.transaccion, medio: c.medio };
+  return { aprobado: true, total: c.total, transaccion: c.transaccion, medio: c.medio, esperado };
 }
 
 module.exports = { PRECIOS, REFERENCIA_VALIDA, llaves, firma, consultarPago, verificarPago };
