@@ -1198,13 +1198,13 @@
           </article>
 
           <article class="card">
-            <span class="tag">Carta de negociación</span>
-            <h3><a href="?servicio=deudas">Gestiona tu Deuda: asesoría legal en deudas y cobranza</a></h3>
-            <p>Ordena la información de tus obligaciones para identificar qué datos harán falta antes de una evaluación jurídica.</p>
+            <span class="tag">Insolvencia y saneamiento de deudas</span>
+            <h3><a href="?servicio=deudas">Gestiona tu Deuda: asesoría legal en insolvencia económica</a></h3>
+            <p>Evalúa si cumples los requisitos de la Ley de Insolvencia para detener embargos, suspender remates y negociar tus obligaciones con respaldo legal.</p>
             <ul class="service-includes">
-              <li>Panorama inicial de obligaciones</li>
-              <li>Datos clave para la evaluación</li>
-              <li>Siguiente paso claro</li>
+              <li>Diagnóstico de viabilidad y régimen legal aplicable</li>
+              <li>Protección patrimonial y suspensión de cobros</li>
+              <li>Ruta jurídica clara para tus deudas</li>
             </ul>
             <div class="cta-row"><a class="btn btn-primary" href="#contacto" onclick="startWizard('deudas')">Revisar el estado de mis deudas</a></div>
           </article>
@@ -1435,18 +1435,18 @@
       <div class="shell section-box">
         <div class="section-head">
           <div>
-            <span class="tag">Servicio 2 · Carta de negociación</span>
-            <h2>Carta de negociación de deudas</h2>
-            <p>Entiende tu situación y las alternativas jurídicas disponibles antes de tomar decisiones.</p>
+            <span class="tag">Servicio 2 · Insolvencia económica</span>
+            <h2>Insolvencia de persona natural y saneamiento de deudas</h2>
+            <p>Entiende tu situación y las alternativas jurídicas bajo la Ley de Insolvencia antes de tomar decisiones.</p>
           </div>
         </div>
 
         <p class="note" style="max-width: 70ch; margin-bottom: 10px; font-size: 1rem;">
-          <strong>Antes de hablar de trámites:</strong> dejas de imaginar el peor escenario posible. En vez de la niebla, tienes un mapa claro de qué puedes hacer legalmente con lo que debes.
+          <strong>Antes de hablar de trámites:</strong> dejas de imaginar el peor escenario posible. En vez de la incertidumbre, tienes un mapa jurídico claro de cómo la ley protege tus ingresos, detiene embargos y te permite negociar lo que debes.
         </p>
 
         <p class="note" style="max-width: 70ch; margin-bottom: 18px;">
-          Analizamos el número y tipo de tus obligaciones, saldos, mora, acreedores, procesos de cobro, tu situación económica y otros factores relevantes, para determinar qué ruta jurídica es adecuada para tu caso. No prometemos reducción de deuda ni resultados garantizados.
+          Analizamos tu perfil, número de acreedores, días de mora, procesos judiciales en curso y tu situación patrimonial para determinar el régimen de insolvencia aplicable (CGP / Ley 1116) y la viabilidad técnica de tu trámite. No prometemos reducción mágica de deuda ni resultados sin sustento legal.
         </p>
 
         <div class="grid-2">
@@ -1483,18 +1483,18 @@
 
         <div class="grid-2">
           <article class="card price-card">
-            <span class="price-label">Carta de negociación</span>
-            <h3>Carta de negociación de deudas</h3>
-            <div class="price">COP 129.000 <small>desde</small></div>
+            <span class="price-label">Diagnóstico de insolvencia</span>
+            <h3>Diagnóstico de viabilidad legal</h3>
+            <div class="price">COP 89.000 <small>desde</small></div>
             <ul class="price-list">
-              <li>Revisión de tus obligaciones</li>
-              <li>Clasificación de alternativas jurídicas</li>
-              <li>Ruta de acción recomendada</li>
+              <li>Evaluación de régimen aplicable (CGP / Ley 1116)</li>
+              <li>Análisis de viabilidad para detener embargos</li>
+              <li>Ruta de acción recomendada y checklist documental</li>
             </ul>
           </article>
           <article class="card">
-            <h3>Nota</h3>
-            <p>El valor final depende del número y complejidad de las obligaciones. Te damos una cotización clara antes de iniciar.</p>
+            <h3>Tarifa escalonada</h3>
+            <p>El valor del diagnóstico y estructuración depende del número de acreedores y complejidad del caso. Te damos una cotización transparente desde el inicio.</p>
           </article>
         </div>
 
@@ -1598,8 +1598,8 @@
           </article>
           <article class="card selector-card" data-service="deudas" onclick="startWizard('deudas')">
             <span class="tag">Servicio 2</span>
-            <h3>Gestiona tu Deuda</h3>
-            <p>Obligaciones, mora o procesos de cobro.</p>
+            <h3>Insolvencia y Deudas</h3>
+            <p>Detener embargos, cesación de pagos y negociación de obligaciones.</p>
           </article>
           <article class="card selector-card" data-service="marca" onclick="startWizard('marca')">
             <span class="tag">Servicio 3</span>
@@ -1926,6 +1926,14 @@
     // ?bold-order-id=<referencia>&bold-tx-status=<estado>; el pago se vuelve a
     // verificar en el servidor (validar-formulario) antes de mostrar el formulario.
     // =========================================================================
+    // =========================================================================
+    // CONFIGURACIÓN DE OPERACIÓN
+    // =========================================================================
+    // Pausa temporal preventiva de nuevas ventas en línea para la línea de insolvencia.
+    // No bloquea los demás servicios (Habeas Data, Alimentos, Marca, TEA) ni interrumpe
+    // casos ya pagados. La reactivación de checkout en Bold queda sujeta a autorización de Liza.
+    var PAUSA_VENTAS_INSOLVENCIA = true;
+
     var BOLD_SCRIPT = 'https://checkout.bold.co/library/boldPaymentButton.js';
 
     function cargarBold() {
@@ -1956,7 +1964,11 @@
         cargarBold(),
         fetch('/.netlify/functions/bold-firma', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ referencia: reference, clave: clave })
+          body: JSON.stringify({
+            referencia: reference,
+            clave: clave,
+            cantAcreedores: (extra && extra.cantAcreedores) ? extra.cantAcreedores : undefined
+          })
         }).then(function (r) { return r.json(); })
       ]).then(function (res) {
         var f = res[1];
@@ -2348,6 +2360,10 @@
         clave = 'ALIMENTOS|' + a.ali_tipo.toUpperCase() + '_' + (a.ali_modalidad || 'autogestion').toUpperCase();
       }
       var p = clave && CATALOGO[clave] ? Object.assign({ clave: clave }, CATALOGO[clave]) : null;
+      if (p && clave && clave.indexOf('DEUDAS|INSOLV_') === 0 && a) {
+        var nAcreed = a.cant_acreedores || a.deuda_cantidad || 2;
+        p.price = calcularPrecioInsolvenciaFront(p.case_type, nAcreed);
+      }
       return p;
     }
     function validarProducto(p) {
@@ -2399,14 +2415,49 @@
         ];
       }
       if (servicio === 'deudas') {
-        return [
-          { id: 'deuda_cantidad', type: 'choice', q: '¿Aproximadamente cuántas obligaciones tienes?', options: [
-            { value: '1', label: '1' }, { value: '2-3', label: '2 a 3' }, { value: '4+', label: '4 o más' },
+        var stepsD = [
+          { id: 'p1_perfil', type: 'choice', q: '¿Para quién buscas una solución frente a tus deudas?', options: [
+            { value: 'no_comercio', label: 'Persona natural (no ejerzo actividades comerciales)' },
+            { value: 'comercio', label: 'Persona natural comerciante o con negocio propio' },
+            { value: 'juridica', label: 'Sociedad o empresa (persona jurídica)' },
+            { value: 'no_se', label: 'No estoy seguro(a)' }
           ]},
-          { id: 'deuda_cobro', type: 'choice', q: '¿Alguna ya está en cobro jurídico o demanda?', options: [
-            { value: 'si', label: 'Sí' }, { value: 'no', label: 'No' }, { value: 'no-se', label: 'No sé' },
-          ]},
+          { id: 'p2_situacion', type: 'choice', q: '¿Cuál describe mejor tu situación actual de deudas?', options: [
+            { value: 'mora_cobros', label: 'Mora de más de 90 días con 2 o más acreedores / cobros o embargos' },
+            { value: 'dificultad_futura', label: 'Aún no tengo mora de 90 días, pero preveo dificultad seria para pagar' },
+            { value: 'caso_existente', label: 'Ya tengo un trámite de insolvencia iniciado o en curso' },
+            { value: 'no_se', label: 'No sé / situación incierta' }
+          ]}
         ];
+        var p3Opts = [
+          { value: 'propuesta_pago', label: 'Llegar a un acuerdo y propuesta de pago con mis acreedores' },
+          { value: 'liquidacion', label: 'Evaluar liquidación patrimonial o condonación de deudas' },
+          { value: 'revisar_acuerdo', label: 'Revisar un acuerdo privado o alternativas aplicables' },
+          { value: 'no_se', label: 'No estoy seguro(a), necesito un diagnóstico de ruta' }
+        ];
+        if (a && a.p2_situacion === 'dificultad_futura') {
+          p3Opts = [
+            { value: 'acceso_requisitos', label: 'Saber si cumplo los requisitos para acogerme a la ley' },
+            { value: 'cuanto_pagar', label: 'Entender cuánto pagaría y cómo proteger mi patrimonio' },
+            { value: 'no_se', label: 'Conocer las opciones legales preventivas' }
+          ];
+        } else if (a && a.p2_situacion === 'caso_existente') {
+          p3Opts = [
+            { value: 'etapa_solicitud', label: 'Solicitud radicada, pendiente de admisión' },
+            { value: 'etapa_negociacion', label: 'En audiencias de negociación con acreedores' },
+            { value: 'etapa_acuerdo', label: 'Acuerdo ya aprobado, en seguimiento o cumplimiento' },
+            { value: 'no_se', label: 'No sé exactamente la etapa procesal' }
+          ];
+        }
+        stepsD.push({ id: 'p3_objetivo', type: 'choice', q: '¿Qué necesitas lograr primero?', options: p3Opts });
+        stepsD.push({ id: 'cant_acreedores', type: 'choice', q: '¿Aproximadamente cuántos acreedores diferentes tienes actualmente?', options: [
+          { value: '2', label: '1 a 2 acreedores' },
+          { value: '4', label: '3 a 5 acreedores' },
+          { value: '6', label: '6 a 7 acreedores' },
+          { value: '8', label: '8 a 9 acreedores' },
+          { value: '10', label: '10 o más acreedores' }
+        ]});
+        return stepsD;
       }
       if (servicio === 'marca') {
         return [
@@ -2526,9 +2577,11 @@
             tier: 'A'
           };
         }
-        return { titulo: 'Tu caso corresponde a una carta de negociación de deudas.',
-                  descripcion: 'Con los datos de tus obligaciones, su estado de mora y tus acreedores, elaboramos la carta de negociación dirigida a tus acreedores.',
-                  tier: 'A' };
+        return {
+          titulo: 'Diagnóstico de Insolvencia: Evalúa Si Puedes Detener Embargos',
+          descripcion: 'Evaluamos tus obligaciones, acreedores y situación patrimonial para definir la ruta legal aplicable bajo el régimen de insolvencia económica.',
+          tier: 'A'
+        };
       }
       if (servicio === 'marca') {
         return { titulo: 'Podemos iniciar la evaluación de tu solicitud.',
@@ -2811,6 +2864,29 @@
           return;
         }
 
+        // Pausa temporal preventiva de ventas en línea para la línea de insolvencia (sin bloquear otros servicios ni casos ya pagados)
+        if (PAUSA_VENTAS_INSOLVENCIA && (wz.servicio === 'deudas' || (producto && producto.clave && producto.clave.indexOf('DEUDAS|') === 0))) {
+          payBtn.style.display = '';
+          payBtn.textContent = 'Unirme a la lista de espera por WhatsApp';
+          var msgWaitlist = encodeURIComponent('Hola Liza, completé mi evaluación de insolvencia con radicado ' + reference + ' para ' + producto.nombre + '. Deseo unirme a la lista de espera prioritaria.');
+          payBtn.href = 'https://wa.me/573000000000?text=' + msgWaitlist;
+          payBtn.target = '_blank';
+          payBtn.onclick = function (e) {
+            // Permite navegación directa a WhatsApp sin cobro en pasarela
+          };
+          var bannerPausa = document.getElementById('aviso-pausa-insolvencia');
+          if (!bannerPausa) {
+            bannerPausa = document.createElement('div');
+            bannerPausa.id = 'aviso-pausa-insolvencia';
+            bannerPausa.style.cssText = 'background:#fff8e6;border-left:4px solid #d97706;padding:14px;margin-top:16px;border-radius:4px;color:#92400e;font-size:0.95rem;line-height:1.5;';
+            descEl.parentNode.insertBefore(bannerPausa, payBtn);
+          }
+          bannerPausa.innerHTML = '<strong>Pausa preventiva de admisiones:</strong><br>' +
+            'Para garantizar la atención jurídica personalizada y el cumplimiento estricto de los tiempos de entrega, la recepción de nuevos pagos en línea para este servicio se encuentra temporalmente en pausa preventiva.<br><br>' +
+            'Tu radicado <code>' + reference + '</code> y respuestas fueron registrados en el sistema. Puedes comunicarte directamente por WhatsApp para solicitar turno prioritario.';
+          return;
+        }
+
         // Si el servicio es de acompañamiento / contacto manual (D1, D3, D5, D19):
         if (producto.delivery_type === 'LEAD_CONTACTO') {
           payBtn.style.display = '';
@@ -2826,7 +2902,7 @@
 
         payBtn.style.display = '';
         payBtn.textContent = (producto.cta ? producto.cta : 'Continuar al pago') + ' — ' + formatCOP(monto);
-        var extraPago = wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : null;
+        var extraPago = wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : (wz.servicio === 'deudas' ? { cantAcreedores: wz.answers.cant_acreedores } : null);
         payBtn.href = '#pago';
         payBtn.dataset.retorno = urlRetornoPago(reference, servicioForm, extraPago);
         payBtn.onclick = function (e) {
