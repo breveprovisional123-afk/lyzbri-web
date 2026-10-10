@@ -1,6 +1,49 @@
 // Netlify Function — registra el caso antes de pasar al checkout o canal de contacto.
 // Previene registros duplicados buscando primero por referencia_pago.
 // Si el registro en HubSpot falla, responde 502 explícito; nunca simula éxito.
+// Incorpora Degradación Controlada: si HubSpot rechaza propiedades personalizadas
+// aún no creadas en el portal CRM, las retira y reintenta para asegurar que
+// el contacto y el radicado NUNCA se pierdan.
+
+/**
+ * Ejecuta una llamada HTTP a HubSpot con degradación controlada:
+ * Si HubSpot devuelve HTTP 400 por propiedades no existentes o inválidas en el portal,
+ * identifica las propiedades rechazadas, las retira del payload y reintenta la operación.
+ */
+async function fetchHubSpotConDegradacion(url, options, props) {
+  let res = await fetch(url, options);
+  if (res.status === 400) {
+    const errText = await res.text();
+    const rechazadas = [];
+    try {
+      const j = JSON.parse(errText);
+      if (j.context && j.context.propertyName) {
+        (Array.isArray(j.context.propertyName) ? j.context.propertyName : [j.context.propertyName]).forEach(p => rechazadas.push(p));
+      }
+      if (j.message) {
+        const matches = j.message.match(/Property ["']?([a-zA-Z0-9_]+)["']? does not exist/gi);
+        if (matches) {
+          matches.forEach(m => {
+            const clean = m.replace(/Property ["']?/i, '').replace(/["']? does not exist/i, '').trim();
+            if (clean && !rechazadas.includes(clean)) rechazadas.push(clean);
+          });
+        }
+      }
+    } catch (_) {}
+
+    if (rechazadas.length > 0) {
+      console.warn('[HubSpot Degradación Controlada] Propiedades no reconocidas por el CRM:', rechazadas);
+      const propsDepuradas = { ...props };
+      rechazadas.forEach(p => delete propsDepuradas[p]);
+      const nuevoBody = JSON.parse(options.body);
+      nuevoBody.properties = propsDepuradas;
+      const reintento = await fetch(url, { ...options, body: JSON.stringify(nuevoBody) });
+      return { res: reintento, degradado: true, rechazadas, errText: null };
+    }
+    return { res, degradado: false, rechazadas: [], errText };
+  }
+  return { res, degradado: false, rechazadas: [], errText: null };
+}
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -86,60 +129,107 @@ exports.handler = async (event) => {
       const searchData = await searchRes.json();
       const existing = searchData.results && searchData.results[0];
       if (existing && existing.id) {
-        // Contacto existente con este radicado -> Actualizar sin duplicar
-        const patchRes = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(existing.id)}`, {
-          method: 'PATCH',
-          headers: H,
-          body: JSON.stringify({ properties })
-        });
-        if (!patchRes.ok) {
-          const errText = await patchRes.text();
+        // Contacto existente con este radicado -> Actualizar con degradación controlada
+        const patchRet = await fetchHubSpotConDegradacion(
+          `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(existing.id)}`,
+          {
+            method: 'PATCH',
+            headers: H,
+            body: JSON.stringify({ properties })
+          },
+          properties
+        );
+        if (!patchRet.res.ok) {
+          const errText = patchRet.errText || await patchRet.res.text();
           return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
         }
-        return { statusCode: 200, body: JSON.stringify({ ok: true, creado: false, deduplicado: true, id: existing.id }) };
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            ok: true,
+            creado: false,
+            deduplicado: true,
+            id: existing.id,
+            degradado: patchRet.degradado,
+            propiedades_omitidas: patchRet.rechazadas
+          })
+        };
       }
     }
 
-    // 2. Si hay correo, intentar upsert por email
+    // 2. Si hay correo, intentar upsert por email con degradación controlada
     if (correo) {
-      const upsertRes = await fetch(
+      const upsertRet = await fetchHubSpotConDegradacion(
         `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email`,
         {
           method: 'PATCH',
           headers: H,
           body: JSON.stringify({ properties })
-        }
+        },
+        properties
       );
-      if (upsertRes.status === 404) {
-        const createRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
-          method: 'POST',
-          headers: H,
-          body: JSON.stringify({ properties })
-        });
-        if (!createRes.ok) {
-          const errText = await createRes.text();
+      if (upsertRet.res.status === 404) {
+        const createRet = await fetchHubSpotConDegradacion(
+          'https://api.hubapi.com/crm/v3/objects/contacts',
+          {
+            method: 'POST',
+            headers: H,
+            body: JSON.stringify({ properties })
+          },
+          properties
+        );
+        if (!createRet.res.ok) {
+          const errText = createRet.errText || await createRet.res.text();
           return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_create_failed', detail: errText }) };
         }
-        return { statusCode: 200, body: JSON.stringify({ ok: true, creado: true }) };
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            ok: true,
+            creado: true,
+            degradado: createRet.degradado,
+            propiedades_omitidas: createRet.rechazadas
+          })
+        };
       }
-      if (!upsertRes.ok) {
-        const errText = await upsertRes.text();
+      if (!upsertRet.res.ok) {
+        const errText = upsertRet.errText || await upsertRet.res.text();
         return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
       }
-      return { statusCode: 200, body: JSON.stringify({ ok: true, creado: false }) };
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          ok: true,
+          creado: false,
+          degradado: upsertRet.degradado,
+          propiedades_omitidas: upsertRet.rechazadas
+        })
+      };
     }
 
-    // 3. Sin correo: creacion directa asegurando referencia_pago unica
-    const createRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
-      method: 'POST',
-      headers: H,
-      body: JSON.stringify({ properties })
-    });
-    if (!createRes.ok) {
-      const errText = await createRes.text();
+    // 3. Sin correo: creacion directa asegurando referencia_pago unica con degradacion controlada
+    const createRet = await fetchHubSpotConDegradacion(
+      'https://api.hubapi.com/crm/v3/objects/contacts',
+      {
+        method: 'POST',
+        headers: H,
+        body: JSON.stringify({ properties })
+      },
+      properties
+    );
+    if (!createRet.res.ok) {
+      const errText = createRet.errText || await createRet.res.text();
       return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_create_failed', detail: errText }) };
     }
-    return { statusCode: 200, body: JSON.stringify({ ok: true, creado: true }) };
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        ok: true,
+        creado: true,
+        degradado: createRet.degradado,
+        propiedades_omitidas: createRet.rechazadas
+      })
+    };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ ok: false, reason: 'server_error', message: err.message }) };
   }

@@ -161,6 +161,47 @@ function modoPrueba(event) {
   return process.env.LYZBRI_MODO_PRUEBA === 'true' && process.env.CONTEXT !== 'production' && host.indexOf('lyzbri.com') === -1;
 }
 
+
+/**
+ * Ejecuta una llamada HTTP a HubSpot con degradación controlada:
+ * Si HubSpot devuelve HTTP 400 por propiedades no existentes en el CRM,
+ * extrae las propiedades rechazadas, las remueve y reintenta una vez.
+ */
+async function fetchHubSpotConDegradacion(url, options, props) {
+  let res = await fetch(url, options);
+  if (res.status === 400) {
+    const errText = await res.text();
+    const rechazadas = [];
+    try {
+      const j = JSON.parse(errText);
+      if (j.context && j.context.propertyName) {
+        (Array.isArray(j.context.propertyName) ? j.context.propertyName : [j.context.propertyName]).forEach(p => rechazadas.push(p));
+      }
+      if (j.message) {
+        const matches = j.message.match(/Property ["']?([a-zA-Z0-9_]+)["']? does not exist/gi);
+        if (matches) {
+          matches.forEach(m => {
+            const clean = m.replace(/Property ["']?/i, '').replace(/["']? does not exist/i, '').trim();
+            if (clean && !rechazadas.includes(clean)) rechazadas.push(clean);
+          });
+        }
+      }
+    } catch (_) {}
+
+    if (rechazadas.length > 0) {
+      console.warn('[HubSpot Degradación Controlada - Formulario] Propiedades no reconocidas:', rechazadas);
+      const propsDepuradas = { ...props };
+      rechazadas.forEach(p => delete propsDepuradas[p]);
+      const nuevoBody = JSON.parse(options.body);
+      nuevoBody.properties = propsDepuradas;
+      const reintento = await fetch(url, { ...options, body: JSON.stringify(nuevoBody) });
+      return { res: reintento, degradado: true, rechazadas, errText: null };
+    }
+    return { res, degradado: false, rechazadas: [], errText };
+  }
+  return { res, degradado: false, rechazadas: [], errText: null };
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ ok: false, reason: 'method_not_allowed' }) };
@@ -292,23 +333,26 @@ exports.handler = async (event) => {
     }
 
     // 3. Actualizar el contacto con los campos del formulario + marcar hechos_completos.
-    const updateRes = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${contact.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
-        'Content-Type': 'application/json'
+    const propsToUpdate = {
+      ...campos,
+      hechos_completos: 'true',
+      fecha_hechos_completos: new Date().toISOString().slice(0, 10)
+    };
+    const updateRet = await fetchHubSpotConDegradacion(
+      `https://api.hubapi.com/crm/v3/objects/contacts/${contact.id}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ properties: propsToUpdate })
       },
-      body: JSON.stringify({
-        properties: {
-          ...campos,
-          hechos_completos: 'true',
-          fecha_hechos_completos: new Date().toISOString().slice(0, 10)
-        }
-      })
-    });
+      propsToUpdate
+    );
 
-    if (!updateRes.ok) {
-      const errText = await updateRes.text();
+    if (!updateRet.res.ok) {
+      const errText = updateRet.errText || await updateRet.res.text();
       return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
     }
 
