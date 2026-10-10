@@ -66,7 +66,11 @@ exports.handler = async (event) => {
         return { statusCode: 400, body: JSON.stringify({ valid: false, reason: 'producto_requiere_contacto_manual', referenciaPago }) };
       }
 
-      const cantAcreedores = contact.properties.cant_acreedores || contact.properties.deuda_cantidad || contact.properties.numero_obligaciones || 1;
+      const rawCant = contact.properties.cant_acreedores || contact.properties.deuda_cantidad || contact.properties.numero_obligaciones;
+      if (clave.startsWith('DEUDAS|INSOLV_') && (!rawCant || Number(rawCant) < 1)) {
+        return { statusCode: 400, body: JSON.stringify({ valid: false, reason: 'cant_acreedores_no_registrada_en_caso', referenciaPago }) };
+      }
+      const cantAcreedores = rawCant;
       const v = await verificarPago(referenciaPago, clave, cantAcreedores);
       if (!v.aprobado) {
         return { statusCode: 400, body: JSON.stringify({ valid: false, reason: v.reason, referenciaPago }) };

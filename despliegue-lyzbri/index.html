@@ -2057,7 +2057,7 @@
     // Pausa temporal preventiva de nuevas ventas en línea para la línea de insolvencia.
     // No bloquea los demás servicios (Habeas Data, Alimentos, Marca, TEA) ni interrumpe
     // casos ya pagados. La reactivación de checkout en Bold queda sujeta a autorización de Liza.
-    var PAUSA_VENTAS_INSOLVENCIA = false;
+    var PAUSA_VENTAS_INSOLVENCIA = true;
 
     var BOLD_SCRIPT = 'https://checkout.bold.co/library/boldPaymentButton.js';
 
@@ -3140,8 +3140,17 @@
           referenciaPago: reference,
           respuestasWizard: respuestasParaHubspot
         })
+      }).then(function (res) {
+        if (!res.ok) {
+          console.warn('Registro de caso retornó estado:', res.status);
+          var avisoReg = document.getElementById('hubspot_aviso_registro');
+          if (avisoReg) {
+            avisoReg.style.display = 'block';
+            avisoReg.textContent = 'Aviso: Tuvimos una intermitencia técnica registrando tu radicado en el sistema. Puedes unirte a la lista de espera por WhatsApp con tu radicado ' + reference + '.';
+          }
+        }
       }).catch(function (err) {
-        console.warn('Registro en HubSpot diferido:', err);
+        console.warn('Registro en CRM diferido:', err);
       });
 
       conf.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -3691,17 +3700,35 @@
         }).then(function (r) {
           if (r && r.notifInsolvencia) {
             var nInfo = r.notifInsolvencia;
+            var msgCorreo = (r.avisoMake === true)
+              ? 'Hemos enviado a tu correo el listado de documentos de tu régimen (<b>' + (nInfo.regimen || 'Insolvencia') + '</b>).'
+              : 'Recibimos tu pago y registramos tu caso. La abogada te contactará por WhatsApp con tu radicado <b>' + (nInfo.radicado || referencia) + '</b> para coordinar el inicio.';
+
+            var obligatoriosHtml = '';
+            if (nInfo.documentos && Array.isArray(nInfo.documentos.obligatorios)) {
+              obligatoriosHtml = '<h5 style="margin:8px 0 4px;color:#102a4c;">Documentos obligatorios requeridos:</h5><ul style="font-size:0.85rem;color:#4a5568;padding-left:18px;">' +
+                nInfo.documentos.obligatorios.map(function(d){ return '<li>' + d + '</li>'; }).join('') + '</ul>';
+            }
+
+            var cargaHtml = '';
+            if (nInfo.enlaceCarga) {
+              cargaHtml = '<div style="margin:14px 0;padding:12px;background:#ffffff;border:1px solid #b8daff;border-radius:6px;">' +
+                '<p style="margin:0 0 8px;font-size:0.9rem;color:#102a4c;font-weight:bold;">Sube tus documentos sin registrarte:</p>' +
+                '<a href="' + nInfo.enlaceCarga + '" target="_blank" rel="noopener" style="display:inline-block;padding:8px 16px;background:#1a365d;color:#ffffff;text-decoration:none;border-radius:4px;font-weight:bold;font-size:0.9rem;">Subir documentos a mi caso &rarr;</a>' +
+                '</div>';
+            } else {
+              cargaHtml = '<div style="margin:14px 0;padding:12px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;">' +
+                '<p style="margin:0;font-size:0.9rem;color:#92400e;font-weight:bold;">Recepción de documentos asistida:</p>' +
+                '<p style="margin:4px 0 0;font-size:0.85rem;color:#78350f;">Para asegurar tu caso, la abogada habilitará tu carpeta privada de documentos directamente tras revisar tu radicado.</p>' +
+                '</div>';
+            }
+
             var listadoHtml = '<div style="margin-top:16px;padding:16px;background:#f0f7ff;border:1px solid #cce3ff;border-radius:8px;text-align:left;">' +
               '<h4 style="margin:0 0 8px;color:#102a4c;">¡Recibimos tu información y tu pago!</h4>' +
-              '<p style="font-size:0.95rem;margin:0 0 12px;color:#2c3e50;">Hemos enviado a tu correo el listado de documentos de tu régimen (<b>' + (nInfo.regimen || 'Insolvencia') + '</b>). Te entregaremos tu documento en <b>' + nInfo.tiempoEntrega + '</b>. El plazo de entrega inicia a partir de la recepción completa de tus documentos.</p>' +
-              '<h5 style="margin:8px 0 4px;color:#102a4c;">Documentos obligatorios requeridos:</h5><ul style="font-size:0.85rem;color:#4a5568;padding-left:18px;">' +
-              nInfo.documentos.obligatorios.map(function(d){ return '<li>' + d + '</li>'; }).join('') +
-              '</ul>' +
-              '<div style="margin:14px 0;padding:12px;background:#ffffff;border:1px solid #b8daff;border-radius:6px;">' +
-              '<p style="margin:0 0 8px;font-size:0.9rem;color:#102a4c;font-weight:bold;">Sube tus documentos sin registrarte:</p>' +
-              '<a href="' + (nInfo.enlaceCarga || '#') + '" target="_blank" rel="noopener" style="display:inline-block;padding:8px 16px;background:#1a365d;color:#ffffff;text-decoration:none;border-radius:4px;font-weight:bold;font-size:0.9rem;">Subir documentos a mi caso &rarr;</a>' +
-              '</div>' +
-              '<p style="font-size:0.85rem;margin:10px 0 0;color:#6b7c96;">¿Dudas? Contáctanos directamente por WhatsApp con tu radicado: <a href="' + (nInfo.enlaceWhatsapp || '#') + '" target="_blank" rel="noopener">Soporte WhatsApp</a>.</p>' +
+              '<p style="font-size:0.95rem;margin:0 0 12px;color:#2c3e50;">' + msgCorreo + ' Te entregaremos tu documento en <b>' + (nInfo.tiempoEntrega || 'el plazo pactado') + '</b>. El plazo de entrega inicia a partir de la verificación de tu documentación completa.</p>' +
+              obligatoriosHtml +
+              cargaHtml +
+              '<p style="font-size:0.85rem;margin:10px 0 0;color:#6b7c96;">¿Dudas? Contáctanos directamente por WhatsApp con tu radicado: <a href="' + (nInfo.enlaceWhatsapp || 'https://wa.me/573115872929') + '" target="_blank" rel="noopener">Soporte WhatsApp</a>.</p>' +
               '</div>';
             estado.innerHTML = listadoHtml;
           } else {

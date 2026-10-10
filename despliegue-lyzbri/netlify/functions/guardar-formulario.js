@@ -19,7 +19,7 @@ const WHITELIST_POR_SERVICIO = {
   ],
   'deudas': [
     'tipo_documento', 'numero_documento', 'acreedores',
-    'numero_obligaciones', 'monto_total_adeudado', 'objetivo_negociacion',
+    'numero_obligaciones', 'monto_total_adeudado', 'objetivo_negociacion', 'relacion_acreedores_insolvencia',
     'observaciones_deudas', 'nombre_deudor', 'tipo_sujeto', 'cant_acreedores',
     'fecha_vencimiento_antigua', 'porcentaje_pasivo_mora', 'tiene_libranzas',
     'soporte_abonos_libranza', 'es_comerciante', 'matricula_mercantil',
@@ -116,16 +116,20 @@ function validarCamposFormulario(campos, servicio) {
 // el repositorio es publico. Si falla, no se bloquea el guardado del cliente.
 const { verificarPago, PRECIOS } = require('./lib/bold-pago');
 
-async function avisarAMake(email, referenciaPago) {
+async function avisarAMake(email, referenciaPago, extraData) {
   if (!process.env.MAKE_WEBHOOK_URL || !email) return false;
   try {
+    const bodyData = {
+      origen: 'formulario_completo',
+      data: {
+        transaction: { status: 'APPROVED', customer_email: email, reference: referenciaPago },
+        ...(extraData || {})
+      }
+    };
     const r = await fetch(process.env.MAKE_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        origen: 'formulario_completo',
-        data: { transaction: { status: 'APPROVED', customer_email: email, reference: referenciaPago } }
-      })
+      body: JSON.stringify(bodyData)
     });
     return r.ok;
   } catch (e) {
@@ -309,9 +313,10 @@ exports.handler = async (event) => {
     }
 
     const emailContacto = correo || (contact.properties && contact.properties.email) || null;
-    const avisoMake = await avisarAMake(emailContacto, referenciaPago);
-    let notifInsolvencia = null;
     const esDeudas = payload.servicio === 'deudas' || (clave && clave.startsWith('DEUDAS|')) || (pc.lyzbri_service_code === 'deudas') || (campos && campos.regimen_insolvencia);
+    let notifInsolvencia = null;
+    let extraMake = {};
+
     if (esDeudas) {
       const caseType = pc.lyzbri_case_type || (campos && campos.lyzbri_case_type) || 'INSOLV_DIAG_NAT';
       const regimen = pc.regimen_insolvencia || (campos && campos.regimen_insolvencia) || 'PN_NC_CGP';
@@ -323,7 +328,41 @@ exports.handler = async (event) => {
         radicado: referenciaPago,
         email: emailContacto
       });
+
+      if (notifInsolvencia && notifInsolvencia.ok) {
+        extraMake = {
+          notificacion: {
+            idPlantilla: notifInsolvencia.idPlantilla,
+            asunto: notifInsolvencia.asunto,
+            html: notifInsolvencia.bodyHtml
+          },
+          case_type: caseType,
+          regimen: regimen
+        };
+      }
     }
+
+    const avisoMake = await avisarAMake(emailContacto, referenciaPago, extraMake);
+
+    // F4.2: Si avisarAMake devuelve false en insolvencia, alertar y marcar ERROR_ENTREGA
+    if (!avisoMake && esDeudas && contact && contact.id) {
+      await alertarRevision(referenciaPago, 'deudas', 'Formulario guardado pero falló el aviso a Make. Requiere revisión manual y despacho asistido de documentos.');
+      if (process.env.HUBSPOT_PRIVATE_APP_TOKEN) {
+        try {
+          await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${contact.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              properties: { estado_revision: 'ERROR_ENTREGA' }
+            })
+          });
+        } catch (_) {}
+      }
+    }
+
     return { statusCode: 200, body: JSON.stringify({ ok: true, avisoMake, notifInsolvencia }) };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ ok: false, reason: 'server_error', message: err.message }) };

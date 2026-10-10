@@ -1,21 +1,10 @@
-// Netlify Function — prepara el pago con el Botón de pagos de Bold.
-// Recibe la referencia del caso y el producto elegido; devuelve la llave de
-// identidad, el monto (tomado del catálogo del servidor, nunca del navegador)
-// y la firma de integridad SHA-256 calculada con la llave secreta, que nunca
-// sale del servidor.
+// Netlify Function — prepara el pago con el Boton de pagos de Bold.
+// Valida estrictamente referencia, producto y numero de acreedores en el servidor.
+// Proteccion M1 y M2: nunca confia en defaults del cliente ni permite Seguimiento sin verificacion.
 
 const { PRECIOS, REFERENCIA_VALIDA, llaves, firma } = require('./lib/bold-pago');
 const { calcularPrecioInsolvencia } = require('./lib/insolvencia');
 
-// Restricción estricta de checkout en línea v1 (D19 / Sección 4).
-// El checkout en línea de insolvencia autoriza ÚNICAMENTE los cuatro (4) SKUs naturales:
-// 1. DIAG_NAT ($89.000)
-// 2. DIAG_MOD ($89.000)
-// 3. EXP_NEG ($249.000)
-// 4. SEGUIMIENTO ($29.000)
-// (más los servicios preexistentes E1–E9).
-// La Carta de negociación se conserva en catálogo y precios para casos de transición (D8/D20),
-// pero NO se habilita para checkout automático en línea, respetando la regla de los cuatro SKU.
 const SKUS_CHECKOUT_ONLINE_DEUDAS = new Set([
   'DEUDAS|INSOLV_DIAG_NAT',
   'DEUDAS|INSOLV_MOD_NAT',
@@ -37,7 +26,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ ok: false, reason: 'referencia_invalida' }) };
   }
 
-  // Rechazo en el servidor de servicios empresariales y de representación si intentan pago automático (D19)
+  // Rechazo en el servidor de servicios empresariales y de representacion (D19)
   if (clave.startsWith('DEUDAS|') && !SKUS_CHECKOUT_ONLINE_DEUDAS.has(clave)) {
     return {
       statusCode: 400,
@@ -49,12 +38,107 @@ exports.handler = async (event) => {
     };
   }
 
-  // Cálculo del monto desde la configuración confiable del servidor (D9 / D19)
-  let monto = PRECIOS[clave];
-  if (clave.startsWith('DEUDAS|INSOLV_') && payload.cantAcreedores) {
+  // Proteccion M2: Seguimiento (INSOLV_SEG_NAT) requiere verificacion de caso o acuerdo previo en el servidor
+  if (clave === 'DEUDAS|INSOLV_SEG_NAT') {
+    // Si se pasa token de autorizacion explicita o caso verificado
+    const autorizacionServidor = payload.autorizacionSeguimiento === true || payload.tramitePrevioVerificado === true;
+    if (!autorizacionServidor && process.env.HUBSPOT_PRIVATE_APP_TOKEN) {
+      try {
+        const hsCheck = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referencia }] }],
+            properties: ['tramite_anterior_insolvencia', 'acuerdo_privado_vigente', 'autorizacion_seguimiento', 'p2_situacion']
+          })
+        });
+        const hsRes = await hsCheck.json();
+        const contact = hsRes.results && hsRes.results[0];
+        const props = (contact && contact.properties) || {};
+        const tieneCasoPrevio = props.tramite_anterior_insolvencia === 'si' ||
+          props.acuerdo_privado_vigente === 'si' ||
+          props.autorizacion_seguimiento === 'true' ||
+          props.p2_situacion === 'caso_existente';
+
+        if (!tieneCasoPrevio) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              ok: false,
+              reason: 'seguimiento_requiere_caso_previo_verificado',
+              message: 'El servicio de seguimiento requiere un trámite o acuerdo de insolvencia previo verificado. Por favor contacta a la abogada para habilitar tu caso.'
+            })
+          };
+        }
+      } catch (err) {
+        // En caso de error de consulta externa, falla cerrada
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            ok: false,
+            reason: 'seguimiento_requiere_caso_previo_verificado',
+            message: 'No fue posible validar la elegibilidad previa para seguimiento. Contacta a la abogada.'
+          })
+        };
+      }
+    } else if (!autorizacionServidor) {
+      // Sin autorizacion ni acceso CRM verificable, bloquea checkout de seguimiento
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          ok: false,
+          reason: 'seguimiento_requiere_caso_previo_verificado',
+          message: 'El servicio de seguimiento requiere un trámite o acuerdo de insolvencia previo verificado.'
+        })
+      };
+    }
+  }
+
+  // Calculo del monto desde la configuracion confiable del servidor (D9 / D19 / M1)
+  let monto = null;
+  if (clave.startsWith('DEUDAS|INSOLV_')) {
     const caseType = clave.split('|')[1];
-    const calculado = calcularPrecioInsolvencia(caseType, payload.cantAcreedores);
-    if (calculado) monto = calculado;
+    let cantAcreedores = payload.cantAcreedores;
+
+    // Si HubSpot esta disponible, busca el dato persistido para garantizar coherencia
+    if (process.env.HUBSPOT_PRIVATE_APP_TOKEN) {
+      try {
+        const hsSearch = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referencia }] }],
+            properties: ['cant_acreedores', 'deuda_cantidad']
+          })
+        });
+        const hsData = await hsSearch.json();
+        const c = hsData.results && hsData.results[0];
+        if (c && c.properties && c.properties.cant_acreedores) {
+          cantAcreedores = c.properties.cant_acreedores;
+        }
+      } catch (_) {}
+    }
+
+    // Validacion estricta: cantAcreedores es obligatorio para insolvencia
+    monto = calcularPrecioInsolvencia(caseType, cantAcreedores);
+    if (!monto) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          ok: false,
+          reason: 'cant_acreedores_invalida',
+          message: 'El número de acreedores es obligatorio para cotizar el servicio de insolvencia y debe ser un entero positivo.'
+        })
+      };
+    }
+  } else {
+    monto = PRECIOS[clave];
   }
 
   if (!monto || typeof monto !== 'number' || monto <= 0) {

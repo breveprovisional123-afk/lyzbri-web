@@ -1,12 +1,6 @@
-// Se llama DESDE EL WIZARD, antes de salir hacia Wompi (ver mostrarResultado()
-// en landing_lyzbri.html). Es la pieza que faltaba de raiz: hoy el wizard no
-// envia nada a HubSpot, asi que cuando el cliente vuelve del pago no existe
-// ningun caso que buscar por referencia_pago. Esta funcion crea (o actualiza,
-// si el correo ya existia) el contacto ANTES del pago, con la referencia que
-// se va a usar despues para encontrarlo.
-//
-// Requiere la variable de entorno HUBSPOT_PRIVATE_APP_TOKEN configurada en
-// Netlify (Site settings -> Environment variables).
+// Netlify Function — registra el caso antes de pasar al checkout o canal de contacto.
+// Previene registros duplicados buscando primero por referencia_pago.
+// Si el registro en HubSpot falla, responde 502 explícito; nunca simula éxito.
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -29,78 +23,97 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ ok: false, reason: 'missing_fields' }) };
   }
 
-  // servicio_comprado es una lista cerrada de HubSpot que no se puede ampliar
-  // (el editor de HubSpot falla). Solo se escribe cuando el valor existe en la
-  // lista; el servicio real (tutela, desacato, alimentos, ...) va siempre en
-  // servicio_lyzbri, que es texto libre y es el que usa Make.
-  var SERVICIOS_EN_LISTA = ['habeas_data', 'deudas', 'registro_marca', 'tea_discapacidad'];
+  const SERVICIOS_EN_LISTA = ['habeas_data', 'deudas', 'registro_marca', 'tea_discapacidad'];
   const properties = {
     firstname: nombre,
     phone: whatsapp,
     servicio_lyzbri: servicioLyzbri || servicio,
     referencia_pago: referenciaPago,
     pago_confirmado: 'false',
-    // Caso nuevo: los hechos de un caso anterior del mismo correo NO pueden
-    // disparar un documento para este pago (Make exige hechos_completos=true).
     hechos_completos: 'false'
   };
   if (SERVICIOS_EN_LISTA.indexOf(servicio) !== -1) properties.servicio_comprado = servicio;
   if (correo) properties.email = correo;
-  // Las respuestas del wizard (p.ej. tea_condicion/tea_area/tea_estado) se guardan
-  // tal cual para no volver a preguntarlas en el formulario post-pago -- PERO
-  // excluyendo nombre/whatsapp/correo/consiente, que no son nombres de propiedad
-  // de HubSpot (ya se mapearon arriba a firstname/phone/email) y que la API de
-  // HubSpot rechazaría por completo si se envían como propiedades inexistentes.
-  // Solo se envían a HubSpot las respuestas que existen como propiedad: una
-  // propiedad desconocida haría que HubSpot rechazara el caso completo.
-  var PROPIEDADES_PERMITIDAS = ['hd_problema', 'hd_reclamo', 'hd_entidad', 'deuda_cantidad', 'deuda_cobro',
+
+  // Lista de propiedades permitidas verificadas en el esquema de HubSpot
+  const PROPIEDADES_PERMITIDAS = [
+    'hd_problema', 'hd_reclamo', 'hd_entidad', 'deuda_cantidad', 'deuda_cobro',
     'marca_tipo', 'marca_disponibilidad', 'categoria_condicion_tea', 'area_caso_tea', 'area_caso_tea_texto',
     'tea_estado', 'subtipo_no_visible_tea', 'sub_caso', 'nombre_completo', 'tipo_solicitud_alimentos', 'modalidad_servicio',
-    // Trazabilidad (Corrección crítica 27-sep-2026): identificador estable del
-    // producto vendido y ruta de procesamiento. Make enruta por lyzbri_make_route.
     'lyzbri_service_code', 'lyzbri_case_type', 'lyzbri_processing_mode', 'lyzbri_delivery_type',
-    'lyzbri_make_route', 'cant_acreedores', 'p1_perfil', 'p2_situacion', 'p3_objetivo', 'regimen_insolvencia'];
-  // Condicion C7 (A2): La marca de revision manual por tutela previa se calcula
-  // en el servidor. El cliente no puede inyectar ni modificar estado_revision.
-  if (respuestasWizard) {
+    'lyzbri_make_route', 'cant_acreedores', 'p1_perfil', 'p2_situacion', 'p3_objetivo', 'regimen_insolvencia',
+    'relacion_acreedores_insolvencia', 'estado_caso_insolvencia'
+  ];
+
+  if (respuestasWizard && typeof respuestasWizard === 'object') {
     if (respuestasWizard.tutela_previa === 'si' || respuestasWizard.tutela_previa === true) {
       properties.estado_revision = 'MANUAL_REVIEW';
     } else if (respuestasWizard.tutela_previa === 'no' || respuestasWizard.tutela_previa === false) {
       properties.estado_revision = '';
     }
-  }
 
-  if (respuestasWizard && typeof respuestasWizard === 'object') {
     Object.keys(respuestasWizard).forEach(function (k) {
       if (PROPIEDADES_PERMITIDAS.indexOf(k) !== -1 && respuestasWizard[k] !== undefined && respuestasWizard[k] !== '') {
-        properties[k] = respuestasWizard[k];
+        properties[k] = String(respuestasWizard[k]);
       }
     });
   }
 
+  // Si es producto de contacto/lead (Flujo B), marcar estado inicial
+  const esLeadContacto = properties.lyzbri_delivery_type === 'LEAD_CONTACTO' ||
+    ['INSOLV_REP_NAT', 'INSOLV_DIAG_EMP', 'INSOLV_EXP_EMP', 'INSOLV_REORG_EMP', 'INSOLV_SEG_EMP'].includes(properties.lyzbri_case_type);
+  if (esLeadContacto) {
+    properties.estado_caso_insolvencia = 'LEAD_PENDIENTE_REVISION';
+  }
+
+  const H = {
+    'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
+    'Content-Type': 'application/json'
+  };
+
   try {
+    // 1. DEDUPLICACION: Buscar si ya existe contacto con esta referencia_pago
+    const searchRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+      method: 'POST',
+      headers: H,
+      body: JSON.stringify({
+        filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
+        properties: ['hs_object_id', 'email', 'referencia_pago']
+      })
+    });
+
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      const existing = searchData.results && searchData.results[0];
+      if (existing && existing.id) {
+        // Contacto existente con este radicado -> Actualizar sin duplicar
+        const patchRes = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(existing.id)}`, {
+          method: 'PATCH',
+          headers: H,
+          body: JSON.stringify({ properties })
+        });
+        if (!patchRes.ok) {
+          const errText = await patchRes.text();
+          return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
+        }
+        return { statusCode: 200, body: JSON.stringify({ ok: true, creado: false, deduplicado: true, id: existing.id }) };
+      }
+    }
+
+    // 2. Si hay correo, intentar upsert por email
     if (correo) {
-      // Con correo: upsert por email -- crea el contacto si no existia, o lo
-      // actualiza si la persona ya tenia un caso anterior con Lyzbri.
       const upsertRes = await fetch(
         `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email`,
         {
           method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
+          headers: H,
           body: JSON.stringify({ properties })
         }
       );
       if (upsertRes.status === 404) {
-        // No existia contacto con ese email todavia -- se crea uno nuevo.
         const createRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
+          headers: H,
           body: JSON.stringify({ properties })
         });
         if (!createRes.ok) {
@@ -116,15 +129,10 @@ exports.handler = async (event) => {
       return { statusCode: 200, body: JSON.stringify({ ok: true, creado: false }) };
     }
 
-    // Sin correo (el campo es opcional en el wizard hoy): se crea el contacto
-    // directo, sin poder deduplicar por email. referencia_pago sigue siendo
-    // la llave que guardar-formulario.js usara despues para encontrarlo.
+    // 3. Sin correo: creacion directa asegurando referencia_pago unica
     const createRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
+      headers: H,
       body: JSON.stringify({ properties })
     });
     if (!createRes.ok) {

@@ -1,35 +1,39 @@
 // Netlify Function — recibe las notificaciones (webhook) de Bold.
-// URL para registrar en el panel de Bold (Integraciones → Webhooks):
-//   https://lyzbri.com/.netlify/functions/bold-webhook
-//
-// Valida x-bold-signature y procesa SALE_APPROVED antes de confirmar la recepción.
-// Si falla el registro en HubSpot, devuelve un error HTTP para permitir reintentos de Bold.
-// Repetir una notificación es seguro: pago_confirmado evita actualizar dos veces.
+// Valida x-bold-signature de forma segura (sin llaves vacias, correccion M4).
+// Verifica monto exacto contra caso en HubSpot (correccion M3).
+// Idempotente: previene re-procesamiento duplicado.
 
 const crypto = require('crypto');
+const { PRECIOS } = require('./lib/bold-pago');
+const { calcularPrecioInsolvencia } = require('./lib/insolvencia');
 
 function firmaValida(body, firma) {
   if (!firma) return false;
   const b64 = Buffer.from(body || '', 'utf8').toString('base64');
-  const llaves = [];
-  if (process.env.BOLD_SECRET_KEY_PRODUCCION) llaves.push(process.env.BOLD_SECRET_KEY_PRODUCCION);
-  if (process.env.CONTEXT !== 'production') llaves.push(''); // ambiente de pruebas de Bold
-  return llaves.some(function (k) {
-    const esperado = crypto.createHmac('sha256', k).update(b64).digest('hex');
-    const a = Buffer.from(esperado, 'utf8');
-    const b = Buffer.from(String(firma).trim().toLowerCase(), 'utf8');
-    return a.length === b.length && crypto.timingSafeEqual(a, b);
-  });
+  // Correccion M4: NUNCA aceptar clave vacia en ningun entorno
+  const secret = process.env.BOLD_SECRET_KEY_PRODUCCION || process.env.BOLD_SECRET_KEY_PRUEBAS;
+  if (!secret || typeof secret !== 'string' || secret.trim() === '') {
+    return false;
+  }
+  const esperado = crypto.createHmac('sha256', secret).update(b64).digest('hex');
+  const a = Buffer.from(esperado, 'utf8');
+  const b = Buffer.from(String(firma).trim().toLowerCase(), 'utf8');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 async function alertar(referencia, error) {
-  const url = process.env.MAKE_DOCUMENTOS_WEBHOOK_URL || process.env.MAKE_ALIMENTOS_WEBHOOK_URL;
+  const url = process.env.MAKE_DOCUMENTOS_WEBHOOK_URL || process.env.MAKE_ALIMENTOS_WEBHOOK_URL || process.env.MAKE_WEBHOOK_URL;
   if (!url) return false;
   try {
     const r = await fetch(url, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ruta: 'MANUAL_REVIEW', service_code: 'BOLD', referencia: referencia, error: error,
-        correo_notificacion: process.env.LYZBRI_NOTIFY_EMAIL || 'contacto@lyzbri.com' })
+      body: JSON.stringify({
+        ruta: 'MANUAL_REVIEW',
+        service_code: 'BOLD',
+        referencia: referencia,
+        error: error,
+        correo_notificacion: process.env.LYZBRI_NOTIFY_EMAIL || 'contacto@lyzbri.com'
+      })
     });
     return r.ok;
   } catch (e) { return false; }
@@ -54,7 +58,6 @@ function clasificarErrorHubSpot(status, body) {
 }
 
 function cuerpoSeguroHubSpot(respuesta) {
-  // En errores JSON conserva el diagnóstico útil sin reenviar propiedades completas del contacto.
   if (respuesta.json && typeof respuesta.json === 'object') {
     const j = respuesta.json;
     const seguro = {
@@ -83,23 +86,14 @@ async function procesarPago(ev, referencia) {
       method: 'POST', headers: H,
       body: JSON.stringify({
         filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referencia }] }],
-        properties: ['referencia_pago', 'pago_confirmado'],
+        properties: ['referencia_pago', 'pago_confirmado', 'lyzbri_service_code', 'lyzbri_case_type', 'cant_acreedores', 'insolv_postpago_procesado'],
         limit: 2
       })
     });
     const search = await leerRespuestaHubSpot(s);
-    if (!search.ok) {
+    if (!search.ok || !search.json || !Array.isArray(search.json.results)) {
       await alertar(referencia, JSON.stringify({
-        etapa: 'SEARCH',
-        clasificación: clasificarErrorHubSpot(search.status, search.body),
-        status: search.status,
-        body: cuerpoSeguroHubSpot(search)
-      }));
-      return false;
-    }
-    if (!search.json || !Array.isArray(search.json.results)) {
-      await alertar(referencia, JSON.stringify({
-        etapa: 'SEARCH', clasificación: 'respuesta_inválida_de_búsqueda',
+        etapa: 'SEARCH', clasificacin: 'error_busqueda_hubspot',
         status: search.status, body: cuerpoSeguroHubSpot(search)
       }));
       return false;
@@ -107,26 +101,63 @@ async function procesarPago(ev, referencia) {
 
     const contactos = search.json.results;
     if (contactos.length === 0) {
-      await alertar(referencia, 'Bold aprobó un pago (' + ((ev.data.amount && ev.data.amount.total) || '?') +
-        ' COP, transacción ' + (ev.data.payment_id || ev.subject || '?') + ') pero la búsqueda de HubSpot no encontró el caso. ' +
-        JSON.stringify({ etapa: 'SEARCH', status: search.status, total: 0 }));
+      await alertar(referencia, 'Bold aprobó un pago pero la búsqueda de HubSpot no encontró el caso (' + referencia + ').');
       return false;
     }
     if (contactos.length !== 1 || !contactos[0].id || !contactos[0].properties ||
         contactos[0].properties.referencia_pago !== referencia) {
       await alertar(referencia, JSON.stringify({
-        etapa: 'SEARCH', clasificación: 'búsqueda_ambigua_o_referencia_no_coincidente',
+        etapa: 'SEARCH', clasificación: 'busqueda_ambigua_o_referencia_no_coincidente',
         status: search.status, coincidencias: contactos.length
       }));
       return false;
     }
 
     const contacto = contactos[0];
-    if (contacto.properties.pago_confirmado === 'true' || contacto.properties.pago_confirmado === true) return true;
+    const props = contacto.properties || {};
 
+    // Idempotencia estricta: si ya fue confirmado, retornar exito sin duplicar operaciones
+    if (props.pago_confirmado === 'true' || props.pago_confirmado === true) {
+      return true;
+    }
+
+    // Correccion M3: Validacion obligatoria de monto pagado vs monto esperado
+    const totalPagado = Number(ev.data && ev.data.amount && ev.data.amount.total);
+    const serviceCode = props.lyzbri_service_code;
+    const caseType = props.lyzbri_case_type;
+    let esperado = null;
+
+    if (serviceCode === 'DEUDAS' || (caseType && caseType.startsWith('INSOLV_'))) {
+      esperado = calcularPrecioInsolvencia(caseType, props.cant_acreedores);
+    } else if (serviceCode && caseType) {
+      esperado = PRECIOS[`${serviceCode}|${caseType}`];
+    }
+
+    if (esperado && (!totalPagado || totalPagado < esperado)) {
+      await alertar(referencia, `Bold aprobó transacción pero el monto pagado (${totalPagado} COP) es menor al esperado (${esperado} COP). Caso retenido en MANUAL_REVIEW.`);
+      await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contacto.id)}`, {
+        method: 'PATCH', headers: H,
+        body: JSON.stringify({
+          properties: {
+            estado_revision: 'MANUAL_REVIEW',
+            monto_pagado_verificado: String(totalPagado),
+            monto_esperado_verificado: String(esperado)
+          }
+        })
+      });
+      return false;
+    }
+
+    // Confirmacion del pago en HubSpot
     const actualizacion = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contacto.id)}`, {
       method: 'PATCH', headers: H,
-      body: JSON.stringify({ properties: { pago_confirmado: 'true' } })
+      body: JSON.stringify({
+        properties: {
+          pago_confirmado: 'true',
+          fecha_pago_confirmado: new Date().toISOString().slice(0, 10),
+          estado_caso_insolvencia: 'PAGADO_SIN_DOCS'
+        }
+      })
     });
     const patch = await leerRespuestaHubSpot(actualizacion);
     const confirmado = patch.json && patch.json.properties &&
@@ -134,7 +165,7 @@ async function procesarPago(ev, referencia) {
     if (!patch.ok || !confirmado) {
       await alertar(referencia, JSON.stringify({
         etapa: 'PATCH',
-        clasificación: patch.ok ? 'respuesta_inválida_de_PATCH' : clasificarErrorHubSpot(patch.status, patch.body),
+        clasificación: patch.ok ? 'respuesta_invalida_de_PATCH' : clasificarErrorHubSpot(patch.status, patch.body),
         status: patch.status,
         body: cuerpoSeguroHubSpot(patch)
       }));
@@ -166,7 +197,8 @@ exports.handler = async (event) => {
   const data = (ev && ev.data) || {};
   const referencia = data.metadata && data.metadata.reference;
 
-  if (tipo !== 'SALE_APPROVED' || !referencia) {
+  // Solo procesar pagos aprobados autenticos (ignorar pendientes, cancelados o rechazados)
+  if (tipo !== 'SALE_APPROVED' || (data.payment_status && data.payment_status !== 'APPROVED') || !referencia) {
     return { statusCode: 200, body: JSON.stringify({ ok: true, ignorado: tipo || 'sin_tipo' }) };
   }
 
