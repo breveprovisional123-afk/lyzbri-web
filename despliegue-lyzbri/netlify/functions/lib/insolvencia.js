@@ -188,12 +188,124 @@ function generarNotificacionPostPago(caseTypeOrOpts, regimenClave, nombreCliente
   };
 }
 
-// Embudo del frontend es la fuente unica de calificacion (F4.6)
-function evaluarEmbudoInsolvencia() {
-  return { route: 'MANUAL_REVIEW', sku: null, case_type: null, fallocerrado: true, deprecado: true };
+// Motor de evaluacion de embudo determinista (3 preguntas de calificacion)
+function evaluarEmbudoInsolvencia(respuestas) {
+  if (!respuestas || typeof respuestas !== 'object') {
+    return { ok: false, error: 'MANUAL_REVIEW', route: 'MANUAL_REVIEW', sku: null, case_type: null, regimen: null, fallocerrado: true };
+  }
+
+  const perfil = respuestas.p1_perfil;
+  const situacion = respuestas.p2_situacion;
+  const objetivo = respuestas.p3_objetivo;
+
+  // 1. Persona jurídica -> Tarjeta G empresarial
+  if (perfil === 'PERSONA_JURIDICA' || perfil === 'juridica' || perfil === 'empresa') {
+    return {
+      ok: true,
+      route: 'TARJETA_G_EMPRESARIAL',
+      sku: 'TARJETA_G',
+      case_type: 'EMPRESARIAL_TARJETA_G',
+      regimen: 'PJ_EMP',
+      esEmpresarial: true
+    };
+  }
+
+  // 2. Caso existente en trámite -> SEGUIMIENTO
+  if (situacion === 'CASO_EXISTENTE' || situacion === 'caso_existente' || situacion === 'etapa_negociacion') {
+    return {
+      ok: true,
+      route: 'DEUDAS_INSOLV_SEG_NAT',
+      sku: 'SEGUIMIENTO',
+      case_type: 'INSOLV_SEG_NAT',
+      regimen: 'SEGUIMIENTO'
+    };
+  }
+
+  // 3. Comerciante persona natural -> DIAG_NATURAL primero
+  if (perfil === 'PN_COMERCIANTE' || perfil === 'comercio' || perfil === 'comerciante_pequeno') {
+    return {
+      ok: true,
+      route: 'DEUDAS_INSOLV_DIAG_NAT',
+      sku: 'DIAG_NATURAL',
+      case_type: 'INSOLV_DIAG_NAT',
+      regimen: 'PN_PC_CGP'
+    };
+  }
+
+  // 4. No comerciante + mora declarada + propuesta de pago -> EXP_NEG_NATURAL
+  if ((perfil === 'PN_NO_COMERCIANTE' || perfil === 'no_comercio' || perfil === 'empleado_pensionado') &&
+      (situacion === 'MORA_DECLARADA' || situacion === 'mora_cobros') &&
+      (objetivo === 'propuesta_pago' || objetivo === 'PROPUESTA_PAGO')) {
+    return {
+      ok: true,
+      route: 'DEUDAS_INSOLV_NEG_NAT',
+      sku: 'EXP_NEG_NATURAL',
+      case_type: 'INSOLV_NEG_NAT',
+      regimen: 'PN_NC_CGP'
+    };
+  }
+
+  // 5. Mora declarada + liquidacion o acuerdo privado -> DIAG_MODALIDAD_NATURAL
+  if ((situacion === 'MORA_DECLARADA' || situacion === 'mora_cobros') &&
+      (objetivo === 'liquidacion' || objetivo === 'revisar_acuerdo' || objetivo === 'LIQUIDACION')) {
+    return {
+      ok: true,
+      route: 'DEUDAS_INSOLV_MOD_NAT',
+      sku: 'DIAG_MODALIDAD_NATURAL',
+      case_type: 'INSOLV_MOD_NAT',
+      regimen: 'PN_NC_CGP'
+    };
+  }
+
+  // 6. Dificultad futura, frenar embargos o perfil general no comerciante -> DIAG_NATURAL
+  if (perfil === 'PN_NO_COMERCIANTE' || perfil === 'no_comercio' || perfil === 'empleado_pensionado' ||
+      situacion === 'DIFICULTAD_FUTURA' || situacion === 'dificultad_futura' ||
+      objetivo === 'frenar_embargos') {
+    return {
+      ok: true,
+      route: 'DEUDAS_INSOLV_DIAG_NAT',
+      sku: 'DIAG_NATURAL',
+      case_type: 'INSOLV_DIAG_NAT',
+      regimen: 'PN_NC_CGP'
+    };
+  }
+
+  // 7. Si no se puede reconocer el regimen -> MANUAL_REVIEW (falla cerrada)
+  return {
+    ok: false,
+    error: 'MANUAL_REVIEW',
+    route: 'MANUAL_REVIEW',
+    sku: null,
+    case_type: null,
+    regimen: null,
+    fallocerrado: true
+  };
 }
-function evaluarEmbudoEmpresarial() {
-  return { route: 'MANUAL_REVIEW', sku: null, case_type: null, fallocerrado: true, deprecado: true };
+
+// Embudo empresarial (preguntas complementarias)
+function evaluarEmbudoEmpresarial(respuestas) {
+  if (!respuestas || typeof respuestas !== 'object') {
+    return { ok: false, error: 'MANUAL_REVIEW', route: 'MANUAL_REVIEW', sku: null, case_type: null, fallocerrado: true };
+  }
+
+  const crisis = respuestas.emp_crisis;
+  const activos = respuestas.emp_activos;
+  const operacion = respuestas.emp_operacion;
+  const objetivo = respuestas.emp_objetivo;
+
+  if (objetivo === 'proceso_supersociedades') {
+    return { ok: true, route: 'DEUDAS_INSOLV_REORG_EMP', sku: 'REORG_EMP', case_type: 'INSOLV_REORG_EMP', regimen: 'PJ_EMP' };
+  }
+
+  if (crisis === 'mora_90_ejecutivos' && operacion === 'opera_con_ingresos') {
+    return { ok: true, route: 'DEUDAS_INSOLV_EXP_EMP', sku: 'EXP_EMPRESARIAL', case_type: 'INSOLV_EXP_EMP', regimen: 'PJ_EMP' };
+  }
+
+  if (crisis === 'dificultad_futura' || operacion === 'sin_operacion' || !crisis) {
+    return { ok: true, route: 'DEUDAS_INSOLV_DIAG_EMP', sku: 'DIAG_EMPRESARIAL', case_type: 'INSOLV_DIAG_EMP', regimen: 'PJ_EMP' };
+  }
+
+  return { ok: true, route: 'DEUDAS_INSOLV_DIAG_EMP', sku: 'DIAG_EMPRESARIAL', case_type: 'INSOLV_DIAG_EMP', regimen: 'PJ_EMP' };
 }
 
 module.exports = {
