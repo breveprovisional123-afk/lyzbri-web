@@ -195,7 +195,7 @@ exports.handler = async (event) => {
   }
   const tipo = ev && ev.type;
   const data = (ev && ev.data) || {};
-  const referencia = data.metadata && data.metadata.reference;
+  const referencia = (data.metadata && data.metadata.reference) || data.reference;
 
   // Solo procesar pagos aprobados autenticos (ignorar pendientes, cancelados o rechazados)
   if (tipo !== 'SALE_APPROVED' || (data.payment_status && data.payment_status !== 'APPROVED') || !referencia) {
