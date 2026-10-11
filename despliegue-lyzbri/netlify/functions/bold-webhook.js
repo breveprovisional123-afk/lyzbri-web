@@ -21,6 +21,67 @@ function firmaValida(body, firma) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+/**
+ * Ejecuta una llamada HTTP a HubSpot con degradación controlada:
+ * Si HubSpot devuelve HTTP 400 por propiedades no existentes o inválidas en el portal,
+ * identifica las propiedades rechazadas, las retira del payload y reintenta la operación.
+ * Asegura que pago_confirmado nunca falle por inconsistencias en campos complementarios.
+ */
+async function fetchHubSpotConDegradacion(url, options, props) {
+  let res = await fetch(url, options);
+  if (res.status === 400) {
+    const errText = await res.text();
+    const rechazadas = [];
+    try {
+      const j = JSON.parse(errText);
+      if (j.context && j.context.propertyName) {
+        (Array.isArray(j.context.propertyName) ? j.context.propertyName : [j.context.propertyName]).forEach(p => {
+          if (p && !rechazadas.includes(p)) rechazadas.push(p);
+        });
+      }
+      if (Array.isArray(j.propertiesNotFound)) {
+        j.propertiesNotFound.forEach(p => {
+          if (p && !rechazadas.includes(p)) rechazadas.push(p);
+        });
+      }
+      if (Array.isArray(j.errors)) {
+        j.errors.forEach(e => {
+          if (e.context && e.context.propertyName) {
+            (Array.isArray(e.context.propertyName) ? e.context.propertyName : [e.context.propertyName]).forEach(p => {
+              if (p && !rechazadas.includes(p)) rechazadas.push(p);
+            });
+          }
+          if (e.message) {
+            const m = e.message.match(/Property ["']?([a-zA-Z0-9_]+)["']? does not exist/i);
+            if (m && m[1] && !rechazadas.includes(m[1])) rechazadas.push(m[1]);
+          }
+        });
+      }
+      if (j.message) {
+        const matches = j.message.match(/Property ["']?([a-zA-Z0-9_]+)["']? does not exist/gi);
+        if (matches) {
+          matches.forEach(m => {
+            const clean = m.replace(/Property ["']?/i, '').replace(/["']? does not exist/i, '').trim();
+            if (clean && !rechazadas.includes(clean)) rechazadas.push(clean);
+          });
+        }
+      }
+    } catch (_) {}
+
+    if (rechazadas.length > 0) {
+      console.warn('[HubSpot Degradación Controlada - Webhook] Propiedades no reconocidas por el CRM:', rechazadas);
+      const propsDepuradas = { ...props };
+      rechazadas.forEach(p => delete propsDepuradas[p]);
+      const nuevoBody = JSON.parse(options.body);
+      nuevoBody.properties = propsDepuradas;
+      const reintento = await fetch(url, { ...options, body: JSON.stringify(nuevoBody) });
+      return { res: reintento, degradado: true, rechazadas, errText: null };
+    }
+    return { res, degradado: false, rechazadas: [], errText };
+  }
+  return { res, degradado: false, rechazadas: [], errText: null };
+}
+
 async function alertar(referencia, error) {
   const url = process.env.MAKE_DOCUMENTOS_WEBHOOK_URL || process.env.MAKE_ALIMENTOS_WEBHOOK_URL || process.env.MAKE_WEBHOOK_URL;
   if (!url) return false;
@@ -93,7 +154,7 @@ async function procesarPago(ev, referencia) {
     const search = await leerRespuestaHubSpot(s);
     if (!search.ok || !search.json || !Array.isArray(search.json.results)) {
       await alertar(referencia, JSON.stringify({
-        etapa: 'SEARCH', clasificacin: 'error_busqueda_hubspot',
+        etapa: 'SEARCH', clasificación: 'error_busqueda_hubspot',
         status: search.status, body: cuerpoSeguroHubSpot(search)
       }));
       return false;
@@ -135,31 +196,41 @@ async function procesarPago(ev, referencia) {
 
     if (esperado && (!totalPagado || totalPagado < esperado)) {
       await alertar(referencia, `Bold aprobó transacción pero el monto pagado (${totalPagado} COP) es menor al esperado (${esperado} COP). Caso retenido en MANUAL_REVIEW.`);
-      await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contacto.id)}`, {
-        method: 'PATCH', headers: H,
-        body: JSON.stringify({
-          properties: {
-            estado_revision: 'MANUAL_REVIEW',
-            monto_pagado_verificado: String(totalPagado),
-            monto_esperado_verificado: String(esperado)
-          }
-        })
-      });
+      const propsManual = {
+        estado_revision: 'MANUAL_REVIEW',
+        monto_pagado_verificado: String(totalPagado),
+        monto_esperado_verificado: String(esperado)
+      };
+      await fetchHubSpotConDegradacion(
+        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contacto.id)}`,
+        {
+          method: 'PATCH', headers: H,
+          body: JSON.stringify({ properties: propsManual })
+        },
+        propsManual
+      );
       return false;
     }
 
-    // Confirmacion del pago en HubSpot
-    const actualizacion = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contacto.id)}`, {
-      method: 'PATCH', headers: H,
-      body: JSON.stringify({
-        properties: {
-          pago_confirmado: 'true',
-          fecha_pago_confirmado: new Date().toISOString().slice(0, 10),
-          estado_caso_insolvencia: 'PAGADO_SIN_DOCS'
-        }
-      })
-    });
-    const patch = await leerRespuestaHubSpot(actualizacion);
+    // Confirmacion del pago en HubSpot (H-01 y H-08)
+    const propertiesToUpdate = {
+      pago_confirmado: 'true',
+      fecha_pago_confirmado: new Date().toISOString().slice(0, 10)
+    };
+    // H-08: estado_caso_insolvencia se escribe SOLO si el caso corresponde a insolvencia
+    if (caseType && caseType.startsWith('INSOLV_')) {
+      propertiesToUpdate.estado_caso_insolvencia = 'PAGADO_SIN_DOCS';
+    }
+
+    const patchResult = await fetchHubSpotConDegradacion(
+      `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contacto.id)}`,
+      {
+        method: 'PATCH', headers: H,
+        body: JSON.stringify({ properties: propertiesToUpdate })
+      },
+      propertiesToUpdate
+    );
+    const patch = await leerRespuestaHubSpot(patchResult.res);
     const confirmado = patch.json && patch.json.properties &&
       (patch.json.properties.pago_confirmado === 'true' || patch.json.properties.pago_confirmado === true);
     if (!patch.ok || !confirmado) {
@@ -167,7 +238,9 @@ async function procesarPago(ev, referencia) {
         etapa: 'PATCH',
         clasificación: patch.ok ? 'respuesta_invalida_de_PATCH' : clasificarErrorHubSpot(patch.status, patch.body),
         status: patch.status,
-        body: cuerpoSeguroHubSpot(patch)
+        body: cuerpoSeguroHubSpot(patch),
+        degradado: patchResult.degradado,
+        rechazadas: patchResult.rechazadas
       }));
       return false;
     }
