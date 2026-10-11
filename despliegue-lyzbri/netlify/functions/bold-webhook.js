@@ -209,7 +209,8 @@ async function procesarPago(ev, referencia) {
         },
         propsManual
       );
-      return false;
+      // O-1: Retener en MANUAL_REVIEW y retornar éxito para que el webhook responda 200 (sin reintentos ni spam)
+      return { retenido: true, motivo: 'monto_menor_al_esperado' };
     }
 
     // Confirmacion del pago en HubSpot (H-01 y H-08)
@@ -279,5 +280,5 @@ exports.handler = async (event) => {
   if (!procesado) {
     return { statusCode: 503, body: JSON.stringify({ ok: false, recibido: true, reintento: true }) };
   }
-  return { statusCode: 200, body: JSON.stringify({ ok: true, recibido: true }) };
+  return { statusCode: 200, body: JSON.stringify({ ok: true, recibido: true, retenido: Boolean(procesado && procesado.retenido) }) };
 };
