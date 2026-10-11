@@ -147,7 +147,7 @@ async function procesarPago(ev, referencia) {
       method: 'POST', headers: H,
       body: JSON.stringify({
         filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referencia }] }],
-        properties: ['referencia_pago', 'pago_confirmado', 'lyzbri_service_code', 'lyzbri_case_type', 'cant_acreedores', 'insolv_postpago_procesado'],
+        properties: ['referencia_pago', 'pago_confirmado', 'lyzbri_service_code', 'lyzbri_case_type', 'cant_acreedores'],
         limit: 2
       })
     });
