@@ -45,6 +45,28 @@ async function fetchHubSpotConDegradacion(url, options, props) {
   return { res, degradado: false, rechazadas: [], errText: null };
 }
 
+async function alertar(referencia, error, datosAdicionales) {
+  const url = process.env.MAKE_DOCUMENTOS_WEBHOOK_URL || process.env.MAKE_ALIMENTOS_WEBHOOK_URL || process.env.MAKE_WEBHOOK_URL;
+  if (!url) return false;
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ruta: 'MANUAL_REVIEW',
+        service_code: 'CREAR_CASO',
+        referencia: referencia,
+        error: error,
+        datos: datosAdicionales,
+        correo_notificacion: process.env.LYZBRI_NOTIFY_EMAIL || 'contacto@lyzbri.com'
+      })
+    });
+    return r.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ ok: false, reason: 'method_not_allowed' }) };
@@ -157,18 +179,113 @@ exports.handler = async (event) => {
       }
     }
 
-    // 2. Si hay correo, intentar upsert por email con degradación controlada
+    // 2. Si hay correo, verificar si ya existe un contacto y si tiene un caso abierto
     if (correo) {
-      const upsertRet = await fetchHubSpotConDegradacion(
-        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email`,
-        {
-          method: 'PATCH',
-          headers: H,
-          body: JSON.stringify({ properties })
-        },
-        properties
+      const getContactRes = await fetch(
+        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email&properties=email,firstname,lastname,referencia_pago,pago_confirmado,estado_caso_insolvencia,estado_revision,servicio_lyzbri,servicio_comprado,lyzbri_case_type,hechos_completos`,
+        { method: 'GET', headers: H }
       );
-      if (upsertRet.res.status === 404) {
+
+      if (getContactRes.ok) {
+        const contactData = await getContactRes.json();
+        const prevProps = contactData.properties || {};
+        const prevRef = prevProps.referencia_pago;
+
+        // Si ya tiene este mismo radicado, es el mismo caso (idempotencia)
+        if (prevRef && prevRef === referenciaPago) {
+          const patchRet = await fetchHubSpotConDegradacion(
+            `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contactData.id)}`,
+            {
+              method: 'PATCH',
+              headers: H,
+              body: JSON.stringify({ properties })
+            },
+            properties
+          );
+          if (!patchRet.res.ok) {
+            const errText = patchRet.errText || await patchRet.res.text();
+            return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
+          }
+          return {
+            statusCode: 200,
+            body: JSON.stringify({
+              ok: true,
+              creado: false,
+              deduplicado: true,
+              id: contactData.id,
+              degradado: patchRet.degradado,
+              propiedades_omitidas: patchRet.rechazadas
+            })
+          };
+        }
+
+        // Si existe un radicado previo DIFERENTE, verificar si el caso anterior sigue abierto
+        if (prevRef && prevRef !== referenciaPago) {
+          const tienePagoConfirmado = prevProps.pago_confirmado === 'true' || prevProps.pago_confirmado === true;
+          const tieneEstadoInsolv = Boolean(prevProps.estado_caso_insolvencia && !['CERRADO', 'TERMINADO', 'DESISTIDO'].includes(prevProps.estado_caso_insolvencia));
+          const estaEnRevisionManual = prevProps.estado_revision === 'MANUAL_REVIEW' || prevProps.estado_revision === 'ERROR_ENTREGA';
+          const tieneHechosCompletos = prevProps.hechos_completos === 'true' || prevProps.hechos_completos === true;
+
+          // Un caso está abierto si ya fue pagado, tiene hechos completos, está en revisión manual,
+          // o tiene un trámite de insolvencia activo en proceso
+          const casoAbierto = tienePagoConfirmado || tieneEstadoInsolv || estaEnRevisionManual || tieneHechosCompletos;
+
+          if (casoAbierto) {
+            // Mitigación H-F4-5: NO SOBRESCRIBIR los datos del caso abierto anterior
+            const detalleAlerta = `Intento de compra concurrente (${servicio || properties.servicio_lyzbri}, radicado nuevo: ${referenciaPago}) para correo con caso abierto existente (radicado anterior: ${prevRef}, servicio anterior: ${prevProps.servicio_lyzbri || prevProps.servicio_comprado || 'N/A'}, pago_confirmado: ${prevProps.pago_confirmado}, estado_insolv: ${prevProps.estado_caso_insolvencia || 'N/A'}). Se detuvo el flujo y se derivó a MANUAL_REVIEW para preservar los datos del caso anterior.`;
+
+            await alertar(referenciaPago, detalleAlerta, {
+              correo,
+              radicado_anterior: prevRef,
+              radicado_nuevo: referenciaPago,
+              servicio_anterior: prevProps.servicio_lyzbri || prevProps.servicio_comprado,
+              servicio_nuevo: servicio || properties.servicio_lyzbri,
+              contacto_id: contactData.id
+            });
+
+            return {
+              statusCode: 409,
+              body: JSON.stringify({
+                ok: false,
+                reason: 'caso_abierto_existente',
+                bloqueado_por_caso_abierto: true,
+                mensaje: 'Existe un caso en curso asociado a este correo electrónico. Se ha derivado a revisión manual y se notificó a nuestro equipo para gestionarlo sin afectar su caso anterior.',
+                contacto_id: contactData.id,
+                radicado_anterior: prevRef,
+                radicado_nuevo: referenciaPago
+              })
+            };
+          }
+        }
+
+        // Si el contacto existe pero NO tiene un caso abierto previo (p. ej. lead sin pagar o radicado vacío),
+        // se actualiza de forma segura
+        const patchRet = await fetchHubSpotConDegradacion(
+          `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contactData.id)}`,
+          {
+            method: 'PATCH',
+            headers: H,
+            body: JSON.stringify({ properties })
+          },
+          properties
+        );
+        if (!patchRet.res.ok) {
+          const errText = patchRet.errText || await patchRet.res.text();
+          return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
+        }
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            ok: true,
+            creado: false,
+            degradado: patchRet.degradado,
+            propiedades_omitidas: patchRet.rechazadas
+          })
+        };
+      }
+
+      if (getContactRes.status === 404) {
+        // Contacto nuevo: creación con POST
         const createRet = await fetchHubSpotConDegradacion(
           'https://api.hubapi.com/crm/v3/objects/contacts',
           {
@@ -192,19 +309,9 @@ exports.handler = async (event) => {
           })
         };
       }
-      if (!upsertRet.res.ok) {
-        const errText = upsertRet.errText || await upsertRet.res.text();
-        return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
-      }
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          ok: true,
-          creado: false,
-          degradado: upsertRet.degradado,
-          propiedades_omitidas: upsertRet.rechazadas
-        })
-      };
+
+      const errText = await getContactRes.text();
+      return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_lookup_failed', detail: errText }) };
     }
 
     // 3. Sin correo: creacion directa asegurando referencia_pago unica con degradacion controlada
