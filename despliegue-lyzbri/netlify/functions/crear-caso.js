@@ -221,18 +221,17 @@ exports.handler = async (event) => {
 
         // Si existe un radicado previo DIFERENTE, verificar si el caso anterior sigue abierto
         if (prevRef && prevRef !== referenciaPago) {
-          const tienePagoConfirmado = prevProps.pago_confirmado === 'true' || prevProps.pago_confirmado === true;
-          const tieneEstadoInsolv = Boolean(prevProps.estado_caso_insolvencia && !['CERRADO', 'TERMINADO', 'DESISTIDO'].includes(prevProps.estado_caso_insolvencia));
-          const estaEnRevisionManual = prevProps.estado_revision === 'MANUAL_REVIEW' || prevProps.estado_revision === 'ERROR_ENTREGA';
-          const tieneHechosCompletos = prevProps.hechos_completos === 'true' || prevProps.hechos_completos === true;
+          // Un caso anterior con radicado diferente se considera ABIERTO a menos que esté formalmente cerrado,
+          // incluso si aún está sin pagar (pago pendiente en pasarela) o tiene hechos_completos = false (formulario en curso).
+          const estaCerrado = ['CERRADO', 'TERMINADO', 'DESISTIDO'].includes(prevProps.estado_caso_insolvencia) ||
+                              ['CERRADO', 'TERMINADO', 'DESISTIDO', 'ARCHIVADO'].includes(prevProps.estado_revision);
 
-          // Un caso está abierto si ya fue pagado, tiene hechos completos, está en revisión manual,
-          // o tiene un trámite de insolvencia activo en proceso
-          const casoAbierto = tienePagoConfirmado || tieneEstadoInsolv || estaEnRevisionManual || tieneHechosCompletos;
+          // Todo caso no cerrado formalmente se protege contra sobrescritura
+          const casoAbierto = !estaCerrado;
 
           if (casoAbierto) {
             // Mitigación H-F4-5: NO SOBRESCRIBIR los datos del caso abierto anterior
-            const detalleAlerta = `Intento de compra concurrente (${servicio || properties.servicio_lyzbri}, radicado nuevo: ${referenciaPago}) para correo con caso abierto existente (radicado anterior: ${prevRef}, servicio anterior: ${prevProps.servicio_lyzbri || prevProps.servicio_comprado || 'N/A'}, pago_confirmado: ${prevProps.pago_confirmado}, estado_insolv: ${prevProps.estado_caso_insolvencia || 'N/A'}). Se detuvo el flujo y se derivó a MANUAL_REVIEW para preservar los datos del caso anterior.`;
+            const detalleAlerta = `Intento de compra concurrente (${servicio || properties.servicio_lyzbri}, radicado nuevo: ${referenciaPago}) para correo con caso abierto existente (radicado anterior: ${prevRef}, servicio anterior: ${prevProps.servicio_lyzbri || prevProps.servicio_comprado || 'N/A'}, pago_confirmado: ${prevProps.pago_confirmado}, estado_insolv: ${prevProps.estado_caso_insolvencia || 'N/A'}, estado_rev: ${prevProps.estado_revision || 'N/A'}, hechos_completos: ${prevProps.hechos_completos}). Se detuvo el flujo y se derivó a MANUAL_REVIEW para preservar los datos del caso anterior.`;
 
             await alertar(referenciaPago, detalleAlerta, {
               correo,
@@ -240,7 +239,11 @@ exports.handler = async (event) => {
               radicado_nuevo: referenciaPago,
               servicio_anterior: prevProps.servicio_lyzbri || prevProps.servicio_comprado,
               servicio_nuevo: servicio || properties.servicio_lyzbri,
-              contacto_id: contactData.id
+              contacto_id: contactData.id,
+              pago_confirmado_anterior: prevProps.pago_confirmado,
+              hechos_completos_anterior: prevProps.hechos_completos,
+              estado_revision_anterior: prevProps.estado_revision,
+              estado_insolv_anterior: prevProps.estado_caso_insolvencia
             });
 
             return {
