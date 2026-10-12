@@ -23,28 +23,15 @@ const TIEMPOS_ENTREGA = {
 };
 
 // Matriz de precios aprobada por la propietaria (5 tramos oficiales)
+// Formula de precios de los F1 (referencia; el calculo real esta en calcularPrecioInsolvencia).
+// hasta2 = hasta 2 acreedores; hasta5 = de 3 a 5; bloque = suma por cada 2 acreedores desde el 6.o, sin tope.
 const MATRIZ_PRECIOS_INSOLVENCIA = {
-  DIAGNOSTICO_MODALIDAD: [
-    { min: 1, max: 2, valor: 89000 },
-    { min: 3, max: 5, valor: 179000 },
-    { min: 6, max: 7, valor: 268000 },
-    { min: 8, max: 9, valor: 357000 },
-    { min: 10, max: Infinity, valor: 446000 }
-  ],
-  NEGOCIACION: [
-    { min: 1, max: 2, valor: 249000 },
-    { min: 3, max: 5, valor: 499000 },
-    { min: 6, max: 7, valor: 748000 },
-    { min: 8, max: 9, valor: 998000 },
-    { min: 10, max: Infinity, valor: 1247000 }
-  ],
-  SEGUIMIENTO: [
-    { min: 1, max: 2, valor: 29000 },
-    { min: 3, max: 5, valor: 59000 },
-    { min: 6, max: 7, valor: 88000 },
-    { min: 8, max: 9, valor: 117000 },
-    { min: 10, max: Infinity, valor: 146000 }
-  ]
+  DIAGNOSTICO_MODALIDAD: { hasta2: 89000, hasta5: 179000, bloque: 89000 },
+  NEGOCIACION: { hasta2: 249000, hasta5: 499000, bloque: 249000 },
+  SEGUIMIENTO: { hasta2: 29000, hasta5: 59000, bloque: 29000 },
+  DIAGNOSTICO_EMPRESARIAL: { hasta2: 390000, hasta5: 790000, bloque: 390000 },
+  BLINDAJE_EMPRESARIAL: { hasta2: 1200000, hasta5: 2900000, bloque: 1200000 },
+  REPRESENTACION_NATURAL: { fijo: 2000000 }
 };
 
 // Calculo server-side estricto de precio escalonado (M1 correccion)
@@ -59,43 +46,43 @@ function calcularPrecioInsolvencia(caseType, cantAcreedores) {
     return null;
   }
 
+  // Formula de los F1 aprobados por Liza (COR-INS-02, H-F4-4):
+  // hasta 2 acreedores = base; de 3 a 5 = segundo tramo; desde el 6.o se suma
+  // un bloque por cada 2 acreedores adicionales, redondeando hacia arriba, SIN tope.
+  function escalonado(base2, base5, bloque) {
+    if (n <= 2) return base2;
+    if (n <= 5) return base5;
+    return base5 + Math.ceil((n - 5) / 2) * bloque;
+  }
+
   switch (caseType) {
     case 'INSOLV_DIAG_NAT':
     case 'INSOLV_MOD_NAT':
-      if (n <= 2) return 89000;
-      if (n <= 5) return 179000;
-      if (n <= 7) return 268000;
-      if (n <= 9) return 357000;
-      return 446000;
+      return escalonado(89000, 179000, 89000);
 
     case 'INSOLV_NEG_NAT':
-      if (n <= 2) return 249000;
-      if (n <= 5) return 499000;
-      if (n <= 7) return 748000;
-      if (n <= 9) return 998000;
-      return 1247000;
+      return escalonado(249000, 499000, 249000);
 
     case 'INSOLV_SEG_NAT':
-      if (n <= 2) return 29000;
-      if (n <= 5) return 59000;
-      if (n <= 7) return 88000;
-      if (n <= 9) return 117000;
-      return 146000;
+      // F1: 29.000 / 59.000 y bloques desde el 6.o; valor del bloque (29.000) por confirmar con Liza.
+      return escalonado(29000, 59000, 29000);
 
     case 'INSOLV_REP_NAT':
+      // Decision de Liza (12 oct 2026): se mantiene en 2.000.000 (hasta 2 acreedores);
+      // con mas de 2 acreedores el caso entra como lead (D-REP-1).
       return 2000000;
 
     case 'INSOLV_DIAG_EMP':
-      return 390000;
+      return escalonado(390000, 790000, 390000);
 
     case 'INSOLV_EXP_EMP':
-      return 1200000;
+      return escalonado(1200000, 2900000, 1200000);
 
     case 'INSOLV_REORG_EMP':
-      return 15000000;
+      return 15000000; // "desde": cotizacion por complejidad (F1)
 
     case 'INSOLV_SEG_EMP':
-      return 149000;
+      return 149000; // "desde": 149.000 a 630.000 al mes (F1)
 
     default:
       return null;

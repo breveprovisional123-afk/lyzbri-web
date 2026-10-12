@@ -2313,40 +2313,20 @@
     function calcularPrecioInsolvenciaFront(caseType, cant) {
       var n = parseInt(cant, 10);
       if (isNaN(n) || n < 1) n = 1;
-      if (caseType === 'INSOLV_DIAG_NAT' || caseType === 'INSOLV_MOD_NAT') {
-        if (n <= 2) return 89000;
-        if (n <= 5) return 179000;
-        if (n <= 7) return 268000;
-        if (n <= 9) return 357000;
-        return 446000;
+      // Formula de los F1 (COR-INS-02, H-F4-4): bloque por cada 2 acreedores desde el 6.o, sin tope.
+      function escalonado(base2, base5, bloque) {
+        if (n <= 2) return base2;
+        if (n <= 5) return base5;
+        return base5 + Math.ceil((n - 5) / 2) * bloque;
       }
-      if (caseType === 'INSOLV_NEG_NAT') {
-        if (n <= 2) return 249000;
-        if (n <= 5) return 499000;
-        if (n <= 7) return 748000;
-        if (n <= 9) return 998000;
-        return 1247000;
-      }
-      if (caseType === 'INSOLV_SEG_NAT') {
-        if (n <= 2) return 29000;
-        if (n <= 5) return 59000;
-        if (n <= 7) return 88000;
-        if (n <= 9) return 117000;
-        return 146000;
-      }
-      if (caseType === 'INSOLV_REP_NAT') {
-        return 2000000;
-      }
-      if (caseType === 'INSOLV_DIAG_EMP') {
-        return 390000;
-      }
-      if (caseType === 'INSOLV_EXP_EMP') {
-        return 1200000;
-      }
+      if (caseType === 'INSOLV_DIAG_NAT' || caseType === 'INSOLV_MOD_NAT') return escalonado(89000, 179000, 89000);
+      if (caseType === 'INSOLV_NEG_NAT') return escalonado(249000, 499000, 249000);
+      if (caseType === 'INSOLV_SEG_NAT') return escalonado(29000, 59000, 29000);
+      if (caseType === 'INSOLV_REP_NAT') return 2000000;
+      if (caseType === 'INSOLV_DIAG_EMP') return escalonado(390000, 790000, 390000);
+      if (caseType === 'INSOLV_EXP_EMP') return escalonado(1200000, 2900000, 1200000);
       if (caseType === 'INSOLV_REORG_EMP') return 15000000;
-      if (caseType === 'INSOLV_SEG_EMP') {
-        return 149000;
-      }
+      if (caseType === 'INSOLV_SEG_EMP') return 149000;
       return 89000;
     }
 
@@ -3122,6 +3102,12 @@
         respuestasParaHubspot.lyzbri_processing_mode = producto.processing_mode;
         respuestasParaHubspot.lyzbri_delivery_type = producto.delivery_type;
         respuestasParaHubspot.lyzbri_make_route = producto.make_route;
+        // H-F4-1: regimen segun el tipo de persona del wizard (validacion juridica de Liza pendiente)
+        if (producto.case_type && producto.case_type.indexOf('INSOLV_') === 0) {
+          var REGIMEN_POR_PERFIL = { comercio: 'PN_PC_CGP', PN_COMERCIANTE: 'PN_PC_CGP', no_comercio: 'PN_NC_CGP', PN_NO_COMERCIANTE: 'PN_NC_CGP', juridica: 'PJ_EMP', PERSONA_JURIDICA: 'PJ_EMP' };
+          var regPerfil = REGIMEN_POR_PERFIL[wz.answers.p1_perfil];
+          if (regPerfil) respuestasParaHubspot.regimen_insolvencia = regPerfil;
+        }
       } else {
         respuestasParaHubspot.estado_revision = 'REQUIERE_DEFINICION';
       }
