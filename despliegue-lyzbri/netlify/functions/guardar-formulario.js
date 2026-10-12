@@ -278,32 +278,11 @@ exports.handler = async (event) => {
     //     el contacto aquí mismo en vez de perder la información del cliente.
     if (!contact && correo) {
       const byEmailRes = await fetch(
-        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email&properties=email,lyzbri_service_code,lyzbri_case_type,referencia_pago,pago_confirmado,estado_caso_insolvencia,estado_revision,hechos_completos`,
+        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email&properties=email,lyzbri_service_code,lyzbri_case_type`,
         { headers: { 'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}` } }
       );
       if (byEmailRes.ok) {
-        const emailContact = await byEmailRes.json();
-        const ep = emailContact.properties || {};
-        // Si el contacto encontrado por correo tiene un radicado previo DIFERENTE y abierto,
-        // NO podemos sobrescribirlo con este formulario: enviamos a revisión manual.
-        if (ep.referencia_pago && ep.referencia_pago !== referenciaPago) {
-          const estaCerrado = ['CERRADO', 'TERMINADO', 'DESISTIDO'].includes(ep.estado_caso_insolvencia) ||
-                              ['CERRADO', 'TERMINADO', 'DESISTIDO', 'ARCHIVADO'].includes(ep.estado_revision);
-          if (!estaCerrado) {
-            const alerta = await alertarRevision(referenciaPago, payload.servicio,
-              `Intento de guardar formulario para radicado ${referenciaPago}, pero el contacto (${correo}) tiene otro caso abierto con radicado ${ep.referencia_pago}. Se detuvo para no sobrescribir.`);
-            return {
-              statusCode: 409,
-              body: JSON.stringify({
-                ok: false,
-                reason: 'caso_abierto_concurrente_en_formulario',
-                alertaEnviada: alerta,
-                mensaje: 'No se puede asociar el formulario al contacto porque tiene un caso abierto con otro radicado. Derivado a revisión manual.'
-              })
-            };
-          }
-        }
-        contact = emailContact;
+        contact = await byEmailRes.json();
       }
     }
 
