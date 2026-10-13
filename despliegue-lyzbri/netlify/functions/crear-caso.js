@@ -107,7 +107,7 @@ exports.handler = async (event) => {
     'tea_estado', 'subtipo_no_visible_tea', 'sub_caso', 'nombre_completo', 'tipo_solicitud_alimentos', 'modalidad_servicio',
     'lyzbri_service_code', 'lyzbri_case_type', 'lyzbri_processing_mode', 'lyzbri_delivery_type',
     'lyzbri_make_route', 'cant_acreedores', 'p1_perfil', 'p2_situacion', 'p3_objetivo', 'regimen_insolvencia',
-    'relacion_acreedores_insolvencia', 'estado_caso_insolvencia'
+    'relacion_acreedores_insolvencia', 'estado_caso_insolvencia', 'acepta_alcance_preliminar'
   ];
 
   if (respuestasWizard && typeof respuestasWizard === 'object') {
@@ -224,23 +224,23 @@ exports.handler = async (event) => {
           const pagoConfirmado = String(prevProps.pago_confirmado).toLowerCase() === 'true';
 
           if (pagoConfirmado) {
-            const esInsolvenciaPrev = prevProps.servicio_lyzbri === 'deudas' ||
-                                      prevProps.servicio_comprado === 'deudas' ||
-                                      (prevProps.lyzbri_case_type && String(prevProps.lyzbri_case_type).startsWith('INSOLV_')) ||
-                                      Boolean(prevProps.estado_caso_insolvencia && prevProps.estado_caso_insolvencia.trim() !== '');
+            // Criterios de reauditoría Cowork (13 oct 2026):
+            // 1. Identificar insolvencia exclusivamente cuando lyzbri_case_type empieza por INSOLV_ (no por servicio_lyzbri = deudas).
+            const esInsolvenciaPrev = Boolean(prevProps.lyzbri_case_type && String(prevProps.lyzbri_case_type).startsWith('INSOLV_'));
 
-            let entregado = false;
+            let casoEnCurso = false;
             if (esInsolvenciaPrev) {
-              // Para insolvencia, usar sus estados propios
-              entregado = ['ENTREGADO', 'ENTREGA_SERVICIO'].includes(prevProps.estado_caso_insolvencia);
+              // 2. Para insolvencia, considerar entregado un caso cuyo estado_caso_insolvencia sea ENTREGADO o CERRADO
+              const entregado = ['ENTREGADO', 'CERRADO', 'ENTREGA_SERVICIO'].includes(prevProps.estado_caso_insolvencia);
+              casoEnCurso = !entregado;
             } else {
-              // Para servicios automáticos (Hábeas Data, etc.), considerar hechos_completos y estados de revisión existentes
-              const hechosCompletos = String(prevProps.hechos_completos).toLowerCase() === 'true';
-              const revisionEntregada = ['ENTREGADO', 'ENTREGA_SERVICIO', 'DOCUMENTO_ENTREGADO'].includes(prevProps.estado_revision);
-              entregado = hechosCompletos && revisionEntregada;
+              // 3. Para servicios automáticos, considerar en curso únicamente cuando hechos_completos no sea 'true',
+              // o estado_revision sea MANUAL_REVIEW o ERROR_ENTREGA. Un caso con hechos_completos = true y
+              // ENVIADO_A_MAKE o estado vacío permite una nueva compra.
+              const hechosIncompletos = String(prevProps.hechos_completos).toLowerCase() !== 'true';
+              const enRevisionCritica = ['MANUAL_REVIEW', 'ERROR_ENTREGA'].includes(prevProps.estado_revision);
+              casoEnCurso = hechosIncompletos || enRevisionCritica;
             }
-
-            const casoEnCurso = !entregado;
 
             if (casoEnCurso) {
               const detalleAlerta = `Intento de nueva compra (${servicio || properties.servicio_lyzbri}, nuevo radicado: ${referenciaPago}) para correo con caso anterior en curso no entregado (radicado anterior: ${prevRef}, servicio anterior: ${prevProps.servicio_lyzbri || prevProps.servicio_comprado || 'N/A'}, tipo: ${esInsolvenciaPrev ? 'insolvencia' : 'automatico'}, estado_insolv: ${prevProps.estado_caso_insolvencia || 'N/A'}, estado_rev: ${prevProps.estado_revision || 'N/A'}, hechos_completos: ${prevProps.hechos_completos}). Se bloqueó la sobrescritura y se derivó a MANUAL_REVIEW.`;
