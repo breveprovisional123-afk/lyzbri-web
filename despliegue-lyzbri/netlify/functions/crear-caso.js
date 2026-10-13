@@ -85,7 +85,7 @@ exports.handler = async (event) => {
     'tea_estado', 'subtipo_no_visible_tea', 'sub_caso', 'nombre_completo', 'tipo_solicitud_alimentos', 'modalidad_servicio',
     'lyzbri_service_code', 'lyzbri_case_type', 'lyzbri_processing_mode', 'lyzbri_delivery_type',
     'lyzbri_make_route', 'cant_acreedores', 'p1_perfil', 'p2_situacion', 'p3_objetivo', 'regimen_insolvencia',
-    'relacion_acreedores_insolvencia', 'estado_caso_insolvencia'
+    'relacion_acreedores_insolvencia', 'estado_caso_insolvencia', 'acepta_alcance_preliminar'
   ];
 
   if (respuestasWizard && typeof respuestasWizard === 'object') {

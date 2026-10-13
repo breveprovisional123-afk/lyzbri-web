@@ -265,7 +265,7 @@ exports.handler = async (event) => {
         },
         body: JSON.stringify({
           filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
-          properties: ['hs_object_id', 'email', 'lyzbri_service_code', 'lyzbri_case_type', 'regimen_insolvencia', 'firstname', 'nombre_completo']
+          properties: ['hs_object_id', 'email', 'lyzbri_service_code', 'lyzbri_case_type', 'regimen_insolvencia', 'firstname', 'nombre_completo', 'cant_acreedores', 'deuda_cantidad', 'pago_confirmado']
         })
       });
       const searchData = await searchRes.json();
@@ -278,7 +278,7 @@ exports.handler = async (event) => {
     //     el contacto aquí mismo en vez de perder la información del cliente.
     if (!contact && correo) {
       const byEmailRes = await fetch(
-        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email&properties=email,lyzbri_service_code,lyzbri_case_type,regimen_insolvencia,firstname,nombre_completo`,
+        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email&properties=email,lyzbri_service_code,lyzbri_case_type,regimen_insolvencia,firstname,nombre_completo,cant_acreedores,deuda_cantidad,pago_confirmado`,
         { headers: { 'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}` } }
       );
       if (byEmailRes.ok) {
@@ -333,6 +333,31 @@ exports.handler = async (event) => {
       const alertaEnviada = await alertarRevision(referenciaPago, payload.servicio,
         'El valor pagado en Bold (' + pago.total + ') no corresponde al producto del caso ' + clave + ' (' + PRECIOS[clave] + '). Revisar antes de entregar.');
       return { statusCode: 403, body: JSON.stringify({ ok: false, reason: 'monto_no_coincide', alertaEnviada }) };
+    }
+
+    // H-F4-7: Validar que cant_acreedores posterior al pago no contradiga la cotización ni el precio calculado
+    if (campos && campos.cant_acreedores && contact && pc) {
+      const cantCotizada = pc.cant_acreedores || pc.deuda_cantidad;
+      const caseType = pc.lyzbri_case_type;
+      if (cantCotizada && caseType && caseType.startsWith('INSOLV_')) {
+        const nCotizado = parseInt(cantCotizada, 10);
+        const nEnviado = parseInt(campos.cant_acreedores, 10);
+
+        if (!isNaN(nCotizado) && !isNaN(nEnviado) && nCotizado !== nEnviado) {
+          const precioCotizado = calcularPrecioInsolvencia(caseType, nCotizado);
+          const precioEnviado = calcularPrecioInsolvencia(caseType, nEnviado);
+
+          if (precioCotizado !== null && precioEnviado !== null && precioCotizado !== precioEnviado) {
+            const numReportado = campos.cant_acreedores;
+            campos.cant_acreedores = String(nCotizado);
+            campos.observaciones_deudas = (campos.observaciones_deudas ? campos.observaciones_deudas + ' | ' : '') +
+              `Discrepancia post-pago: cotizó/pagó ${nCotizado} acreedores ($${precioCotizado.toLocaleString('es-CO')}) pero reportó ${numReportado} acreedores cuyo valor calculado es $${precioEnviado.toLocaleString('es-CO')}.`;
+            await alertarRevision(referenciaPago, payload.servicio || 'deudas',
+              `Discrepancia de precio en acreedores post-pago: caso cotizado/pagado para ${nCotizado} acreedores ($${precioCotizado.toLocaleString('es-CO')}), pero cliente reportó ${numReportado} acreedores cuyo valor calculado es $${precioEnviado.toLocaleString('es-CO')}. Se preservó el valor cotizado para revisión.`
+            );
+          }
+        }
+      }
     }
 
     // 3. Actualizar el contacto con los campos del formulario + marcar hechos_completos.
