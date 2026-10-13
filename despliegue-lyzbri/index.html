@@ -2897,7 +2897,7 @@
           '<div class="form-grid">' +
           '<div class="field"><label for="wz-nombre">Nombre completo *</label><input id="wz-nombre" type="text" value="' + (wz.answers.nombre || '') + '" autocomplete="name" /></div>' +
           '<div class="field"><label for="wz-whatsapp">Tu número de WhatsApp *</label><input id="wz-whatsapp" type="tel" value="' + (wz.answers.whatsapp || '') + '" autocomplete="tel" /></div>' +
-          '<div class="field"><label for="wz-correo">Correo electrónico</label><input id="wz-correo" type="email" value="' + (wz.answers.correo || '') + '" autocomplete="email" /></div>' +
+          '<div class="field"><label for="wz-correo">Correo electrónico' + (wz.servicio === 'deudas' ? ' *' : '') + '</label><input id="wz-correo" type="email" value="' + (wz.answers.correo || '') + '" autocomplete="email" /></div>' +
           '</div>' +
           '<div class="consent-row">' +
           '<input id="wz-consentimiento" type="checkbox"' + (wz.answers.consiente ? ' checked' : '') + ' />' +
@@ -2958,6 +2958,11 @@
         } else {
           alert('Por favor completa tu nombre y WhatsApp, y autoriza el tratamiento de tus datos.');
         }
+        return;
+      }
+      var esInsolvencia = (wz.servicio === 'deudas');
+      if (esInsolvencia && (!correo || !correo.includes('@') || !correo.includes('.'))) {
+        alert('Para avanzar con tu trámite de insolvencia y recibir el listado oficial de documentos de tu régimen, el correo electrónico es obligatorio.');
         return;
       }
       wz.answers.nombre = nombre;
