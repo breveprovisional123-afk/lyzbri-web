@@ -219,47 +219,62 @@ exports.handler = async (event) => {
           };
         }
 
-        // Si existe un radicado previo DIFERENTE, verificar si el caso anterior está pagado y aún no entregado
+        // Si existe un radicado previo DIFERENTE, verificar si el caso anterior está pagado y aún en curso
         if (prevRef && prevRef !== referenciaPago) {
           const pagoConfirmado = String(prevProps.pago_confirmado).toLowerCase() === 'true';
-          const entregado = ['ENTREGADO', 'ENTREGA_SERVICIO'].includes(prevProps.estado_caso_insolvencia) ||
-                            ['ENTREGADO', 'ENTREGA_SERVICIO'].includes(prevProps.estado_revision);
 
-          // H-F4-5: Proteger contra sobrescritura SOLO si el caso anterior está pagado y aún no entregado
-          const casoPagadoNoEntregado = pagoConfirmado && !entregado;
+          if (pagoConfirmado) {
+            const esInsolvenciaPrev = prevProps.servicio_lyzbri === 'deudas' ||
+                                      prevProps.servicio_comprado === 'deudas' ||
+                                      (prevProps.lyzbri_case_type && String(prevProps.lyzbri_case_type).startsWith('INSOLV_')) ||
+                                      Boolean(prevProps.estado_caso_insolvencia && prevProps.estado_caso_insolvencia.trim() !== '');
 
-          if (casoPagadoNoEntregado) {
-            const detalleAlerta = `Intento de nueva compra (${servicio || properties.servicio_lyzbri}, nuevo radicado: ${referenciaPago}) para correo con caso anterior pagado y no entregado (radicado anterior: ${prevRef}, servicio anterior: ${prevProps.servicio_lyzbri || prevProps.servicio_comprado || 'N/A'}, pago_confirmado: ${prevProps.pago_confirmado}, estado_insolv: ${prevProps.estado_caso_insolvencia || 'N/A'}, estado_rev: ${prevProps.estado_revision || 'N/A'}). Se bloqueó la sobrescritura y se derivó a MANUAL_REVIEW.`;
+            let entregado = false;
+            if (esInsolvenciaPrev) {
+              // Para insolvencia, usar sus estados propios
+              entregado = ['ENTREGADO', 'ENTREGA_SERVICIO'].includes(prevProps.estado_caso_insolvencia);
+            } else {
+              // Para servicios automáticos (Hábeas Data, etc.), considerar hechos_completos y estados de revisión existentes
+              const hechosCompletos = String(prevProps.hechos_completos).toLowerCase() === 'true';
+              const revisionEntregada = ['ENTREGADO', 'ENTREGA_SERVICIO', 'DOCUMENTO_ENTREGADO'].includes(prevProps.estado_revision);
+              entregado = hechosCompletos && revisionEntregada;
+            }
 
-            await alertar(referenciaPago, detalleAlerta, {
-              correo,
-              radicado_anterior: prevRef,
-              radicado_nuevo: referenciaPago,
-              servicio_anterior: prevProps.servicio_lyzbri || prevProps.servicio_comprado,
-              servicio_nuevo: servicio || properties.servicio_lyzbri,
-              contacto_id: contactData.id,
-              pago_confirmado_anterior: prevProps.pago_confirmado,
-              hechos_completos_anterior: prevProps.hechos_completos,
-              estado_revision_anterior: prevProps.estado_revision,
-              estado_insolv_anterior: prevProps.estado_caso_insolvencia
-            });
+            const casoEnCurso = !entregado;
 
-            return {
-              statusCode: 409,
-              body: JSON.stringify({
-                ok: false,
-                reason: 'caso_abierto_existente',
-                bloqueado_por_caso_abierto: true,
-                mensaje: 'Existe un caso en curso con pago confirmado asociado a este correo electrónico. Por favor contáctanos por WhatsApp para gestionar tu nuevo requerimiento sin afectar tu caso actual.',
-                whatsapp_url: 'https://wa.me/573115872929',
-                contacto_id: contactData.id,
+            if (casoEnCurso) {
+              const detalleAlerta = `Intento de nueva compra (${servicio || properties.servicio_lyzbri}, nuevo radicado: ${referenciaPago}) para correo con caso anterior en curso no entregado (radicado anterior: ${prevRef}, servicio anterior: ${prevProps.servicio_lyzbri || prevProps.servicio_comprado || 'N/A'}, tipo: ${esInsolvenciaPrev ? 'insolvencia' : 'automatico'}, estado_insolv: ${prevProps.estado_caso_insolvencia || 'N/A'}, estado_rev: ${prevProps.estado_revision || 'N/A'}, hechos_completos: ${prevProps.hechos_completos}). Se bloqueó la sobrescritura y se derivó a MANUAL_REVIEW.`;
+
+              await alertar(referenciaPago, detalleAlerta, {
+                correo,
                 radicado_anterior: prevRef,
-                radicado_nuevo: referenciaPago
-              })
-            };
+                radicado_nuevo: referenciaPago,
+                servicio_anterior: prevProps.servicio_lyzbri || prevProps.servicio_comprado,
+                servicio_nuevo: servicio || properties.servicio_lyzbri,
+                contacto_id: contactData.id,
+                pago_confirmado_anterior: prevProps.pago_confirmado,
+                hechos_completos_anterior: prevProps.hechos_completos,
+                estado_revision_anterior: prevProps.estado_revision,
+                estado_insolv_anterior: prevProps.estado_caso_insolvencia
+              });
+
+              return {
+                statusCode: 409,
+                body: JSON.stringify({
+                  ok: false,
+                  reason: 'caso_abierto_existente',
+                  bloqueado_por_caso_abierto: true,
+                  mensaje: 'Existe un caso en curso con pago confirmado asociado a este correo electrónico. Por favor contáctanos por WhatsApp para gestionar tu nuevo requerimiento sin afectar tu caso actual.',
+                  whatsapp_url: 'https://wa.me/573115872929',
+                  contacto_id: contactData.id,
+                  radicado_anterior: prevRef,
+                  radicado_nuevo: referenciaPago
+                })
+              };
+            }
           }
-          // Si el caso anterior no está pagado (o ya fue entregado), permitir que la nueva cotización
-          // actualice el caso conforme al comportamiento anterior.
+          // Si el caso anterior no está pagado, o ya fue entregado efectivamente, permitir
+          // que la nueva cotización/compra actualice el caso conforme al comportamiento esperado.
         }
 
         // Si el contacto existe pero NO tiene un caso abierto previo (p. ej. lead sin pagar o radicado vacío),
