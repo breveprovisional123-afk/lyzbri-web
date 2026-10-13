@@ -1765,6 +1765,7 @@
             En Lyzbri tramitamos este caso bajo revisión manual previa de una abogada para verificar la procedencia antes de cualquier radicación. Por favor envíe copia del fallo o del radicado de su tutela anterior a nuestro correo oficial: <a href="mailto:contacto@lyzbri.com" style="color: #64b5f6; text-decoration: underline;">contacto@lyzbri.com</a>
           </div>
           <div id="aviso-pausa-insolvencia" style="display:none; background:#fff8e6; border-left:4px solid #d97706; padding:14px; margin:16px 0; border-radius:4px; color:#92400e; font-size:0.95rem; line-height:1.5;"></div>
+          <div id="aviso-bloqueo-409" style="display:none; background:#fef2f2; border-left:4px solid #ef4444; padding:16px; margin:16px 0; border-radius:6px; color:#991b1b; font-size:0.95rem; line-height:1.5;"></div>
           <p class="fine-print" id="resultado-nota">Este resultado organiza la información disponible; la viabilidad jurídica y el alcance final requieren revisión profesional.</p>
           <div class="form-actions" style="margin-top:18px;">
             <a class="btn btn-primary" id="resultado-pago" href="#" target="_blank" rel="noopener">Continuar al pago</a>
@@ -2941,6 +2942,8 @@
       document.getElementById('wizard-card').style.display = 'none';
       var conf = document.getElementById('form-confirmacion');
       conf.style.display = 'block';
+      var aviso409Reset = document.getElementById('aviso-bloqueo-409');
+      if (aviso409Reset) { aviso409Reset.style.display = 'none'; aviso409Reset.innerHTML = ''; }
 
       document.getElementById('resultado-etiqueta').textContent = 'Resultado inicial';
       document.getElementById('resultado-titulo').textContent = resultado.titulo || (producto ? producto.nombre : 'Tu evaluación inicial está lista.');
@@ -3051,7 +3054,7 @@
             payBtn.dataset.retorno = urlRetornoPago(reference, servicioForm, extraPago);
             payBtn.onclick = function (e) {
               e.preventDefault();
-              pagarConBold(payBtn, producto.clave, reference, servicioForm, extraPago, producto.nombre);
+              ejecutarPagoSeguro(extraPago);
             };
           }
         }
@@ -3077,8 +3080,28 @@
         payBtn.dataset.retorno = urlRetornoPago(reference, servicioForm, extraPagoOtros);
         payBtn.onclick = function (e) {
           e.preventDefault();
-          pagarConBold(payBtn, producto.clave, reference, servicioForm, extraPagoOtros, producto.nombre);
+          ejecutarPagoSeguro(extraPagoOtros);
         };
+      }
+
+      function ejecutarPagoSeguro(extraPayload) {
+        if (window._casoRegistroPromise) {
+          var txtAnt = payBtn.textContent;
+          payBtn.textContent = 'Verificando caso en el sistema…';
+          payBtn.setAttribute('aria-busy', 'true');
+          window._casoRegistroPromise.then(function (reg) {
+            payBtn.removeAttribute('aria-busy');
+            payBtn.textContent = txtAnt;
+            if (!reg || !reg.ok) {
+              if (reg && reg.status === 409) return;
+              alert('No se pudo verificar el registro de tu radicado en el sistema CRM antes del pago. Por favor intenta de nuevo en unos segundos o escríbenos por WhatsApp.');
+              return;
+            }
+            pagarConBold(payBtn, producto.clave, reference, servicioForm, extraPayload, producto.nombre);
+          });
+        } else {
+          pagarConBold(payBtn, producto.clave, reference, servicioForm, extraPayload, producto.nombre);
+        }
       }
 
       var alertaTutela = document.getElementById('resultado-alerta-tutela');
@@ -3127,7 +3150,7 @@
       }
       if (wz.answers.nombre) respuestasParaHubspot.nombre_completo = wz.answers.nombre;
 
-      fetch('/.netlify/functions/crear-caso', {
+      window._casoRegistroPromise = fetch('/.netlify/functions/crear-caso', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3139,7 +3162,32 @@
           referenciaPago: reference,
           respuestasWizard: respuestasParaHubspot
         })
-      }).then(function (res) {
+      }).then(async function (res) {
+        var data = null;
+        try { data = await res.json(); } catch (e) { }
+        if (res.status === 409) {
+          // Bloqueo H-F4-5: caso en curso pagado y no entregado
+          if (payBtn) payBtn.style.display = 'none';
+          if (pagoNota) pagoNota.style.display = 'none';
+          if (bannerPausa) bannerPausa.style.display = 'none';
+          var aviso409 = document.getElementById('aviso-bloqueo-409');
+          if (!aviso409) {
+            aviso409 = document.createElement('div');
+            aviso409.id = 'aviso-bloqueo-409';
+            if (payBtn && payBtn.parentNode) {
+              payBtn.parentNode.insertBefore(aviso409, payBtn);
+            }
+          }
+          aviso409.style.display = 'block';
+          var radAnt = (data && data.radicado_anterior) ? data.radicado_anterior : '';
+          var msgWA = encodeURIComponent('Hola Liza, tengo un caso en curso con radicado ' + radAnt + ' y acabo de generar una nueva solicitud (' + reference + '). Deseo consultar cómo proceder sin afectar mi caso anterior.');
+          var linkWA = 'https://wa.me/573115872929?text=' + msgWA;
+          aviso409.innerHTML = '<strong>Caso en curso detectado:</strong><br>' +
+            (data && data.mensaje ? data.mensaje : 'Existe un caso en curso con pago confirmado asociado a este correo electrónico.') + '<br><br>' +
+            'Para proteger la documentación y el avance de tu caso actual, no es posible registrar un pago nuevo de forma automática.<br><br>' +
+            '<a href="' + linkWA + '" target="_blank" rel="noopener" class="btn" style="display:inline-block;background:#15803d;color:#ffffff;padding:10px 18px;border-radius:6px;font-weight:700;text-decoration:none;margin-top:6px;">Consultar por WhatsApp con la abogada</a>';
+          return { ok: false, status: 409, data: data };
+        }
         if (!res.ok) {
           console.warn('Registro de caso retornó estado:', res.status);
           var avisoReg = document.getElementById('hubspot_aviso_registro');
@@ -3147,9 +3195,12 @@
             avisoReg.style.display = 'block';
             avisoReg.textContent = 'Aviso: Tuvimos una intermitencia técnica registrando tu radicado en el sistema. Puedes unirte a la lista de espera por WhatsApp con tu radicado ' + reference + '.';
           }
+          return { ok: false, status: res.status, data: data };
         }
+        return { ok: true, status: res.status, data: data };
       }).catch(function (err) {
         console.warn('Registro en CRM diferido:', err);
+        return { ok: false, error: err };
       });
 
       conf.scrollIntoView({ behavior: 'smooth', block: 'center' });

@@ -219,19 +219,17 @@ exports.handler = async (event) => {
           };
         }
 
-        // Si existe un radicado previo DIFERENTE, verificar si el caso anterior sigue abierto
+        // Si existe un radicado previo DIFERENTE, verificar si el caso anterior está pagado y aún no entregado
         if (prevRef && prevRef !== referenciaPago) {
-          // Un caso anterior con radicado diferente se considera ABIERTO a menos que esté formalmente cerrado,
-          // incluso si aún está sin pagar (pago pendiente en pasarela) o tiene hechos_completos = false (formulario en curso).
-          const estaCerrado = ['CERRADO', 'TERMINADO', 'DESISTIDO'].includes(prevProps.estado_caso_insolvencia) ||
-                              ['CERRADO', 'TERMINADO', 'DESISTIDO', 'ARCHIVADO'].includes(prevProps.estado_revision);
+          const pagoConfirmado = String(prevProps.pago_confirmado).toLowerCase() === 'true';
+          const entregado = ['ENTREGADO', 'ENTREGA_SERVICIO'].includes(prevProps.estado_caso_insolvencia) ||
+                            ['ENTREGADO', 'ENTREGA_SERVICIO'].includes(prevProps.estado_revision);
 
-          // Todo caso no cerrado formalmente se protege contra sobrescritura
-          const casoAbierto = !estaCerrado;
+          // H-F4-5: Proteger contra sobrescritura SOLO si el caso anterior está pagado y aún no entregado
+          const casoPagadoNoEntregado = pagoConfirmado && !entregado;
 
-          if (casoAbierto) {
-            // Mitigación H-F4-5: NO SOBRESCRIBIR los datos del caso abierto anterior
-            const detalleAlerta = `Intento de compra concurrente (${servicio || properties.servicio_lyzbri}, radicado nuevo: ${referenciaPago}) para correo con caso abierto existente (radicado anterior: ${prevRef}, servicio anterior: ${prevProps.servicio_lyzbri || prevProps.servicio_comprado || 'N/A'}, pago_confirmado: ${prevProps.pago_confirmado}, estado_insolv: ${prevProps.estado_caso_insolvencia || 'N/A'}, estado_rev: ${prevProps.estado_revision || 'N/A'}, hechos_completos: ${prevProps.hechos_completos}). Se detuvo el flujo y se derivó a MANUAL_REVIEW para preservar los datos del caso anterior.`;
+          if (casoPagadoNoEntregado) {
+            const detalleAlerta = `Intento de nueva compra (${servicio || properties.servicio_lyzbri}, nuevo radicado: ${referenciaPago}) para correo con caso anterior pagado y no entregado (radicado anterior: ${prevRef}, servicio anterior: ${prevProps.servicio_lyzbri || prevProps.servicio_comprado || 'N/A'}, pago_confirmado: ${prevProps.pago_confirmado}, estado_insolv: ${prevProps.estado_caso_insolvencia || 'N/A'}, estado_rev: ${prevProps.estado_revision || 'N/A'}). Se bloqueó la sobrescritura y se derivó a MANUAL_REVIEW.`;
 
             await alertar(referenciaPago, detalleAlerta, {
               correo,
@@ -252,13 +250,16 @@ exports.handler = async (event) => {
                 ok: false,
                 reason: 'caso_abierto_existente',
                 bloqueado_por_caso_abierto: true,
-                mensaje: 'Existe un caso en curso asociado a este correo electrónico. Se ha derivado a revisión manual y se notificó a nuestro equipo para gestionarlo sin afectar su caso anterior.',
+                mensaje: 'Existe un caso en curso con pago confirmado asociado a este correo electrónico. Por favor contáctanos por WhatsApp para gestionar tu nuevo requerimiento sin afectar tu caso actual.',
+                whatsapp_url: 'https://wa.me/573115872929',
                 contacto_id: contactData.id,
                 radicado_anterior: prevRef,
                 radicado_nuevo: referenciaPago
               })
             };
           }
+          // Si el caso anterior no está pagado (o ya fue entregado), permitir que la nueva cotización
+          // actualice el caso conforme al comportamiento anterior.
         }
 
         // Si el contacto existe pero NO tiene un caso abierto previo (p. ej. lead sin pagar o radicado vacío),
