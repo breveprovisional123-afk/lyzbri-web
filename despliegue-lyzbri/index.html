@@ -3742,6 +3742,13 @@
         var envio = productoForm ? productoForm.submit : (servicio === 'alimentos' ? 'enviar-alimentos' : 'guardar-formulario');
         var endpoint = '/.netlify/functions/' + envio;
         var cuerpo = { referenciaPago: referencia, servicio: servicio, campos: datos };
+        try {
+          var casoWz = JSON.parse(localStorage.getItem('lyzbri_caso_' + referencia) || 'null');
+          var ansWz = (casoWz && casoWz.answers) || {};
+          if (ansWz.correo || ansWz.whatsapp || ansWz.nombre) {
+            cuerpo.contactoWizard = { nombre: ansWz.nombre || '', correo: ansWz.correo || '', whatsapp: ansWz.whatsapp || '' };
+          }
+        } catch (e) {}
         if (envio === 'enviar-documento') { cuerpo.serviceCode = productoForm.service_code; cuerpo.caseType = productoForm.case_type; }
         fetch(endpoint, {
           method: 'POST',
@@ -3757,6 +3764,11 @@
               }
               throw new Error('respuesta 400');
             });
+          }
+          if (res.status === 404 && envio === 'guardar-formulario') {
+            try { localStorage.setItem('lyzbri_hechos_pendientes_' + referencia, JSON.stringify(datos)); } catch (e) {}
+            estado.textContent = 'No pudimos registrar tu formulario en este momento. Para evitar que tu solicitud quede sin seguimiento, comunícate con nuestro equipo por WhatsApp e indica el radicado ' + referencia + '. Te ayudaremos a verificar el estado de tu solicitud.';
+            var e404 = new Error('caso_no_encontrado_404'); e404.manejado = true; throw e404;
           }
           if (!res.ok) throw new Error(endpoint + ' respondió ' + res.status);
           return res.json();
