@@ -991,7 +991,7 @@
         scroll-behavior: auto !important;
       }
     }
-    @media (max-width: 720px) { .top-actions { flex-wrap:nowrap; gap:8px; } .top-actions .btn { width:auto; min-height:42px; padding:0 14px; } .brand-tag { display:none; } }
+    @media (max-width: 700px) { .top-actions { flex-wrap:nowrap; gap:8px; } .top-actions .btn { width:auto; min-height:42px; padding:0 14px; } .brand-tag { display:none; } }
 
     
     /* ========================================================
@@ -1027,6 +1027,8 @@
         flex-direction: column;
         height: 100%;
         box-sizing: border-box;
+        overflow-wrap: break-word;
+        word-break: break-word;
       }
       #servicios .card .service-includes,
       .pillar-card p {

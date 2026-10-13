@@ -4,3 +4,10 @@
 # Variables de entorno locales y secretos
 .env
 .env.*
+
+# Temporales de pruebas automatizadas y perfiles de navegador (R-4)
+temp_chrome_profile*
+temp_chrome_*
+.tempmediaStorage/
+scratch/
+*.log
