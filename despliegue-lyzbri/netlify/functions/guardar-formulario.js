@@ -265,7 +265,7 @@ exports.handler = async (event) => {
         },
         body: JSON.stringify({
           filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
-          properties: ['hs_object_id', 'email', 'lyzbri_service_code', 'lyzbri_case_type']
+          properties: ['hs_object_id', 'email', 'lyzbri_service_code', 'lyzbri_case_type', 'regimen_insolvencia', 'firstname', 'nombre_completo']
         })
       });
       const searchData = await searchRes.json();
@@ -278,7 +278,7 @@ exports.handler = async (event) => {
     //     el contacto aquí mismo en vez de perder la información del cliente.
     if (!contact && correo) {
       const byEmailRes = await fetch(
-        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email&properties=email,lyzbri_service_code,lyzbri_case_type`,
+        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email&properties=email,lyzbri_service_code,lyzbri_case_type,regimen_insolvencia,firstname,nombre_completo`,
         { headers: { 'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}` } }
       );
       if (byEmailRes.ok) {
@@ -310,7 +310,7 @@ exports.handler = async (event) => {
       const esDeudasRespaldo = payload.servicio === 'deudas' || (campos && (campos.regimen_insolvencia || campos.monto_total_adeudado));
       if (esDeudasRespaldo) {
         const caseType = (campos && campos.lyzbri_case_type) || 'INSOLV_DIAG_NAT';
-        const regimen = (campos && campos.regimen_insolvencia) || 'PN_NC_CGP';
+        const regimen = (campos && campos.regimen_insolvencia) || ((campos && campos.es_comerciante === 'si') ? 'PN_PC_CGP' : 'PN_NC_CGP');
         const nombreCliente = (campos && campos.nombre_deudor) || 'Cliente';
         notifInsolvencia = generarNotificacionPostPago({
           case_type: caseType,
@@ -366,8 +366,10 @@ exports.handler = async (event) => {
 
     if (esDeudas) {
       const caseType = pc.lyzbri_case_type || (campos && campos.lyzbri_case_type) || 'INSOLV_DIAG_NAT';
-      const regimen = pc.regimen_insolvencia || (campos && campos.regimen_insolvencia) || 'PN_NC_CGP';
-      const nombreCliente = pc.firstname || pc.nombre_deudor || (campos && (campos.nombre_deudor || campos.firstname)) || 'Cliente';
+      // H-F4-1: regimen del caso; si no existe, se deduce de la respuesta del formulario
+      const regimen = pc.regimen_insolvencia || (campos && campos.regimen_insolvencia) ||
+        ((campos && campos.es_comerciante === 'si') ? 'PN_PC_CGP' : 'PN_NC_CGP');
+      const nombreCliente = (campos && campos.nombre_deudor) || pc.nombre_completo || pc.firstname || (campos && campos.firstname) || 'Cliente';
       notifInsolvencia = generarNotificacionPostPago({
         case_type: caseType,
         regimen: regimen,
