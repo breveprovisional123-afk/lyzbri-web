@@ -48,6 +48,13 @@
     q_area: 'Entiendo. ¿En qué área se está presentando la dificultad ahora mismo?',
     q_estado: 'Hablemos sobre lo que está pasando. Cuéntame, ¿cómo ha sido la situación hasta ahora? Elige la opción que mejor se adapte a tu caso',
     q_tutela_previa: 'Entiendo lo frustrante que es no recibir respuesta. Para cuidarte jurídicamente: ¿ya habías presentado antes una acción de tutela por estos mismos hechos?',
+    q_resultado_tutela_previa: '¿Cómo terminó esa tutela?',
+    tutela_negada: 'Presentar una tutela por los mismos hechos ante otro juez sin un análisis previo puede considerarse actuación temeraria (Art. 38 del Decreto 2591 de 1991), exponiéndote a sanciones y al rechazo inmediato de tu petición.<br><br>Tu tranquilidad y seguridad jurídica no son negociables. En Lyzbri no automatizamos a ciegas: este diagnóstico incluye una revisión manual experta por parte de nuestra abogada especialista para auditar antecedentes y blindar tu trámite antes de cualquier radicación.<br><br>Invierte en una estrategia respaldada por profesionales y evita errores fatales en tu proceso.',
+    contacto_revision: 'Ya casi terminamos. Para mostrarte tu resultado y enviarte las instrucciones de tu revisión, ¿me compartes tu nombre, tu WhatsApp y tu correo? El correo es obligatorio: allí te llegarán las instrucciones.',
+    tutela_en_tramite: 'Mientras tu tutela siga en trámite, no es procedente presentar otra por los mismos hechos. Espera el fallo.<br><br>Si gustas, descarga aquí gratis una plantilla de impulso procesal para pedirle al juez que decida tu tutela.<br><br>Cuando salga el fallo, vuelve con nosotros: si te dan la razón y no lo cumplen, te ayudamos con el incidente de desacato; y si no te dan la razón, te ayudamos con la impugnación del fallo, siempre que estés dentro de los 3 días hábiles siguientes a su notificación por correo.',
+    q_fecha_notificacion: '¿En qué fecha te notificaron el fallo por correo electrónico?',
+    impugnacion_disponible: 'Todavía estás dentro del término para impugnar el fallo: la ley da 3 días hábiles desde la notificación, y en tu caso vence el <strong>{fecha_vencimiento_impugnacion}</strong>. Nuestra abogada puede revisar el fallo y preparar la impugnación con prioridad. Tiene un valor de $600.000. Después del pago recibirás un correo con las instrucciones para enviarnos el fallo y tu información de inmediato.',
+    impugnacion_vence_hoy: 'El término para impugnar tu fallo vence hoy. Para preparar una impugnación con la calidad que tu caso merece necesitamos como mínimo 24 horas hábiles, así que no alcanzamos a ayudarte a tiempo con este servicio. Si lo deseas, puedes presentar hoy mismo tu escrito de impugnación directamente ante el juzgado que dictó el fallo.',
     q_modalidad: 'Lamento que no estén cumpliendo el fallo a tu favor; para eso existe el desacato. ¿Cómo prefieres avanzar con este proceso?',
     contacto: 'Ya casi terminamos. Para mostrarte tu resultado y poder acompañarte, ¿me compartes tu nombre y tu WhatsApp? El correo es opcional.',
     consentimiento: 'Para continuar necesito tu autorización para tratar tus datos conforme a la Política de Tratamiento de Datos de Lyzbri. ¿Me la das?',
@@ -161,10 +168,108 @@
     { value: 'si', label: 'Sí, ya había presentado una tutela previamente', keys: ['si', 'ya habia presentado', 'anterior'] }
   ];
 
+  var OPCIONES_RESULTADO_TUTELA_PREVIA = [
+    { value: 'favor_incumplida', label: 'Me dieron la razón, pero no están cumpliendo el fallo', keys: ['razon', 'cumpliendo', 'favor', 'incumplida'] },
+    { value: 'negada', label: 'Me la negaron o la declararon improcedente', keys: ['negaron', 'negada', 'improcedente', 'rechazo'] },
+    { value: 'en_tramite', label: 'Todavía no hay fallo', keys: ['todavia', 'tramite', 'espera', 'no hay fallo'] }
+  ];
+
   var OPCIONES_MODALIDAD_DESACATO = [
     { value: 'autogestion', label: 'Autogestión: recibo el documento listo para radicar ($99.000)', keys: ['autogestion', 'documento listo', '99000', '99'] },
     { value: 'acompanamiento', label: 'Con acompañamiento de abogada ($600.000)', keys: ['acompanamiento', 'abogada', '600000', '600'] }
   ];
+
+  // Calendario de festivos de Colombia 2026-2027 (Ley 51 de 1983)
+  var FESTIVOS_COLOMBIA_CLIENTE = new Set([
+    '2026-01-01', '2026-01-12', '2026-03-23', '2026-04-02', '2026-04-03',
+    '2026-05-01', '2026-05-18', '2026-06-08', '2026-06-15', '2026-06-29',
+    '2026-07-20', '2026-08-07', '2026-08-17', '2026-10-12', '2026-11-02',
+    '2026-11-16', '2026-12-08', '2026-12-25',
+    '2027-01-01', '2027-01-11', '2027-03-22', '2027-03-25', '2027-03-26',
+    '2027-05-01', '2027-05-10', '2027-05-31', '2027-06-07', '2027-07-05',
+    '2027-07-20', '2027-08-07', '2027-08-16', '2027-10-18', '2027-11-01',
+    '2027-11-15', '2027-12-08', '2027-12-25'
+  ]);
+
+  function formatearFechaISOFront(d) {
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var dia = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + dia;
+  }
+
+  function esDiaHabilFront(d) {
+    var dow = d.getDay();
+    if (dow === 0 || dow === 6) return false;
+    var iso = formatearFechaISOFront(d);
+    if (FESTIVOS_COLOMBIA_CLIENTE.has(iso)) return false;
+    return true;
+  }
+
+  function siguienteDiaHabilFront(d) {
+    var cur = new Date(d.getTime());
+    do {
+      cur.setDate(cur.getDate() + 1);
+    } while (!esDiaHabilFront(cur));
+    return cur;
+  }
+
+  function calcularTerminoImpugnacionFront(fechaNotifStr, fechaConsulta) {
+    if (!fechaNotifStr || !/^\d{4}-\d{2}-\d{2}$/.test(fechaNotifStr)) {
+      return { ok: false, estado: 'FECHA_INVALIDA' };
+    }
+    var parts = fechaNotifStr.split('-').map(Number);
+    var notifDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+    if (isNaN(notifDate.getTime())) return { ok: false, estado: 'FECHA_INVALIDA' };
+
+    var dia1 = siguienteDiaHabilFront(notifDate);
+    var dia2 = siguienteDiaHabilFront(dia1);
+    var dia3 = siguienteDiaHabilFront(dia2);
+
+    var fechaVencimientoISO = formatearFechaISOFront(dia3);
+    var fEval = fechaConsulta || new Date();
+    var utc = fEval.getTime() + (fEval.getTimezoneOffset() * 60000);
+    var colDate = new Date(utc - (5 * 3600000));
+    var colDateMid = new Date(colDate.getFullYear(), colDate.getMonth(), colDate.getDate(), 12, 0, 0);
+
+    var fechaEfectiva = colDateMid;
+    if (!esDiaHabilFront(fechaEfectiva)) {
+      fechaEfectiva = siguienteDiaHabilFront(fechaEfectiva);
+    }
+
+    var fechaEfectivaISO = formatearFechaISOFront(fechaEfectiva);
+    var dia2ISO = formatearFechaISOFront(dia2);
+    var dia3ISO = formatearFechaISOFront(dia3);
+
+    if (fechaEfectivaISO <= dia2ISO) {
+      return {
+        ok: true,
+        estado: 'IMPUGNACION_DISPONIBLE',
+        aptoImpugnacion: true,
+        fechaNotificacion: fechaNotifStr,
+        fechaVencimiento: fechaVencimientoISO,
+        diasHabilesRestantesMinimo: 1
+      };
+    } else if (fechaEfectivaISO === dia3ISO) {
+      return {
+        ok: true,
+        estado: 'VENCE_HOY',
+        aptoImpugnacion: false,
+        fechaNotificacion: fechaNotifStr,
+        fechaVencimiento: fechaVencimientoISO,
+        diasHabilesRestantesMinimo: 0
+      };
+    } else {
+      return {
+        ok: true,
+        estado: 'VENCIDO',
+        aptoImpugnacion: false,
+        fechaNotificacion: fechaNotifStr,
+        fechaVencimiento: fechaVencimientoISO
+      };
+    }
+  }
+  window.calcularTerminoImpugnacion = calcularTerminoImpugnacionFront;
 
   // 4. MOTOR CONVERSACIONAL DE BRY CON REEMPLAZO DE TURNO (PANTALLA ÚNICA)
   function AgenteBry(hostElement) {
@@ -175,6 +280,10 @@
       tea_area: null,
       tea_estado: null,
       tutela_previa: null,
+      tutela_previa_resultado: null,
+      fecha_notificacion_fallo_tutela: null,
+      fecha_vencimiento_impugnacion: null,
+      es_impugnacion: false,
       tea_modalidad: null,
       nombre: '',
       whatsapp: '',
@@ -597,13 +706,272 @@
           btn.textContent = opt.label;
           btn.addEventListener('click', function () {
             self.respuestas.tutela_previa = opt.value;
+            // Regla B8: limpiar estados dependientes si cambia tutela_previa
+            self.respuestas.tutela_previa_resultado = null;
+            self.respuestas.fecha_notificacion_fallo_tutela = null;
+            self.respuestas.fecha_vencimiento_impugnacion = null;
+            self.respuestas.es_impugnacion = false;
+            self.respuestas.tea_modalidad = null;
             self.sincronizarConWizard();
-            self.mostrarEtapaContacto(opt.label);
+
+            if (opt.value === 'si') {
+              self.mostrarEtapaResultadoTutelaPrevia(opt.label);
+            } else {
+              self.mostrarEtapaContacto(opt.label);
+            }
           });
           chipsContainer.appendChild(btn);
         });
         stage.appendChild(chipsContainer);
       }, 700);
+    });
+  };
+
+  // ==========================================================================
+  // ETAPA 4a-1: RESULTADO DE LA TUTELA PREVIA (§5.1, B1)
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaResultadoTutelaPrevia = function (prevLabel) {
+    var self = this;
+    this.pasoActual = 'RESULTADO_TUTELA_PREVIA';
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'Tutela previa', function () {
+        self.mostrarEtapaTutelaPrevia();
+      });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_resultado_tutela_previa));
+
+        var chipsContainer = document.createElement('div');
+        chipsContainer.className = 'bry-quick-replies';
+
+        OPCIONES_RESULTADO_TUTELA_PREVIA.forEach(function (opt) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bry-chip-btn';
+          btn.textContent = opt.label;
+          btn.addEventListener('click', function () {
+            self.respuestas.tutela_previa_resultado = opt.value;
+            // Regla B8: limpiar estados dependientes si cambia resultado
+            self.respuestas.fecha_notificacion_fallo_tutela = null;
+            self.respuestas.fecha_vencimiento_impugnacion = null;
+            self.respuestas.es_impugnacion = false;
+            self.respuestas.tea_modalidad = null;
+            self.sincronizarConWizard();
+
+            if (opt.value === 'favor_incumplida') {
+              self.mostrarEtapaModalidad(opt.label);
+            } else if (opt.value === 'negada') {
+              self.mostrarEtapaFechaNotificacion(opt.label);
+            } else if (opt.value === 'en_tramite') {
+              self.mostrarEtapaEnTramite(opt.label);
+            }
+          });
+          chipsContainer.appendChild(btn);
+        });
+        stage.appendChild(chipsContainer);
+      }, 700);
+    });
+  };
+
+  // ==========================================================================
+  // ETAPA 4a-2: FECHA DE NOTIFICACIÓN DEL FALLO (§13.2, X-01)
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaFechaNotificacion = function (prevLabel) {
+    var self = this;
+    this.pasoActual = 'FECHA_NOTIFICACION';
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'Tutela negada', function () {
+        self.mostrarEtapaResultadoTutelaPrevia();
+      });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.q_fecha_notificacion));
+
+        var card = document.createElement('div');
+        card.className = 'bry-card';
+        card.innerHTML =
+          '<div class="bry-input-group" style="margin-bottom:12px;">' +
+            '<label class="bry-input-label" for="bry-f-fecha-notif">Fecha en que te llegó el correo</label>' +
+            '<input type="date" class="bry-input-control" id="bry-f-fecha-notif" max="' + formatearFechaISOFront(new Date()) + '">' +
+          '</div>' +
+          '<div style="display:flex;flex-direction:column;gap:8px;">' +
+            '<button type="button" class="bry-btn-primary" id="bry-btn-confirmar-fecha">Confirmar fecha</button>' +
+            '<button type="button" class="bry-btn-secondary" id="bry-btn-no-recuerdo-fecha">No recuerdo la fecha</button>' +
+          '</div>';
+
+        stage.appendChild(card);
+
+        var btnConfirmar = card.querySelector('#bry-btn-confirmar-fecha');
+        var btnNoRecuerdo = card.querySelector('#bry-btn-no-recuerdo-fecha');
+        var inputFecha = card.querySelector('#bry-f-fecha-notif');
+
+        btnConfirmar.addEventListener('click', function () {
+          var val = inputFecha.value;
+          if (!val) {
+            alert('Por favor selecciona una fecha o pulsa "No recuerdo la fecha".');
+            return;
+          }
+          var termino = calcularTerminoImpugnacionFront(val);
+          self.respuestas.fecha_notificacion_fallo_tutela = val;
+
+          if (termino.estado === 'IMPUGNACION_DISPONIBLE') {
+            self.respuestas.es_impugnacion = true;
+            self.respuestas.fecha_vencimiento_impugnacion = termino.fechaVencimiento;
+            self.sincronizarConWizard();
+            var msgImp = MENSAJES_BRY.impugnacion_disponible.replace('{fecha_vencimiento_impugnacion}', termino.fechaVencimiento);
+            self.mostrarEtapaMensajeImpugnacion(msgImp, 'Fecha notificada');
+          } else if (termino.estado === 'VENCE_HOY') {
+            self.respuestas.es_impugnacion = false;
+            self.respuestas.fecha_vencimiento_impugnacion = termino.fechaVencimiento;
+            self.sincronizarConWizard();
+            self.mostrarEtapaImpugnacionVenceHoy('Fecha notificada');
+          } else {
+            // Término vencido
+            self.respuestas.es_impugnacion = false;
+            self.respuestas.fecha_vencimiento_impugnacion = termino.fechaVencimiento || '';
+            self.sincronizarConWizard();
+            self.mostrarEtapaMensajeTutelaNegada('Fecha notificada');
+          }
+        });
+
+        btnNoRecuerdo.addEventListener('click', function () {
+          self.respuestas.fecha_notificacion_fallo_tutela = '';
+          self.respuestas.fecha_vencimiento_impugnacion = '';
+          self.respuestas.es_impugnacion = false;
+          self.sincronizarConWizard();
+          self.mostrarEtapaMensajeTutelaNegada('No recuerdo la fecha');
+        });
+      }, 700);
+    });
+  };
+
+  // ==========================================================================
+  // ETAPA 4a-3: MENSAJE CONVERSACIONAL DE IMPUGNACIÓN (§13.3)
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaMensajeImpugnacion = function (msgText, prevLabel) {
+    var self = this;
+    this.pasoActual = 'MENSAJE_IMPUGNACION';
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'Fecha de notificación', function () {
+        self.mostrarEtapaFechaNotificacion();
+      });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        stage.appendChild(self.crearFilaMensaje('agent', msgText));
+
+        var actions = document.createElement('div');
+        actions.style.marginTop = '16px';
+        actions.innerHTML = '<button type="button" class="bry-btn-primary" id="bry-btn-avanzar-impugnacion">Continuar →</button>';
+        stage.appendChild(actions);
+
+        actions.querySelector('#bry-btn-avanzar-impugnacion').addEventListener('click', function () {
+          self.mostrarEtapaContacto('Impugnación dentro de término');
+        });
+      }, 800);
+    });
+  };
+
+  // ==========================================================================
+  // ETAPA 4a-4: IMPUGNACIÓN VENCE HOY (NO SE VENDE, §13.3b)
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaImpugnacionVenceHoy = function (prevLabel) {
+    var self = this;
+    this.pasoActual = 'IMPUGNACION_VENCE_HOY';
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'Fecha de notificación', function () {
+        self.mostrarEtapaFechaNotificacion();
+      });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.impugnacion_vence_hoy));
+
+        var card = document.createElement('div');
+        card.className = 'bry-card';
+        card.style.marginTop = '14px';
+        card.innerHTML =
+          '<button type="button" class="bry-btn-secondary" id="bry-btn-inicio-vence-hoy">' +
+            'Volver al inicio' +
+          '</button>';
+        stage.appendChild(card);
+
+        card.querySelector('#bry-btn-inicio-vence-hoy').addEventListener('click', function () {
+          window.location.href = window.location.pathname;
+        });
+      }, 800);
+    });
+  };
+
+  // ==========================================================================
+  // ETAPA 4a-5: MENSAJE CONVERSACIONAL DE TUTELA NEGADA (§5.2)
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaMensajeTutelaNegada = function (prevLabel) {
+    var self = this;
+    this.pasoActual = 'MENSAJE_TUTELA_NEGADA';
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'Tutela negada', function () {
+        self.mostrarEtapaFechaNotificacion();
+      });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.tutela_negada));
+
+        var actions = document.createElement('div');
+        actions.style.marginTop = '16px';
+        actions.innerHTML = '<button type="button" class="bry-btn-primary" id="bry-btn-avanzar-revision">Continuar con mi diagnóstico →</button>';
+        stage.appendChild(actions);
+
+        actions.querySelector('#bry-btn-avanzar-revision').addEventListener('click', function () {
+          self.mostrarEtapaContacto('Revisión por abogada');
+        });
+      }, 800);
+    });
+  };
+
+  // ==========================================================================
+  // ETAPA 4a-6: EN TRÁMITE (§5.3, I-02 descarga gratuita)
+  // ==========================================================================
+  AgenteBry.prototype.mostrarEtapaEnTramite = function (prevLabel) {
+    var self = this;
+    this.pasoActual = 'TUTELA_EN_TRAMITE';
+
+    this.cambiarEtapa(function (stage) {
+      var topbar = self.crearBarraSuperior(prevLabel || 'Tutela en trámite', function () {
+        self.mostrarEtapaResultadoTutelaPrevia();
+      });
+      stage.appendChild(topbar);
+
+      self.mostrarEscribiendoEnEtapa(stage, function () {
+        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.tutela_en_tramite));
+
+        var card = document.createElement('div');
+        card.className = 'bry-card';
+        card.style.marginTop = '16px';
+        card.innerHTML =
+          '<div style="display:flex;flex-direction:column;gap:10px;">' +
+            '<a href="descargas/plantilla-impulso-procesal-tutela-lyzbri.docx" download="Plantilla_Impulso_Procesal_Tutela_Lyzbri.docx" class="bry-btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;" id="bry-btn-descargar-impulso">' +
+              '📥 Descargar plantilla (Word)' +
+            '</a>' +
+            '<button type="button" class="bry-btn-secondary" id="bry-btn-volver-inicio-tramite">' +
+              'Volver al inicio' +
+            '</button>' +
+          '</div>';
+
+        stage.appendChild(card);
+
+        card.querySelector('#bry-btn-volver-inicio-tramite').addEventListener('click', function () {
+          window.location.href = window.location.pathname;
+        });
+      }, 800);
     });
   };
 
@@ -616,7 +984,11 @@
 
     this.cambiarEtapa(function (stage) {
       var topbar = self.crearBarraSuperior(prevLabel || 'Tutela incumplida', function () {
-        self.mostrarEtapaEstado();
+        if (self.respuestas.tutela_previa_resultado === 'favor_incumplida') {
+          self.mostrarEtapaResultadoTutelaPrevia();
+        } else {
+          self.mostrarEtapaEstado();
+        }
       });
       stage.appendChild(topbar);
 
@@ -649,17 +1021,36 @@
   AgenteBry.prototype.mostrarEtapaContacto = function (prevLabel) {
     var self = this;
     this.pasoActual = 'CONTACTO';
+    var esNegada = self.respuestas.tutela_previa_resultado === 'negada';
+    var mensajeContacto = esNegada ? MENSAJES_BRY.contacto_revision : MENSAJES_BRY.contacto;
 
     this.cambiarEtapa(function (stage) {
       var topbar = self.crearBarraSuperior(prevLabel || 'Paso previo', function () {
-        if (self.respuestas.tea_estado === 'peticion_sin_respuesta') self.mostrarEtapaTutelaPrevia();
+        if (self.respuestas.tea_estado === 'peticion_sin_respuesta') {
+          if (self.respuestas.tutela_previa === 'si') {
+            if (self.respuestas.tutela_previa_resultado === 'negada') {
+              self.mostrarEtapaFechaNotificacion();
+            } else if (self.respuestas.tutela_previa_resultado === 'favor_incumplida') {
+              self.mostrarEtapaModalidad();
+            } else {
+              self.mostrarEtapaResultadoTutelaPrevia();
+            }
+          } else {
+            self.mostrarEtapaTutelaPrevia();
+          }
+        }
         else if (self.respuestas.tea_estado === 'tutela_incumplida') self.mostrarEtapaModalidad();
         else self.mostrarEtapaEstado();
       });
       stage.appendChild(topbar);
 
       self.mostrarEscribiendoEnEtapa(stage, function () {
-        stage.appendChild(self.crearFilaMensaje('agent', MENSAJES_BRY.contacto));
+        stage.appendChild(self.crearFilaMensaje('agent', mensajeContacto));
+
+        var correoLabel = esNegada
+          ? 'Correo electrónico * (obligatorio: allí recibirás las instrucciones)'
+          : 'Correo electrónico (opcional)';
+        var correoPlaceholder = esNegada ? 'ejemplo@correo.com (obligatorio)' : 'ejemplo@correo.com';
 
         var formCard = document.createElement('div');
         formCard.className = 'bry-card';
@@ -674,8 +1065,8 @@
               '<input type="tel" class="bry-input-control" id="bry-f-whatsapp" required placeholder="Ej: 3001234567">' +
             '</div>' +
             '<div class="bry-input-group">' +
-              '<label class="bry-input-label" for="bry-f-correo">Correo electrónico (opcional)</label>' +
-              '<input type="email" class="bry-input-control" id="bry-f-correo" placeholder="ejemplo@correo.com">' +
+              '<label class="bry-input-label" for="bry-f-correo">' + correoLabel + '</label>' +
+              '<input type="email" class="bry-input-control" id="bry-f-correo" ' + (esNegada ? 'required ' : '') + 'placeholder="' + correoPlaceholder + '">' +
             '</div>' +
             '<label class="bry-consent-label">' +
               '<input type="checkbox" class="bry-consent-checkbox" id="bry-f-consentimiento" required>' +
@@ -698,6 +1089,10 @@
 
           if (!nombre || !whatsapp) {
             alert('Por favor ingresa tu nombre y número de WhatsApp.');
+            return;
+          }
+          if (esNegada && (!correo || !correo.includes('@') || !correo.includes('.'))) {
+            alert('Para enviarte las instrucciones de tu revisión, el correo electrónico es obligatorio.');
             return;
           }
           if (!consiente) {
@@ -737,18 +1132,8 @@
         var card = document.createElement('div');
         card.className = 'bry-card bry-card-result';
 
-        var alertaHtml = '';
-        if (self.respuestas.tutela_previa === 'si') {
-          alertaHtml =
-            '<div class="bry-alert-temerity">' +
-              '<span class="bry-alert-icon">⚠️</span>' +
-              '<div><strong>Aviso legal:</strong> Al haber presentado una tutela previa por estos hechos, tu caso será revisado por una abogada para evitar temeridad y proteger tu proceso.</div>' +
-            '</div>';
-        }
-
         card.innerHTML =
           '<span class="bry-badge-legal">Evaluación Inicial Gratuita</span>' +
-          alertaHtml +
           '<h3 class="bry-card-title">' + evaluacion.titulo + '</h3>' +
           '<p class="bry-card-desc">' + evaluacion.descripcion + '</p>' +
           '<div class="bry-price-box">' +
@@ -780,6 +1165,10 @@
       tea_area: this.respuestas.tea_area,
       tea_estado: this.respuestas.tea_estado,
       tutela_previa: this.respuestas.tutela_previa,
+      tutela_previa_resultado: this.respuestas.tutela_previa_resultado,
+      fecha_notificacion_fallo_tutela: this.respuestas.fecha_notificacion_fallo_tutela,
+      fecha_vencimiento_impugnacion: this.respuestas.fecha_vencimiento_impugnacion,
+      es_impugnacion: this.respuestas.es_impugnacion,
       tea_modalidad: this.respuestas.tea_modalidad,
       nombre: this.respuestas.nombre,
       whatsapp: this.respuestas.whatsapp,
@@ -803,6 +1192,19 @@
           };
         }
       }
+    }
+
+    // Regla B7: Si hay tutela previa 'si' y resolverProducto no entregó un producto válido,
+    // NUNCA caer en la tutela de $420.000 ni mostrar botón de pago.
+    if (this.respuestas.tutela_previa === 'si') {
+      return {
+        titulo: 'No pudimos calcular tu resultado.',
+        descripcion: 'Intenta de nuevo en unos minutos o escríbenos a contacto@lyzbri.com.',
+        servicioNombre: 'Orientación jurídica',
+        precio: 0,
+        precioFormateado: '$0',
+        productoClave: null
+      };
     }
 
     var precio = 149000;
@@ -876,6 +1278,10 @@
     if (this.respuestas.tea_area) ans.tea_area = this.respuestas.tea_area;
     if (this.respuestas.tea_estado) ans.tea_estado = this.respuestas.tea_estado;
     if (this.respuestas.tutela_previa) ans.tutela_previa = this.respuestas.tutela_previa;
+    if (this.respuestas.tutela_previa_resultado) ans.tutela_previa_resultado = this.respuestas.tutela_previa_resultado;
+    if (this.respuestas.fecha_notificacion_fallo_tutela) ans.fecha_notificacion_fallo_tutela = this.respuestas.fecha_notificacion_fallo_tutela;
+    if (this.respuestas.fecha_vencimiento_impugnacion) ans.fecha_vencimiento_impugnacion = this.respuestas.fecha_vencimiento_impugnacion;
+    if (this.respuestas.es_impugnacion !== undefined) ans.es_impugnacion = this.respuestas.es_impugnacion;
     if (this.respuestas.tea_modalidad) ans.tea_modalidad = this.respuestas.tea_modalidad;
     if (this.respuestas.nombre) ans.nombre = this.respuestas.nombre;
     if (this.respuestas.whatsapp) ans.whatsapp = this.respuestas.whatsapp;

@@ -5,6 +5,8 @@
 // aún no creadas en el portal CRM, las retira y reintenta para asegurar que
 // el contacto y el radicado NUNCA se pierdan.
 
+const { calcularTerminoImpugnacion } = require('./lib/dias-habiles');
+
 /**
  * Ejecuta una llamada HTTP a HubSpot con degradación controlada:
  * Si HubSpot devuelve HTTP 400 por propiedades no existentes o inválidas en el portal,
@@ -107,18 +109,47 @@ exports.handler = async (event) => {
     'tea_estado', 'subtipo_no_visible_tea', 'sub_caso', 'nombre_completo', 'tipo_solicitud_alimentos', 'modalidad_servicio',
     'lyzbri_service_code', 'lyzbri_case_type', 'lyzbri_processing_mode', 'lyzbri_delivery_type',
     'lyzbri_make_route', 'cant_acreedores', 'p1_perfil', 'p2_situacion', 'p3_objetivo', 'regimen_insolvencia',
-    'relacion_acreedores_insolvencia', 'estado_caso_insolvencia', 'acepta_alcance_preliminar'
+    'relacion_acreedores_insolvencia', 'estado_caso_insolvencia', 'acepta_alcance_preliminar',
+    'tutela_previa_resultado', 'fecha_notificacion_fallo_tutela', 'fecha_vencimiento_impugnacion'
   ];
 
+  const OPCIONES_RESULTADO_TUTELA = ['favor_incumplida', 'negada', 'en_tramite'];
   if (respuestasWizard && typeof respuestasWizard === 'object') {
-    if (respuestasWizard.tutela_previa === 'si' || respuestasWizard.tutela_previa === true) {
-      properties.estado_revision = 'MANUAL_REVIEW';
+    const tutelaPrevia = respuestasWizard.tutela_previa === 'si' || respuestasWizard.tutela_previa === true;
+    const resTutela = respuestasWizard.tutela_previa_resultado;
+    const resValido = OPCIONES_RESULTADO_TUTELA.includes(resTutela) ? resTutela : null;
+
+    if (tutelaPrevia) {
+      if (resValido === 'favor_incumplida') {
+        properties.estado_revision = '';
+      } else if (resValido === 'negada') {
+        const caseType = respuestasWizard.lyzbri_case_type || properties.lyzbri_case_type;
+        if (caseType === 'IMPUGNACION_FALLO') {
+          const fechaNotif = respuestasWizard.fecha_notificacion_fallo_tutela;
+          const termino = calcularTerminoImpugnacion(fechaNotif);
+          if (termino.ok && termino.aptoImpugnacion) {
+            properties.estado_revision = 'PENDIENTE_PAGO_IMPUGNACION';
+            properties.fecha_vencimiento_impugnacion = termino.fechaVencimiento;
+          } else {
+            // Término insuficiente o vencido: degrada de impugnación a revisión
+            properties.lyzbri_case_type = 'REVISION_TUTELA_NEGADA';
+            properties.estado_revision = 'PENDIENTE_PAGO_REVISION';
+          }
+        } else {
+          properties.estado_revision = 'PENDIENTE_PAGO_REVISION';
+        }
+      } else {
+        // en_tramite o sin resultado válido con tutela_previa = si
+        properties.estado_revision = 'MANUAL_REVIEW';
+      }
     } else if (respuestasWizard.tutela_previa === 'no' || respuestasWizard.tutela_previa === false) {
       properties.estado_revision = '';
     }
 
     Object.keys(respuestasWizard).forEach(function (k) {
-      if (PROPIEDADES_PERMITIDAS.indexOf(k) !== -1 && respuestasWizard[k] !== undefined && respuestasWizard[k] !== '') {
+      if (k === 'tutela_previa_resultado') {
+        if (resValido) properties[k] = resValido;
+      } else if (PROPIEDADES_PERMITIDAS.indexOf(k) !== -1 && respuestasWizard[k] !== undefined && respuestasWizard[k] !== '') {
         properties[k] = String(respuestasWizard[k]);
       }
     });
@@ -223,7 +254,10 @@ exports.handler = async (event) => {
         if (prevRef && prevRef !== referenciaPago) {
           const pagoConfirmado = String(prevProps.pago_confirmado).toLowerCase() === 'true';
 
-          if (pagoConfirmado) {
+          // Regla A-1 (Decisión Liza 14 oct 2026): REVISION_TUTELA_NEGADA e IMPUGNACION_FALLO quedan exentos de la restricción 409
+          const esExentoRevisionTutela = ['REVISION_TUTELA_NEGADA', 'IMPUGNACION_FALLO'].includes(prevProps.lyzbri_case_type);
+
+          if (pagoConfirmado && !esExentoRevisionTutela) {
             // Criterios de reauditoría Cowork (13 oct 2026):
             // 1. Identificar insolvencia exclusivamente cuando lyzbri_case_type empieza por INSOLV_ (no por servicio_lyzbri = deudas).
             const esInsolvenciaPrev = Boolean(prevProps.lyzbri_case_type && String(prevProps.lyzbri_case_type).startsWith('INSOLV_'));

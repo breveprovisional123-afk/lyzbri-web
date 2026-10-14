@@ -265,7 +265,7 @@ exports.handler = async (event) => {
         },
         body: JSON.stringify({
           filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referenciaPago }] }],
-          properties: ['hs_object_id', 'email', 'lyzbri_service_code', 'lyzbri_case_type', 'regimen_insolvencia', 'firstname', 'nombre_completo', 'cant_acreedores', 'deuda_cantidad', 'pago_confirmado']
+          properties: ['hs_object_id', 'email', 'lyzbri_service_code', 'lyzbri_case_type', 'regimen_insolvencia', 'firstname', 'nombre_completo', 'cant_acreedores', 'deuda_cantidad', 'pago_confirmado', 'estado_revision']
         })
       });
       const searchData = await searchRes.json();
@@ -347,6 +347,12 @@ exports.handler = async (event) => {
     if (!updateRet.res.ok) {
       const errText = updateRet.errText || await updateRet.res.text();
       return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
+    }
+
+    // Regla S3: si el caso está en revisión manual, responder revisionManual: true sin avisar a Make ni prometer documento
+    const estadosRevisionManual = ['MANUAL_REVIEW', 'PENDIENTE_REVISION', 'PENDIENTE_PAGO_REVISION', 'PENDIENTE_PAGO_IMPUGNACION'];
+    if (pc.estado_revision && estadosRevisionManual.includes(pc.estado_revision)) {
+      return { statusCode: 200, body: JSON.stringify({ ok: true, revisionManual: true }) };
     }
 
     const emailContacto = correo || (contact.properties && contact.properties.email) || null;
