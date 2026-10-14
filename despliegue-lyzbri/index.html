@@ -3767,7 +3767,15 @@
           }
           if (res.status === 404 && envio === 'guardar-formulario') {
             try { localStorage.setItem('lyzbri_hechos_pendientes_' + referencia, JSON.stringify(datos)); } catch (e) {}
-            estado.textContent = 'No pudimos registrar tu formulario en este momento. Para evitar que tu solicitud quede sin seguimiento, comunícate con nuestro equipo por WhatsApp e indica el radicado ' + referencia + '. Te ayudaremos a verificar el estado de tu solicitud.';
+            var asuntoMail = encodeURIComponent('Incidencia de registro de formulario — Radicado ' + referencia);
+            var cuerpoMail = encodeURIComponent('Hola equipo Lyzbri,\n\nNo fue posible registrar mi formulario en la plataforma para el radicado: ' + referencia + '.\n\nPor favor ayúdenme a verificar el estado de mi solicitud y confirmar la recepción de mis datos.\n\nGracias.');
+            var mailtoUrl = 'mailto:contacto@lyzbri.com?subject=' + asuntoMail + '&body=' + cuerpoMail;
+            var mensajeHtml = '<div style="margin-top:16px;padding:16px;background:#fff3cd;border:1px solid #ffeeba;border-radius:8px;text-align:left;color:#856404;">'
+              + '<p style="margin:0 0 10px;font-size:0.95rem;line-height:1.5;">No pudimos registrar tu formulario en este momento. Para evitar que tu solicitud quede sin seguimiento, contacta a nuestro equipo por correo e indica el radicado que aparece a continuación. Te ayudaremos a verificar el estado de tu solicitud.</p>'
+              + '<p style="margin:0 0 14px;font-size:1rem;font-weight:bold;color:#102a4c;">Radicado: <span style="font-family:monospace;background:#ffffff;padding:2px 8px;border:1px solid #cbd5e1;border-radius:4px;">' + referencia + '</span></p>'
+              + '<a id="btn-contactar-correo" class="btn btn-primary" href="' + mailtoUrl + '" style="display:inline-block;text-decoration:none;padding:10px 20px;font-weight:bold;">Contactar por correo</a>'
+              + '</div>';
+            estado.innerHTML = mensajeHtml;
             var e404 = new Error('caso_no_encontrado_404'); e404.manejado = true; throw e404;
           }
           if (!res.ok) throw new Error(endpoint + ' respondió ' + res.status);
