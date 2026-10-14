@@ -2898,7 +2898,7 @@
           '<div class="form-grid">' +
           '<div class="field"><label for="wz-nombre">Nombre completo *</label><input id="wz-nombre" type="text" value="' + (wz.answers.nombre || '') + '" autocomplete="name" /></div>' +
           '<div class="field"><label for="wz-whatsapp">Tu número de WhatsApp *</label><input id="wz-whatsapp" type="tel" value="' + (wz.answers.whatsapp || '') + '" autocomplete="tel" /></div>' +
-          '<div class="field"><label for="wz-correo">Correo electrónico</label><input id="wz-correo" type="email" value="' + (wz.answers.correo || '') + '" autocomplete="email" /></div>' +
+          '<div class="field"><label for="wz-correo">Correo electrónico' + (wz.servicio === 'deudas' ? ' *' : '') + '</label><input id="wz-correo" type="email" value="' + (wz.answers.correo || '') + '" autocomplete="email" /></div>' +
           '</div>' +
           '<div class="consent-row">' +
           '<input id="wz-consentimiento" type="checkbox"' + (wz.answers.consiente ? ' checked' : '') + ' />' +
@@ -2959,6 +2959,11 @@
         } else {
           alert('Por favor completa tu nombre y WhatsApp, y autoriza el tratamiento de tus datos.');
         }
+        return;
+      }
+      var esInsolvencia = (wz.servicio === 'deudas');
+      if (esInsolvencia && (!correo || !correo.includes('@') || !correo.includes('.'))) {
+        alert('Para avanzar con tu trámite de insolvencia y recibir el listado oficial de documentos de tu régimen, el correo electrónico es obligatorio.');
         return;
       }
       wz.answers.nombre = nombre;
@@ -3788,6 +3793,13 @@
         var envio = productoForm ? productoForm.submit : (servicio === 'alimentos' ? 'enviar-alimentos' : 'guardar-formulario');
         var endpoint = '/.netlify/functions/' + envio;
         var cuerpo = { referenciaPago: referencia, servicio: servicio, campos: datos };
+        try {
+          var casoWz = JSON.parse(localStorage.getItem('lyzbri_caso_' + referencia) || 'null');
+          var ansWz = (casoWz && casoWz.answers) || {};
+          if (ansWz.correo || ansWz.whatsapp || ansWz.nombre) {
+            cuerpo.contactoWizard = { nombre: ansWz.nombre || '', correo: ansWz.correo || '', whatsapp: ansWz.whatsapp || '' };
+          }
+        } catch (e) {}
         if (envio === 'enviar-documento') { cuerpo.serviceCode = productoForm.service_code; cuerpo.caseType = productoForm.case_type; }
         fetch(endpoint, {
           method: 'POST',
@@ -3803,6 +3815,20 @@
               }
               throw new Error('respuesta 400');
             });
+          }
+          if (res.status === 404 && envio === 'guardar-formulario') {
+            try { localStorage.setItem('lyzbri_hechos_pendientes_' + referencia, JSON.stringify(datos)); } catch (e) {}
+            var asuntoMail = encodeURIComponent('Incidencia de registro de formulario — Radicado ' + referencia);
+            var cuerpoMail = encodeURIComponent('Hola equipo Lyzbri,\n\nNo fue posible registrar mi formulario en la plataforma para el radicado: ' + referencia + '.\n\nPor favor ayúdenme a verificar el estado de mi solicitud y confirmar la recepción de mis datos.\n\nGracias.');
+            var mailtoUrl = 'mailto:contacto@lyzbri.com?subject=' + asuntoMail + '&body=' + cuerpoMail;
+            var mensajeHtml = '<div style="margin-top:16px;padding:16px;background:#fff3cd;border:1px solid #ffeeba;border-radius:8px;text-align:left;color:#856404;">'
+              + '<p style="margin:0 0 10px;font-size:0.95rem;line-height:1.5;">No pudimos registrar tu formulario en este momento. Para evitar que tu solicitud quede sin seguimiento, escríbenos a <b>contacto@lyzbri.com</b> e indica el radicado que aparece a continuación. Te ayudaremos a verificar el estado de tu solicitud.</p>'
+              + '<p style="margin:0 0 14px;font-size:1rem;font-weight:bold;color:#102a4c;">Radicado: <span style="font-family:monospace;background:#ffffff;padding:2px 8px;border:1px solid #cbd5e1;border-radius:4px;">' + referencia + '</span></p>'
+              + '<a id="btn-contactar-correo" class="btn btn-primary" href="' + mailtoUrl + '" style="display:inline-block;text-decoration:none;padding:10px 20px;font-weight:bold;">Contactar por correo</a>'
+              + '<p style="margin:10px 0 0;font-size:0.85rem;">Si el botón no abre tu correo, escribe a <b>contacto@lyzbri.com</b> con el asunto: <i>Incidencia de registro de formulario — Radicado ' + referencia + '</i></p>'
+              + '</div>';
+            estado.innerHTML = mensajeHtml;
+            var e404 = new Error('caso_no_encontrado_404'); e404.manejado = true; throw e404;
           }
           if (!res.ok) throw new Error(endpoint + ' respondió ' + res.status);
           return res.json();

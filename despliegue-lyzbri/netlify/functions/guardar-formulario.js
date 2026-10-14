@@ -272,58 +272,23 @@ exports.handler = async (event) => {
       contact = searchData.results && searchData.results[0];
     }
 
-    // 2b. Respaldo: si no se encontró por referencia_pago (p. ej. crear-caso.js
-    //     falló antes del pago, o es un caso previo a esta integración), se
-    //     intenta por correo -- y si tampoco existe con ese correo, se crea
-    //     el contacto aquí mismo en vez de perder la información del cliente.
-    if (!contact && correo) {
-      const byEmailRes = await fetch(
-        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email&properties=email,lyzbri_service_code,lyzbri_case_type,regimen_insolvencia,firstname,nombre_completo,cant_acreedores,deuda_cantidad,pago_confirmado`,
-        { headers: { 'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}` } }
-      );
-      if (byEmailRes.ok) {
-        contact = await byEmailRes.json();
-      }
-    }
-
+    // 2b. Mitigación R-4 (aprobada L2): sin respaldo por correo. Si el caso no aparece por
+    //     referencia_pago, no se crea ni se sobrescribe ningún contacto: se alerta a revisión
+    //     manual con TODOS los datos para que Liza pueda contactar al cliente.
     if (!contact) {
-      if (!correo) {
-        // Caso pagado que no aparece y sin correo para respaldo: NUNCA en silencio.
-        const alertaEnviada = await alertarRevision(referenciaPago, payload.servicio,
-          'Formulario recibido pero el caso no se encontró en HubSpot y no llegó correo para respaldo. Contactar al cliente (datos del formulario no guardados).');
-        return { statusCode: 404, body: JSON.stringify({ ok: false, reason: 'case_not_found_in_hubspot_and_no_email', alertaEnviada }) };
-      }
-      const createRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ properties: { email: correo, referencia_pago: referenciaPago, ...campos, hechos_completos: 'true', fecha_hechos_completos: new Date().toISOString().slice(0, 10) } })
-      });
-      if (!createRes.ok) {
-        const errText = await createRes.text();
-        return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_create_failed', detail: errText }) };
-      }
-      const avisoMakeRespaldo = await avisarAMake(correo, referenciaPago);
-      let notifInsolvencia = null;
-      const esDeudasRespaldo = payload.servicio === 'deudas' || (campos && (campos.regimen_insolvencia || campos.monto_total_adeudado));
-      if (esDeudasRespaldo) {
-        const caseType = (campos && campos.lyzbri_case_type) || 'INSOLV_DIAG_NAT';
-        const regimen = (campos && campos.regimen_insolvencia) || ((campos && campos.es_comerciante === 'si') ? 'PN_PC_CGP' : 'PN_NC_CGP');
-        const nombreCliente = (campos && campos.nombre_deudor) || 'Cliente';
-        notifInsolvencia = generarNotificacionPostPago({
-          case_type: caseType,
-          regimen: regimen,
-          nombre: nombreCliente,
-          radicado: referenciaPago,
-          email: correo
-        });
-        if (!notifInsolvencia || !notifInsolvencia.ok) {
-          await alertarRevision(referenciaPago, 'deudas', 'fillout_no_configurado');
-        }
-      }
-      return { statusCode: 200, body: JSON.stringify({ ok: true, creadoComoRespaldo: true, avisoMake: avisoMakeRespaldo, notifInsolvencia }) };
+      const cw = (payload && payload.contactoWizard && typeof payload.contactoWizard === 'object') ? payload.contactoWizard : {};
+      const c = campos || {};
+      const detalleError = [
+        'Formulario recibido pero el caso no se encontró en HubSpot para la referencia ' + referenciaPago + '.',
+        'Derivado a revisión manual para evitar mezclas de casos.',
+        'Nombre: ' + (cw.nombre || c.nombre_deudor || c.nombre_titular || c.nombre_denunciante || 'No suministrado'),
+        'Correo: ' + (correo || cw.correo || c.correo_titular || c.correo_notificaciones || 'No suministrado'),
+        'WhatsApp: ' + (payload.whatsapp || cw.whatsapp || c.celular_titular || c.celular_denunciante || 'No suministrado'),
+        'Servicio: ' + (payload.servicio || 'No suministrado'),
+        'Datos del formulario: ' + JSON.stringify(c)
+      ].join(' | ');
+      const alertaEnviada = await alertarRevision(referenciaPago, payload.servicio, detalleError);
+      return { statusCode: 404, body: JSON.stringify({ ok: false, reason: 'case_not_found_by_reference', alertaEnviada }) };
     }
 
     // 2c. El valor pagado en Bold debe corresponder al producto registrado en el caso.
