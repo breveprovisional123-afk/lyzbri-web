@@ -319,6 +319,9 @@ exports.handler = async (event) => {
           radicado: referenciaPago,
           email: correo
         });
+        if (!notifInsolvencia || !notifInsolvencia.ok) {
+          await alertarRevision(referenciaPago, 'deudas', 'fillout_no_configurado');
+        }
       }
       return { statusCode: 200, body: JSON.stringify({ ok: true, creadoComoRespaldo: true, avisoMake: avisoMakeRespaldo, notifInsolvencia }) };
     }
@@ -383,6 +386,9 @@ exports.handler = async (event) => {
           case_type: caseType,
           regimen: regimen
         };
+      } else {
+        // F1.3: Falla cerrada y alerta obligatoria si falta herramienta de carga o plantilla
+        await alertarRevision(referenciaPago, 'deudas', 'fillout_no_configurado');
       }
     }
 

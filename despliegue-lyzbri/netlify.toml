@@ -3,5 +3,3 @@
   publish = "."
   functions = "netlify/functions"
 
-[build.environment]
-  FILLOUT_UPLOAD_URL = "https://forms.fillout.com/t/prywvLiNweus"
