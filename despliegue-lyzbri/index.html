@@ -2337,7 +2337,7 @@
       if (n <= 5) return '3 a 5 acreedores';
       if (n <= 7) return '6 a 7 acreedores';
       if (n <= 9) return '8 a 9 acreedores';
-      return '10 o más acreedores';
+      return n + ' acreedores (10 o más)';
     }
 
     var CATALOGO = {
@@ -2592,8 +2592,15 @@
           { value: '4', label: '3 a 5 acreedores' },
           { value: '6', label: '6 a 7 acreedores' },
           { value: '8', label: '8 a 9 acreedores' },
-          { value: '10', label: '10 o más acreedores' }
+          { value: '10_mas', label: '10 o más acreedores' }
         ]});
+        if (a && (a.cant_acreedores === '10_mas' || (a.cant_acreedores_exacto && parseInt(a.cant_acreedores, 10) >= 10))) {
+          stepsD.push({
+            id: 'cant_acreedores_exacto',
+            type: 'text',
+            q: 'Indica el número exacto de acreedores diferentes (10 o más):'
+          });
+        }
         return stepsD;
       }
       if (servicio === 'marca') {
@@ -2859,6 +2866,33 @@
           if (el) el.focus();
         }, 50);
       } else if (step.type === 'contacto') {
+        var prodPrev = resolverProducto(wz.servicio, wz.answers);
+        var esInsolvProd = prodPrev && prodPrev.case_type && prodPrev.case_type.indexOf('INSOLV_') === 0;
+
+        // Propuestas de texto específicas por tipo de producto de insolvencia (H-F4-7 / Cowork 13 oct)
+        // NOTA: Pendientes de aprobación jurídica formal de Liza antes de habilitarlos al cliente en producción.
+        var ALCANCE_PRELIMINAR_APROBADO_LIZA = false;
+
+        var textoAlcance = '';
+        if (esInsolvProd) {
+          if (prodPrev.case_type === 'INSOLV_REP_NAT') {
+            textoAlcance = 'Entiendo y acepto que este servicio de representación legal para persona natural comerciante requiere validación contractual y documental previa, y no garantiza la condonación total de obligaciones ni la suspensión automática e indefinida de procesos judiciales.';
+          } else if (prodPrev.case_type === 'INSOLV_NEG_NAT' || prodPrev.case_type === 'INSOLV_EXP_EMP' || prodPrev.case_type === 'INSOLV_REORG_EMP') {
+            textoAlcance = 'Entiendo y acepto que este servicio comprende la elaboración y estructuración del expediente de negociación de deudas con base en la información y soportes suministrados, sin que garantice la aceptación judicial o notarial del trámite ni el acuerdo obligatorio con los acreedores.';
+          } else {
+            // Diagnóstico de viabilidad y modalidad (natural o empresarial)
+            textoAlcance = 'Entiendo y acepto que este servicio corresponde a un diagnóstico y estructuración jurídica preliminar de mi situación de insolvencia, y que no garantiza la admisión judicial del trámite, la suspensión inmediata de embargos ni la condonación de deudas.';
+          }
+        }
+
+        var htmlAlcance = '';
+        if (esInsolvProd && ALCANCE_PRELIMINAR_APROBADO_LIZA) {
+          htmlAlcance = '<div class="consent-row" style="margin-top:10px;">' +
+            '<input id="wz-alcance" type="checkbox"' + (wz.answers.acepta_alcance_preliminar ? ' checked' : '') + ' />' +
+            '<label for="wz-alcance" style="font-size:0.88rem;line-height:1.45;color:#334155;">' + textoAlcance + '</label>' +
+            '</div>';
+        }
+
         body.innerHTML =
           '<p class="wizard-question">' + step.q + '</p>' +
           '<div class="form-grid">' +
@@ -2870,6 +2904,7 @@
           '<input id="wz-consentimiento" type="checkbox"' + (wz.answers.consiente ? ' checked' : '') + ' />' +
           '<label for="wz-consentimiento">Autorizo el tratamiento de mis datos personales conforme a la <a href="#politica-datos" target="_blank" rel="noopener">Política de Tratamiento de Datos</a> de Lyzbri.</label>' +
           '</div>' +
+          htmlAlcance +
           '<div class="wizard-actions">' +
           '<button type="button" class="btn btn-primary" onclick="submitContacto()">Ver mi resultado</button>' +
           '</div>' +
@@ -2879,6 +2914,9 @@
 
     function chooseAnswer(stepId, value) {
       wz.answers[stepId] = value;
+      if (stepId === 'cant_acreedores' && value !== '10_mas') {
+        delete wz.answers.cant_acreedores_exacto;
+      }
       // Si cambia el área en TEA, se limpia el estado dependiente para no arrastrar una respuesta inválida.
       if (stepId === 'tea_condicion') { delete wz.answers.tea_subtipo_nv; delete wz.answers.tea_area; delete wz.answers.tea_estado; delete wz.answers.tea_modalidad; }
       if (stepId === 'tea_area') { delete wz.answers.tea_estado; delete wz.answers.tea_modalidad; }
@@ -2889,7 +2927,19 @@
 
     function continueText(stepId) {
       var el = document.getElementById('wizardTextInput');
-      wz.answers[stepId] = el ? el.value.trim() : '';
+      var val = el ? el.value.trim() : '';
+      if (stepId === 'cant_acreedores_exacto') {
+        var num = parseInt(val, 10);
+        if (isNaN(num) || num < 10) {
+          alert('Por favor ingresa un número de acreedores válido (mínimo 10).');
+          if (el) el.focus();
+          return;
+        }
+        wz.answers.cant_acreedores = String(num);
+        wz.answers.cant_acreedores_exacto = String(num);
+      } else {
+        wz.answers[stepId] = val;
+      }
       wz.stepIndex += 1;
       renderStep();
     }
@@ -2900,14 +2950,24 @@
       var correo = document.getElementById('wz-correo').value.trim();
       var consiente = document.getElementById('wz-consentimiento').checked;
 
-      if (!nombre || !whatsapp || !consiente) {
-        alert('Por favor completa tu nombre y WhatsApp, y autoriza el tratamiento de tus datos.');
+      var elAlcance = document.getElementById('wz-alcance');
+      var requiereAlcance = Boolean(elAlcance);
+
+      if (!nombre || !whatsapp || !consiente || (requiereAlcance && !elAlcance.checked)) {
+        if (requiereAlcance && !elAlcance.checked) {
+          alert('Por favor confirma la aceptación del alcance preliminar del servicio para continuar.');
+        } else {
+          alert('Por favor completa tu nombre y WhatsApp, y autoriza el tratamiento de tus datos.');
+        }
         return;
       }
       wz.answers.nombre = nombre;
       wz.answers.whatsapp = whatsapp;
       wz.answers.correo = correo;
       wz.answers.consiente = true;
+      if (requiereAlcance && elAlcance.checked) {
+        wz.answers.acepta_alcance_preliminar = 'true';
+      }
 
       mostrarResultado();
     }
@@ -3135,6 +3195,7 @@
         respuestasParaHubspot.estado_revision = 'REQUIERE_DEFINICION';
       }
       if (wz.answers.nombre) respuestasParaHubspot.nombre_completo = wz.answers.nombre;
+      if (wz.answers.acepta_alcance_preliminar) respuestasParaHubspot.acepta_alcance_preliminar = wz.answers.acepta_alcance_preliminar;
 
       window._casoRegistroPromise = fetch('/.netlify/functions/crear-caso', {
         method: 'POST',
@@ -3549,13 +3610,23 @@
     ];
     // Datos de la evaluación que se precargan en el formulario (campo -> respuesta del wizard).
     var PRECARGA = { nombre_titular: 'nombre', nombre_denunciante: 'nombre', correo_titular: 'correo', correo_notificaciones: 'correo',
-      celular_titular: 'whatsapp', celular_denunciante: 'whatsapp', fuente_nombre: 'hd_entidad', condicion_afectada: 'tea_condicion' };
+      celular_titular: 'whatsapp', celular_denunciante: 'whatsapp', fuente_nombre: 'hd_entidad', condicion_afectada: 'tea_condicion',
+      cant_acreedores: 'cant_acreedores' };
 
     var NOMBRE_SERVICIO = { 'habeas-data': 'Hábeas Data', 'deudas': 'Gestiona tu Deuda', 'marca': 'Registro de marca', 'tea': 'TEA y discapacidad',
       'tea-tutela': 'TEA y discapacidad — acción de tutela', 'tea-desacato': 'TEA y discapacidad — incidente de desacato', 'alimentos': 'Cuota alimentaria',
       'hd-suplantacion': 'Hábeas Data — reclamo por suplantación de identidad', 'hd-datos-incorrectos': 'Hábeas Data — reclamo por datos, fechas o saldos incorrectos',
       'hd-no-reconocida': 'Hábeas Data — reclamo por obligación no reconocida', 'hd-caso-incierto': 'Hábeas Data — solicitud de verificación de obligación',
-      'tea-denuncia-deportiva': 'Escrito de denuncia — discriminación, burlas o exclusión en espacio deportivo' };
+      'tea-denuncia-deportiva': 'Escrito de denuncia — discriminación, burlas o exclusión en espacio deportivo',
+      'insolv-diag-nat': 'Insolvencia — Diagnóstico de viabilidad',
+      'insolv-mod-nat': 'Insolvencia — Estrategia de modalidad',
+      'insolv-neg-nat': 'Insolvencia — Expediente de negociación de deudas',
+      'insolv-seg-nat': 'Insolvencia — Seguimiento a audiencias',
+      'insolv-rep-nat': 'Insolvencia — Representación pequeño comerciante',
+      'insolv-diag-emp': 'Insolvencia Empresarial — Diagnóstico',
+      'insolv-exp-emp': 'Insolvencia Empresarial — Blindaje y expediente',
+      'insolv-reorg-emp': 'Insolvencia Empresarial — Reorganización',
+      'insolv-seg-emp': 'Insolvencia Empresarial — Seguimiento' };
 
     // El wizard usa sus propios códigos cortos ('habeas-data', 'marca', 'tea'),
     // pero el dropdown servicio_comprado en HubSpot tiene sus propios valores
@@ -3626,7 +3697,9 @@
       var av = document.getElementById('aviso-pago');
       if (av) av.style.display = 'none';
 
-      var html = '<h3>Cuéntanos los hechos de tu caso — ' + NOMBRE_SERVICIO[servicio] + '</h3>'
+      var prodForm = productoPorForm(servicio);
+      var nombreServicioTitulo = NOMBRE_SERVICIO[servicio] || (prodForm && prodForm.nombre) || 'Tu servicio legal';
+      var html = '<h3>Cuéntanos los hechos de tu caso — ' + nombreServicioTitulo + '</h3>'
         + '<p class="fine-print">Tu pago fue registrado (referencia ' + referencia + '). Esta información es la que usamos para preparar tu documento.</p>'
         + '<form id="fd_form">' + campos.map(campoHtml).join('') + '<div class="form-actions" style="margin-top:18px;"><button type="submit" class="btn btn-primary">Enviar información</button></div>'
         + '<p class="fine-print" id="fd_estado"></p></form>';
