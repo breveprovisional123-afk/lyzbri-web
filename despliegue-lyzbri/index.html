@@ -2296,6 +2296,9 @@
     var RUTAS_MAKE = {
       DEUDAS: 'Lyzbri principal (6374004)', HD_PAGO_HISTORICO: 'Lyzbri principal (6374004)', MARCA: 'Lyzbri principal (6374004)',
       TEA_PETICION: 'Lyzbri principal (6374004)', TEA_TUTELA: 'Lyzbri principal (6374004)', TEA_DESACATO: 'Lyzbri principal (6374004)',
+      TEA_REVISION_TUTELA: 'Escenario manual TEA (revisión tutela negada)',
+      TEA_IMPUGNACION: 'Escenario manual TEA (impugnación fallo tutela)',
+      TEA_DESACATO_MANUAL: 'Escenario manual TEA (desacato con acompañamiento)',
       DOC_HD_SUPLANTACION: 'Documentos directos', DOC_HD_DATOS_INCORRECTOS: 'Documentos directos',
       DOC_HD_OBLIGACION_NO_RECONOCIDA: 'Documentos directos', DOC_HD_CASO_INCIERTO: 'Documentos directos',
       DOC_TEA_DENUNCIA_DEPORTIVA: 'Documentos directos',
@@ -2421,8 +2424,21 @@
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL', make_route: 'TEA_DESACATO',
         form_key: 'tea-desacato', submit: 'guardar-formulario', servicio_lyzbri: 'desacato' },
       'TEA|DESACATO_ACOMPANAMIENTO': { nombre: 'Incidente de desacato con acompañamiento de abogada', price: 600000,
-        processing_mode: 'SERVICIO_MIXTO', delivery_type: 'ENLACE_GOOGLE_DOC_EMAIL + AVISO_ABOGADA', make_route: 'TEA_DESACATO',
-        form_key: 'tea-desacato', submit: 'guardar-formulario', servicio_lyzbri: 'desacato' },
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'ENTREGA_MANUAL_EMAIL', make_route: 'TEA_DESACATO_MANUAL',
+        form_key: null, submit: null, servicio_lyzbri: 'desacato',
+        cta: 'Continuar al pago seguro — $600.000' },
+      'TEA|REVISION_TUTELA_NEGADA': { nombre: 'Tu caso requiere revisión manual de nuestra abogada', price: 600000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'CORREO_INSTRUCCIONES + REVISION_ABOGADA', make_route: 'TEA_REVISION_TUTELA',
+        form_key: null, submit: null, servicio_lyzbri: 'tea_discapacidad',
+        cta: 'Continuar al pago seguro — $600.000' },
+      'TEA|IMPUGNACION_FALLO': { nombre: 'Impugnación del fallo de tutela', price: 600000,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'CARGA_FILLOUT + REVISION_URGENTE', make_route: 'TEA_IMPUGNACION',
+        form_key: null, submit: null, servicio_lyzbri: 'tea_discapacidad',
+        cta: 'Continuar al pago seguro — $600.000' },
+      'TEA|TUTELA_PREVIA_EN_TRAMITE': { nombre: 'Tutela previa en trámite (orientación gratuita)', price: 0,
+        processing_mode: 'EVALUACION_HUMANA', delivery_type: 'LEAD_CONTACTO', make_route: 'MANUAL_REVIEW',
+        form_key: null, submit: null, servicio_lyzbri: 'tea_discapacidad',
+        cta: 'Volver al inicio' },
       'TEA|DENUNCIA_DEPORTIVA': { nombre: 'Escrito de denuncia', price: 229000,
         processing_mode: 'DOCUMENTO_AUTOMATICO', delivery_type: 'WORD_ADJUNTO_EMAIL + ANEXO', make_route: 'DOC_TEA_DENUNCIA_DEPORTIVA',
         form_key: 'tea-denuncia-deportiva', submit: 'enviar-documento', servicio_lyzbri: 'tea_discapacidad' }
@@ -2442,6 +2458,14 @@
       CATALOGO[k].service_code = k.split('|')[0];
       CATALOGO[k].case_type = k.split('|')[1];
     });
+
+    // Función auxiliar para determinar el estado efectivo en TEA (§6.2, F3)
+    function estadoTeaEfectivo(a) {
+      if (a && (a.tutela_previa === 'si' || a.tutela_previa === true) && a.tutela_previa_resultado === 'favor_incumplida') {
+        return 'tutela_incumplida';
+      }
+      return a ? a.tea_estado : null;
+    }
 
     // Opción del wizard -> producto del catálogo. null = opción sin producto definido.
     var HD_CASE_TYPE = { 'pago': 'PAGO_HISTORICO', 'suplantacion': 'SUPLANTACION', 'datos': 'DATOS_INCORRECTOS',
@@ -2492,9 +2516,30 @@
       }
       else if (servicio === 'marca') clave = 'MARCA|FORMULARIO_REGISTRO';
       else if (servicio === 'tea') {
-        if (a.tea_estado === 'tutela_incumplida') {
-          if (a.tea_modalidad) clave = 'TEA|DESACATO_' + a.tea_modalidad.toUpperCase();
-        } else if (TEA_CASE_TYPE[a.tea_estado]) clave = 'TEA|' + TEA_CASE_TYPE[a.tea_estado];
+        var estadoEf = estadoTeaEfectivo(a);
+        if (a && (a.tutela_previa === 'si' || a.tutela_previa === true)) {
+          var resTutela = a.tutela_previa_resultado;
+          if (resTutela === 'favor_incumplida') {
+            if (a.tea_modalidad) clave = 'TEA|DESACATO_' + a.tea_modalidad.toUpperCase();
+          } else if (resTutela === 'negada') {
+            var esImpug = a.es_impugnacion === true;
+            if (!esImpug && a.fecha_notificacion_fallo_tutela && typeof window.calcularTerminoImpugnacion === 'function') {
+              var term = window.calcularTerminoImpugnacion(a.fecha_notificacion_fallo_tutela);
+              if (term && term.aptoImpugnacion) esImpug = true;
+            }
+            clave = esImpug ? 'TEA|IMPUGNACION_FALLO' : 'TEA|REVISION_TUTELA_NEGADA';
+          } else if (resTutela === 'en_tramite') {
+            clave = 'TEA|TUTELA_PREVIA_EN_TRAMITE';
+          } else {
+            clave = null;
+          }
+        } else {
+          if (estadoEf === 'tutela_incumplida') {
+            if (a.tea_modalidad) clave = 'TEA|DESACATO_' + a.tea_modalidad.toUpperCase();
+          } else if (TEA_CASE_TYPE[estadoEf]) {
+            clave = 'TEA|' + TEA_CASE_TYPE[estadoEf];
+          }
+        }
       } else if (servicio === 'alimentos' && a.ali_tipo) {
         clave = 'ALIMENTOS|' + a.ali_tipo.toUpperCase() + '_' + (a.ali_modalidad || 'autogestion').toUpperCase();
       }
@@ -2508,10 +2553,19 @@
     function validarProducto(p) {
       var errores = [];
       if (!p) return { ok: false, errores: ['opción sin producto en el catálogo'] };
-      ['service_code', 'case_type', 'processing_mode', 'delivery_type', 'make_route', 'form_key', 'submit'].forEach(function (k) {
-        if (!p[k]) errores.push('falta ' + k);
+      var requeridos = ['service_code', 'case_type', 'processing_mode', 'delivery_type', 'make_route'];
+      if (p.delivery_type !== 'LEAD_CONTACTO' && p.form_key !== null) {
+        requeridos.push('form_key');
+        requeridos.push('submit');
+      }
+      requeridos.forEach(function (k) {
+        if (p[k] === undefined || p[k] === '') errores.push('falta ' + k);
       });
-      if (!(typeof p.price === 'number' && p.price > 0)) errores.push('precio inválido');
+      if (p.delivery_type === 'LEAD_CONTACTO') {
+        if (typeof p.price !== 'number' || p.price < 0) errores.push('precio inválido');
+      } else {
+        if (!(typeof p.price === 'number' && p.price > 0)) errores.push('precio inválido');
+      }
       if (p.processing_mode && MODOS_PROCESAMIENTO.indexOf(p.processing_mode) === -1) errores.push('modo inválido');
       if (p.make_route && !RUTAS_MAKE[p.make_route]) errores.push('ruta de Make inexistente: ' + p.make_route);
       if (p.form_key && !CAMPOS_DETALLADOS[p.form_key]) errores.push('formulario inexistente: ' + p.form_key);
@@ -2642,7 +2696,7 @@
             options: TEA_DATA[a.tea_area].estados.map(function (e) { return { value: e.value, label: e.label }; })
           });
         }
-        // Pregunta obligatoria de tutela previa (Condición C7 / Salvaguarda A2)
+        // Pregunta obligatoria de tutela previa (Condición C7 / Salvaguarda A2 / OT-O3 v2)
         if (a.tea_estado === 'peticion_sin_respuesta') {
           steps.push({
             id: 'tutela_previa', type: 'choice', q: '¿Has presentado previamente una acción de tutela por estos mismos hechos?',
@@ -2651,9 +2705,26 @@
               { value: 'si', label: 'Sí, ya había presentado una tutela previamente' }
             ]
           });
+          if (a.tutela_previa === 'si') {
+            steps.push({
+              id: 'tutela_previa_resultado', type: 'choice', q: '¿Cómo terminó esa tutela?',
+              options: [
+                { value: 'favor_incumplida', label: 'Me dieron la razón, pero no están cumpliendo el fallo' },
+                { value: 'negada', label: 'Me la negaron o la declararon improcedente' },
+                { value: 'en_tramite', label: 'Todavía no hay fallo' }
+              ]
+            });
+            if (a.tutela_previa_resultado === 'negada') {
+              steps.push({
+                id: 'fecha_notificacion_fallo_tutela', type: 'text',
+                q: '¿En qué fecha te notificaron el fallo por correo? (AAAA-MM-DD o deja vacío si no recuerdas):'
+              });
+            }
+          }
         }
         // Incidente de desacato: dos modalidades con precio distinto.
-        if (a.tea_estado === 'tutela_incumplida') {
+        var estadoEfSteps = estadoTeaEfectivo(a);
+        if (estadoEfSteps === 'tutela_incumplida') {
           steps.push({ id: 'tea_modalidad', type: 'choice', q: '¿Cómo quieres adelantar el incidente de desacato?', options: [
             { value: 'autogestion', label: 'Autogestión: recibo el documento listo para radicar (desde ' + formatCOP(PRECIOS_DESACATO.autogestion) + ')' },
             { value: 'acompanamiento', label: 'Con acompañamiento de abogada (desde ' + formatCOP(PRECIOS_DESACATO.acompanamiento) + ')' },
@@ -2758,23 +2829,53 @@
                   tier: 'A' };
       }
       if (servicio === 'tea') {
+        var prodResTea = resolverProducto(servicio, a);
+        if (a && (a.tutela_previa === 'si' || a.tutela_previa === true)) {
+          if (a.tutela_previa_resultado === 'negada') {
+            if (prodResTea && prodResTea.clave === 'TEA|IMPUGNACION_FALLO') {
+              return {
+                titulo: 'Impugnación del fallo de tutela',
+                descripcion: 'Revisión manual urgente del fallo por nuestra abogada y preparación de la impugnación dentro del término legal',
+                tier: 'B'
+              };
+            }
+            return {
+              titulo: 'Tu caso requiere revisión manual de nuestra abogada',
+              descripcion: 'Este diagnóstico incluye una revisión manual experta por parte de nuestra abogada especialista. Después del pago recibirás un correo con las instrucciones para enviarnos tu información y te responderemos en un máximo de 3 días hábiles',
+              tier: 'B'
+            };
+          }
+          if (a.tutela_previa_resultado === 'en_tramite') {
+            return {
+              titulo: 'Mientras tu tutela siga en trámite, no es procedente presentar otra por los mismos hechos.',
+              descripcion: 'Espera el fallo. Puedes descargar gratis la plantilla de impulso procesal para pedirle al juez que decida tu tutela.',
+              tier: 'A'
+            };
+          }
+        }
+
         var d = TEA_DATA[a.tea_area];
-        var nivel = TEA_NIVEL[a.tea_estado] || { tier: 'A', nombre: 'Derecho de petición' };
-        // Regla de Liza (29-sep): solo la tutela y el desacato con acompañamiento son
-        // "Evaluación + producto"; todo lo demás se nombra solo por el producto.
-        if (a.tea_estado === 'tutela_incumplida' && a.tea_modalidad === 'acompanamiento') nivel = { tier: nivel.tier, nombre: 'Evaluación + incidente de desacato' };
+        var estadoEf = estadoTeaEfectivo(a);
+        var nivel = TEA_NIVEL[estadoEf] || { tier: 'A', nombre: 'Derecho de petición' };
+        if (estadoEf === 'tutela_incumplida' && a.tea_modalidad === 'acompanamiento') {
+          nivel = { tier: nivel.tier, nombre: 'Incidente de desacato con acompañamiento de abogada' };
+        }
         var c = TEA_CONDICION[a.tea_condicion];
-        if (c && d && a.tea_estado && d.steps[a.tea_estado]) {
+        if (c && d && estadoEf && d.steps[estadoEf]) {
           var desc = 'Condición: ' + c.label + '. Área: ' + d.titulo + '. Normativa aplicable: ' + c.norma + '; ' + d.laws + '. ' + TEA_TRANSVERSAL + ' Servicio recomendado: ' + nivel.nombre + '.';
           if (a.tea_area === 'salud' && TEA_CATEGORIAS_2628.indexOf(a.tea_condicion) >= 0) {
             desc += ' El Certificado Único de Trastorno del Neurodesarrollo es voluntario y su ausencia no puede ser una barrera para acceder a servicios de salud.';
           }
           if (c.nota) desc += ' ' + c.nota;
-          var res = { titulo: d.steps[a.tea_estado].replace('{NORMA}', c.cita), descripcion: desc, tier: nivel.tier };
-          if (a.tea_estado === 'tutela_incumplida' && PRECIOS_DESACATO[a.tea_modalidad]) {
-            res.monto = PRECIOS_DESACATO[a.tea_modalidad];
-            res.descripcion += a.tea_modalidad === 'acompanamiento'
-              ? ' Modalidad: con acompañamiento de abogada.' : ' Modalidad: autogestión (documento listo para radicar).';
+          var res = { titulo: d.steps[estadoEf].replace('{NORMA}', c.cita), descripcion: desc, tier: nivel.tier };
+          if (estadoEf === 'tutela_incumplida') {
+            if (a.tea_modalidad === 'acompanamiento') {
+              res.monto = PRECIOS_DESACATO.acompanamiento;
+              res.descripcion += ' Modalidad: con acompañamiento de abogada. Después del pago recibirás un correo con un enlace seguro para cargar el fallo de tutela, las pruebas del incumplimiento y los anexos. Una abogada estudia tu caso y te contacta.';
+            } else if (PRECIOS_DESACATO[a.tea_modalidad]) {
+              res.monto = PRECIOS_DESACATO[a.tea_modalidad];
+              res.descripcion += ' Modalidad: autogestión (documento listo para radicar).';
+            }
           }
           return res;
         }
@@ -2920,9 +3021,35 @@
         delete wz.answers.cant_acreedores_exacto;
       }
       // Si cambia el área en TEA, se limpia el estado dependiente para no arrastrar una respuesta inválida.
-      if (stepId === 'tea_condicion') { delete wz.answers.tea_subtipo_nv; delete wz.answers.tea_area; delete wz.answers.tea_estado; delete wz.answers.tea_modalidad; }
-      if (stepId === 'tea_area') { delete wz.answers.tea_estado; delete wz.answers.tea_modalidad; }
-      if (stepId === 'tea_estado') { delete wz.answers.tea_modalidad; }
+      if (stepId === 'tea_condicion') {
+        delete wz.answers.tea_subtipo_nv;
+        delete wz.answers.tea_area;
+        delete wz.answers.tea_estado;
+        delete wz.answers.tea_modalidad;
+        delete wz.answers.tutela_previa;
+        delete wz.answers.tutela_previa_resultado;
+        delete wz.answers.fecha_notificacion_fallo_tutela;
+      }
+      if (stepId === 'tea_area') {
+        delete wz.answers.tea_estado;
+        delete wz.answers.tea_modalidad;
+        delete wz.answers.tutela_previa;
+        delete wz.answers.tutela_previa_resultado;
+        delete wz.answers.fecha_notificacion_fallo_tutela;
+      }
+      if (stepId === 'tea_estado') {
+        delete wz.answers.tea_modalidad;
+        delete wz.answers.tutela_previa;
+        delete wz.answers.tutela_previa_resultado;
+        delete wz.answers.fecha_notificacion_fallo_tutela;
+      }
+      if (stepId === 'tutela_previa') {
+        delete wz.answers.tutela_previa_resultado;
+        delete wz.answers.fecha_notificacion_fallo_tutela;
+      }
+      if (stepId === 'tutela_previa_resultado') {
+        delete wz.answers.fecha_notificacion_fallo_tutela;
+      }
       wz.stepIndex += 1;
       renderStep();
     }
@@ -2966,6 +3093,11 @@
       var esInsolvencia = (wz.servicio === 'deudas');
       if (esInsolvencia && (!correo || !correo.includes('@') || !correo.includes('.'))) {
         alert('Para avanzar con tu trámite de insolvencia y recibir el listado oficial de documentos de tu régimen, el correo electrónico es obligatorio.');
+        return;
+      }
+      var esNegada = (wz.servicio === 'tea' && wz.answers && wz.answers.tutela_previa_resultado === 'negada');
+      if (esNegada && (!correo || !correo.includes('@') || !correo.includes('.'))) {
+        alert('Para enviarte las instrucciones y la respuesta jurídica de tu revisión, el correo electrónico es obligatorio.');
         return;
       }
       wz.answers.nombre = nombre;
@@ -3027,7 +3159,7 @@
 
       var reference = wz.servicio + '-' + Date.now();
       var servicioLyzbri = validacion.ok ? producto.servicio_lyzbri : (SERVICIO_A_HUBSPOT[wz.servicio] || wz.servicio);
-      var servicioForm = validacion.ok ? producto.form_key : wz.servicio;
+      var servicioForm = validacion.ok ? (producto.form_key || producto.clave) : wz.servicio;
 
       if (esInsolvencia) {
         if (esContacto) {
@@ -3107,28 +3239,43 @@
         }
       } else {
         // Otros servicios: Hábeas Data, Alimentos, TEA, Marca
-        if (precioLabelEl) precioLabelEl.textContent = 'Precio del servicio';
-        if (precioValorEl) {
-          precioValorEl.textContent = formatCOP(monto);
-          precioValorEl.style.fontSize = '1.65rem';
-          precioValorEl.style.color = '#1e3a8a';
-        }
-        if (precioSubEl) precioSubEl.textContent = 'Pesos Colombianos (COP)';
-        if (acreedoresDetalle) acreedoresDetalle.style.display = 'none';
-        if (contactoDetalle) contactoDetalle.style.display = 'none';
-        if (bannerPausa) bannerPausa.style.display = 'none';
-        if (pagoNota) pagoNota.style.display = 'block';
+        if (producto && producto.clave === 'TEA|TUTELA_PREVIA_EN_TRAMITE') {
+          if (precioContainer) precioContainer.style.display = 'none';
+          if (acreedoresDetalle) acreedoresDetalle.style.display = 'none';
+          if (pagoNota) pagoNota.style.display = 'none';
+          if (payBtn) payBtn.style.display = 'none';
+          if (contactoDetalle) {
+            contactoDetalle.style.display = 'block';
+            contactoDetalle.innerHTML = '<div style="margin-top:14px;padding:16px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;">' +
+              '<p style="margin:0 0 12px;font-size:0.95rem;color:#334155;line-height:1.5;">Mientras tu tutela se encuentre en trámite, no es procedente radicar una nueva acción por los mismos hechos. Para solicitar al juzgado que emita el fallo dentro de los términos legales, puedes descargar gratis nuestra plantilla editable de impulso procesal:</p>' +
+              '<a href="descargas/plantilla-impulso-procesal-tutela-lyzbri.docx" download="Plantilla_Impulso_Procesal_Tutela_Lyzbri.docx" class="btn btn-primary" style="display:inline-block;margin-bottom:10px;text-decoration:none;">Descargar plantilla Word gratis</a><br>' +
+              '<a href="/" class="btn" style="display:inline-block;background:#64748b;color:#ffffff;text-decoration:none;font-size:0.9rem;padding:8px 16px;border-radius:6px;">Volver al inicio</a>' +
+              '</div>';
+          }
+        } else {
+          if (precioLabelEl) precioLabelEl.textContent = 'Precio del servicio';
+          if (precioValorEl) {
+            precioValorEl.textContent = formatCOP(monto);
+            precioValorEl.style.fontSize = '1.65rem';
+            precioValorEl.style.color = '#1e3a8a';
+          }
+          if (precioSubEl) precioSubEl.textContent = 'Pesos Colombianos (COP)';
+          if (acreedoresDetalle) acreedoresDetalle.style.display = 'none';
+          if (contactoDetalle) contactoDetalle.style.display = 'none';
+          if (bannerPausa) bannerPausa.style.display = 'none';
+          if (pagoNota) pagoNota.style.display = 'block';
 
-        payBtn.style.display = 'inline-block';
-        payBtn.textContent = (producto.cta ? producto.cta : 'Continuar al pago') + ' — ' + formatCOP(monto);
-        var extraPagoOtros = wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : null;
-        payBtn.href = '#pago';
-        payBtn.target = '_self';
-        payBtn.dataset.retorno = urlRetornoPago(reference, servicioForm, extraPagoOtros);
-        payBtn.onclick = function (e) {
-          e.preventDefault();
-          ejecutarPagoSeguro(extraPagoOtros);
-        };
+          payBtn.style.display = 'inline-block';
+          payBtn.textContent = (producto.cta ? producto.cta : 'Continuar al pago') + ' — ' + formatCOP(monto);
+          var extraPagoOtros = wz.servicio === 'alimentos' ? { tipo: wz.answers.ali_tipo } : null;
+          payBtn.href = '#pago';
+          payBtn.target = '_self';
+          payBtn.dataset.retorno = urlRetornoPago(reference, servicioForm, extraPagoOtros);
+          payBtn.onclick = function (e) {
+            e.preventDefault();
+            ejecutarPagoSeguro(extraPagoOtros);
+          };
+        }
       }
 
       function ejecutarPagoSeguro(extraPayload) {
@@ -3153,7 +3300,7 @@
 
       var alertaTutela = document.getElementById('resultado-alerta-tutela');
       if (alertaTutela) {
-        alertaTutela.style.display = (wz.answers.tutela_previa === 'si') ? 'block' : 'none';
+        alertaTutela.style.display = 'none';
       }
 
       try {
@@ -3183,6 +3330,26 @@
       if (wz.servicio === 'alimentos') {
         respuestasParaHubspot.tipo_solicitud_alimentos = wz.answers.ali_tipo;
         respuestasParaHubspot.modalidad_servicio = wz.answers.ali_modalidad || 'autogestion';
+      }
+      if (wz.answers.tutela_previa) {
+        respuestasParaHubspot.tutela_previa = wz.answers.tutela_previa;
+      }
+      if (wz.answers.tutela_previa_resultado) {
+        respuestasParaHubspot.tutela_previa_resultado = wz.answers.tutela_previa_resultado;
+        if (wz.answers.tutela_previa_resultado === 'favor_incumplida') {
+          respuestasParaHubspot.tea_estado = 'tutela_incumplida';
+        }
+      }
+      if (wz.answers.fecha_notificacion_fallo_tutela) {
+        respuestasParaHubspot.fecha_notificacion_fallo_tutela = wz.answers.fecha_notificacion_fallo_tutela;
+      }
+      if (wz.answers.fecha_vencimiento_impugnacion) {
+        respuestasParaHubspot.fecha_vencimiento_impugnacion = wz.answers.fecha_vencimiento_impugnacion;
+      } else if (wz.answers.fecha_notificacion_fallo_tutela && typeof window.calcularTerminoImpugnacion === 'function') {
+        var termCalc = window.calcularTerminoImpugnacion(wz.answers.fecha_notificacion_fallo_tutela);
+        if (termCalc && termCalc.fechaVencimiento) {
+          respuestasParaHubspot.fecha_vencimiento_impugnacion = termCalc.fechaVencimiento;
+        }
       }
       ['tea_subtipo_nv', 'tea_modalidad', 'ali_tipo', 'ali_rol', 'ali_modalidad'].forEach(function (k) { delete respuestasParaHubspot[k]; });
       if (validacion.ok && producto.sub_caso) respuestasParaHubspot.sub_caso = producto.sub_caso;
@@ -3868,6 +4035,12 @@
               '<p style="font-size:0.85rem;margin:10px 0 0;color:#6b7c96;">¿Dudas? Contáctanos directamente por WhatsApp con tu radicado: <a href="' + (nInfo.enlaceWhatsapp || 'https://wa.me/573115872929') + '" target="_blank" rel="noopener">Soporte WhatsApp</a>.</p>' +
               '</div>';
             estado.innerHTML = listadoHtml;
+          } else if (r && r.revisionManual === true) {
+            estado.innerHTML = '<div style="margin-top:16px;padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;text-align:left;color:#166534;">' +
+              '<h4 style="margin:0 0 8px;color:#14532d;">¡Recibimos tu información!</h4>' +
+              '<p style="margin:0 0 8px;font-size:0.95rem;line-height:1.5;">Hemos registrado los datos de tu caso bajo el radicado <b>' + (r.radicado || referencia) + '</b>. Tu solicitud pasará a revisión manual experta por parte de nuestra abogada.</p>' +
+              '<p style="margin:0;font-size:0.9rem;line-height:1.4;">Te responderemos a tu correo en un plazo máximo de 3 días hábiles.</p>' +
+              '</div>';
           } else {
             estado.textContent = 'Listo. Recibimos tu información y en breve te enviaremos el documento a tu correo.';
           }
@@ -3886,6 +4059,43 @@
       cont.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
+    function mostrarPantallaPostPagoManual(claveProducto, radicado, correo) {
+      var av0 = document.getElementById('aviso-pago');
+      var cont = document.getElementById('formulario-detallado-container');
+      if (cont) cont.style.display = 'none';
+      if (!av0) return;
+      av0.style.display = 'block';
+      var correoTxt = correo || 'tu correo registrado';
+      var radTxt = radicado || 'tu radicado';
+
+      if (claveProducto === 'TEA|REVISION_TUTELA_NEGADA') {
+        av0.innerHTML = '<h3 style="color:#102a4c;margin-bottom:12px;">¡Recibimos tu pago!</h3>' +
+          '<p style="font-size:1.05rem;line-height:1.6;color:#1e293b;">' +
+          'Recibimos tu pago. Te enviamos un correo a <strong>' + correoTxt + '</strong> con las instrucciones para enviarnos tu información y el fallo a <strong>contacto@lyzbri.com</strong>, citando tu radicado <strong>' + radTxt + '</strong>. Te responderemos en un máximo de 3 días hábiles desde que recibamos tu información completa. Si no ves el correo, revisa tu carpeta de spam.' +
+          '</p>' +
+          '<div style="margin-top:16px;"><a href="/" class="btn btn-primary" style="display:inline-block;text-decoration:none;">Volver al inicio</a></div>';
+      } else if (claveProducto === 'TEA|IMPUGNACION_FALLO') {
+        av0.innerHTML = '<h3 style="color:#102a4c;margin-bottom:12px;">¡Recibimos tu pago!</h3>' +
+          '<p style="font-size:1.05rem;line-height:1.6;color:#1e293b;">' +
+          'Recibimos tu pago para la impugnación del fallo de tutela bajo el radicado <strong>' + radTxt + '</strong>. Te enviamos un correo a <strong>' + correoTxt + '</strong> con las instrucciones para cargar el fallo y los soportes correspondientes de inmediato para proceder con la revisión urgente antes del vencimiento del término legal.' +
+          '</p>' +
+          '<div style="margin-top:16px;"><a href="/" class="btn btn-primary" style="display:inline-block;text-decoration:none;">Volver al inicio</a></div>';
+      } else if (claveProducto === 'TEA|DESACATO_ACOMPANAMIENTO') {
+        av0.innerHTML = '<h3 style="color:#102a4c;margin-bottom:12px;">¡Recibimos tu pago!</h3>' +
+          '<p style="font-size:1.05rem;line-height:1.6;color:#1e293b;">' +
+          'Recibimos tu pago para el incidente de desacato con acompañamiento de abogada bajo el radicado <strong>' + radTxt + '</strong>. Te enviamos un correo a <strong>' + correoTxt + '</strong> con las instrucciones para cargar el fallo de tutela y las pruebas del incumplimiento. Una abogada estudiará tu caso y te contactará.' +
+          '</p>' +
+          '<div style="margin-top:16px;"><a href="/" class="btn btn-primary" style="display:inline-block;text-decoration:none;">Volver al inicio</a></div>';
+      } else {
+        av0.innerHTML = '<h3 style="color:#102a4c;margin-bottom:12px;">¡Recibimos tu pago!</h3>' +
+          '<p style="font-size:1.05rem;line-height:1.6;color:#1e293b;">' +
+          'Recibimos tu pago bajo el radicado <strong>' + radTxt + '</strong>. Te enviamos un correo a <strong>' + correoTxt + '</strong> con las instrucciones correspondientes.' +
+          '</p>' +
+          '<div style="margin-top:16px;"><a href="/" class="btn btn-primary" style="display:inline-block;text-decoration:none;">Volver al inicio</a></div>';
+      }
+      av0.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     // Autocomprobación: cualquier producto del catálogo incompleto se reporta en consola.
     Object.keys(CATALOGO).forEach(function (k) {
       var v = validarProducto(CATALOGO[k]);
@@ -3898,6 +4108,22 @@
         var referencia = params.get('referencia');
         var servicio = params.get('servicio');
         var boldOrderId = params.get('bold-order-id'); // Bold lo agrega solo en un retorno real de pago
+        var casoGuardado = null;
+        try {
+          if (referencia) {
+            casoGuardado = JSON.parse(localStorage.getItem('lyzbri_caso_' + referencia) || 'null');
+          }
+        } catch (e) {}
+
+        // Verificar si es un producto de revisión manual sin formulario guiado
+        var prodClaveLocal = (casoGuardado && casoGuardado.producto) || (servicio && CATALOGO[servicio] ? servicio : null);
+        var esManualLocal = prodClaveLocal && CATALOGO[prodClaveLocal] && CATALOGO[prodClaveLocal].form_key === null;
+
+        if (esManualLocal && !boldOrderId) {
+          mostrarPantallaPostPagoManual(prodClaveLocal, referencia, casoGuardado && casoGuardado.answers && casoGuardado.answers.correo);
+          return;
+        }
+
         if (!referencia || !servicio) {
           // Respaldo: si la URL no trae los parámetros (p. ej. la pasarela los reescribió),
           // se busca el último caso guardado en localStorage antes de salir a pagar.
@@ -3908,13 +4134,23 @@
                 var caso = JSON.parse(localStorage.getItem(k));
                 referencia = referencia || caso.referencia;
                 servicio = servicio || caso.servicio;
+                if (!casoGuardado) casoGuardado = caso;
               }
             }
           } catch (e) {}
         }
 
+        if (esManualLocal) {
+          mostrarPantallaPostPagoManual(prodClaveLocal, referencia, casoGuardado && casoGuardado.answers && casoGuardado.answers.correo);
+          return;
+        }
+
         if (!servicio || !CAMPOS_DETALLADOS[servicio]) {
-          var av0 = document.getElementById('aviso-pago'); if (av0) av0.style.display = 'block';
+          if (prodClaveLocal && CATALOGO[prodClaveLocal] && CATALOGO[prodClaveLocal].form_key === null) {
+            mostrarPantallaPostPagoManual(prodClaveLocal, referencia, casoGuardado && casoGuardado.answers && casoGuardado.answers.correo);
+          } else {
+            var av0 = document.getElementById('aviso-pago'); if (av0) av0.style.display = 'block';
+          }
         } else if (boldOrderId) {
           // Retorno real de Bold: re-validar en el servidor antes de mostrar el
           // formulario -- nunca confiar solo en el parámetro de la URL.
@@ -3929,6 +4165,14 @@
                 // ("tea"). Si HubSpot no devolvió servicio (advertencia de token
                 // no configurado), se usa el que ya traía la URL como respaldo.
                 var prodPagado = data.serviceCode && data.caseType ? CATALOGO[data.serviceCode + '|' + data.caseType] : null;
+                if (prodPagado && prodPagado.form_key === null) {
+                  mostrarPantallaPostPagoManual(
+                    prodPagado.clave || (data.serviceCode + '|' + data.caseType),
+                    data.referenciaPago || referencia,
+                    data.correo || (casoGuardado && casoGuardado.answers && casoGuardado.answers.correo)
+                  );
+                  return;
+                }
                 var svcFinal = (prodPagado && prodPagado.form_key) || (data.servicio && SERVICIO_DESDE_HUBSPOT[data.servicio]) || servicio;
                 mostrarFormularioDetallado(svcFinal, data.referenciaPago || referencia || 'sin-referencia', data.tipoAlimentos || params.get('tipo'));
               } else if (contVal && (data.status === 'PENDING' || data.status === 'PROCESSING')) {
@@ -3941,7 +4185,11 @@
               // La función de validación todavía no está desplegada / no responde:
               // se cae al modo de confianza en la URL, igual que antes de tener
               // el backend conectado, para no dejar al cliente sin formulario.
-              mostrarFormularioDetallado(servicio, referencia || 'sin-referencia', params.get('tipo'));
+              if (prodClaveLocal && CATALOGO[prodClaveLocal] && CATALOGO[prodClaveLocal].form_key === null) {
+                mostrarPantallaPostPagoManual(prodClaveLocal, referencia, casoGuardado && casoGuardado.answers && casoGuardado.answers.correo);
+              } else {
+                mostrarFormularioDetallado(servicio, referencia || 'sin-referencia', params.get('tipo'));
+              }
             });
         } else {
           // Sin ?bold-order-id=: no viene de un pago real -- es una visita de prueba

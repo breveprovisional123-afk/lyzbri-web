@@ -4,6 +4,7 @@
 
 const { PRECIOS, REFERENCIA_VALIDA, llaves, firma } = require('./lib/bold-pago');
 const { calcularPrecioInsolvencia } = require('./lib/insolvencia');
+const { calcularTerminoImpugnacion } = require('./lib/dias-habiles');
 
 const SKUS_CHECKOUT_ONLINE_DEUDAS = new Set([
   'DEUDAS|INSOLV_DIAG_NAT',
@@ -92,6 +93,43 @@ exports.handler = async (event) => {
           ok: false,
           reason: 'seguimiento_requiere_caso_previo_verificado',
           message: 'El servicio de seguimiento requiere un trámite o acuerdo de insolvencia previo verificado.'
+        })
+      };
+    }
+  }
+
+  // Proteccion X-05: TEA|IMPUGNACION_FALLO requiere termino legal suficiente (hasta 2do dia habil)
+  if (clave === 'TEA|IMPUGNACION_FALLO') {
+    let fechaNotif = payload.fechaNotificacion || payload.fecha_notificacion;
+    if (!fechaNotif && process.env.HUBSPOT_PRIVATE_APP_TOKEN) {
+      try {
+        const hsCheck = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.HUBSPOT_PRIVATE_APP_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referencia }] }],
+            properties: ['fecha_notificacion_fallo_tutela']
+          })
+        });
+        const hsRes = await hsCheck.json();
+        const contact = hsRes.results && hsRes.results[0];
+        if (contact && contact.properties && contact.properties.fecha_notificacion_fallo_tutela) {
+          fechaNotif = contact.properties.fecha_notificacion_fallo_tutela;
+        }
+      } catch (_) {}
+    }
+
+    const termino = calcularTerminoImpugnacion(fechaNotif);
+    if (!termino.ok || !termino.aptoImpugnacion) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          ok: false,
+          reason: 'termino_insuficiente',
+          message: 'El término legal para preparar y presentar la impugnación es insuficiente o ya ha vencido (se requiere como mínimo 24 horas hábiles antes del vencimiento).'
         })
       };
     }

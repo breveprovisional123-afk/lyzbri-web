@@ -147,7 +147,7 @@ async function procesarPago(ev, referencia) {
       method: 'POST', headers: H,
       body: JSON.stringify({
         filterGroups: [{ filters: [{ propertyName: 'referencia_pago', operator: 'EQ', value: referencia }] }],
-        properties: ['referencia_pago', 'pago_confirmado', 'lyzbri_service_code', 'lyzbri_case_type', 'cant_acreedores'],
+        properties: ['referencia_pago', 'pago_confirmado', 'lyzbri_service_code', 'lyzbri_case_type', 'cant_acreedores', 'email', 'firstname', 'nombre_completo', 'phone', 'fecha_vencimiento_impugnacion'],
         limit: 2
       })
     });
@@ -245,6 +245,82 @@ async function procesarPago(ev, referencia) {
       }));
       return false;
     }
+
+    // Disparo a Make para casos manuales de TEA (W1-W4, X-06, DA-3)
+    if (serviceCode === 'TEA') {
+      let makeRuta = null;
+      let prioridad = null;
+      let fechaVencimiento = null;
+
+      if (caseType === 'REVISION_TUTELA_NEGADA') {
+        makeRuta = 'TEA_REVISION_TUTELA';
+      } else if (caseType === 'IMPUGNACION_FALLO') {
+        makeRuta = 'TEA_IMPUGNACION';
+        prioridad = 'URGENTE';
+        fechaVencimiento = props.fecha_vencimiento_impugnacion || '';
+      } else if (caseType === 'DESACATO_ACOMPANAMIENTO') {
+        makeRuta = 'TEA_DESACATO_MANUAL';
+      }
+
+      if (makeRuta) {
+        const emailDestino = props.email || (ev.data && (ev.data.payer_email || (ev.data.customer && ev.data.customer.email)));
+        const nombreCliente = props.nombre_completo || props.firstname || (ev.data && ev.data.customer && ev.data.customer.name) || '';
+        const telefonoCliente = props.phone || (ev.data && ev.data.customer && ev.data.customer.phone_number) || '';
+
+        if (!emailDestino) {
+          await alertar(referencia, JSON.stringify({
+            clasificación: 'revision_tea_sin_correo',
+            referencia,
+            service_code: serviceCode,
+            case_type: caseType
+          }));
+        }
+
+        const makePayload = {
+          ruta: makeRuta,
+          referencia,
+          email: emailDestino || '',
+          nombre: nombreCliente,
+          telefono: telefonoCliente
+        };
+        if (prioridad) makePayload.prioridad = prioridad;
+        if (fechaVencimiento) makePayload.fecha_vencimiento = fechaVencimiento;
+
+        const teaWebhookUrl = process.env.MAKE_TEA_REVISION_WEBHOOK_URL;
+        if (teaWebhookUrl) {
+          try {
+            const makeRes = await fetch(teaWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(makePayload)
+            });
+            if (!makeRes.ok) {
+              await alertar(referencia, JSON.stringify({
+                clasificación: 'make_revision_tea_no_disparado',
+                status: makeRes.status,
+                referencia,
+                ruta: makeRuta
+              }));
+            }
+          } catch (errMake) {
+            await alertar(referencia, JSON.stringify({
+              clasificación: 'make_revision_tea_no_disparado',
+              error: errMake.message,
+              referencia,
+              ruta: makeRuta
+            }));
+          }
+        } else {
+          await alertar(referencia, JSON.stringify({
+            clasificación: 'make_revision_tea_no_disparado',
+            motivo: 'MAKE_TEA_REVISION_WEBHOOK_URL_no_configurada',
+            referencia,
+            ruta: makeRuta
+          }));
+        }
+      }
+    }
+
     return true;
   } catch (e) {
     await alertar(referencia, 'Bold aprobó un pago pero falló el registro en HubSpot: ' + e.message);
