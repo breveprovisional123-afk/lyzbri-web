@@ -45,6 +45,28 @@ async function fetchHubSpotConDegradacion(url, options, props) {
   return { res, degradado: false, rechazadas: [], errText: null };
 }
 
+async function alertar(referencia, error, datosAdicionales) {
+  const url = process.env.MAKE_DOCUMENTOS_WEBHOOK_URL || process.env.MAKE_ALIMENTOS_WEBHOOK_URL || process.env.MAKE_WEBHOOK_URL;
+  if (!url) return false;
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ruta: 'MANUAL_REVIEW',
+        service_code: 'CREAR_CASO',
+        referencia: referencia,
+        error: error,
+        datos: datosAdicionales,
+        correo_notificacion: process.env.LYZBRI_NOTIFY_EMAIL || 'contacto@lyzbri.com'
+      })
+    });
+    return r.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ ok: false, reason: 'method_not_allowed' }) };
@@ -85,7 +107,7 @@ exports.handler = async (event) => {
     'tea_estado', 'subtipo_no_visible_tea', 'sub_caso', 'nombre_completo', 'tipo_solicitud_alimentos', 'modalidad_servicio',
     'lyzbri_service_code', 'lyzbri_case_type', 'lyzbri_processing_mode', 'lyzbri_delivery_type',
     'lyzbri_make_route', 'cant_acreedores', 'p1_perfil', 'p2_situacion', 'p3_objetivo', 'regimen_insolvencia',
-    'relacion_acreedores_insolvencia', 'estado_caso_insolvencia'
+    'relacion_acreedores_insolvencia', 'estado_caso_insolvencia', 'acepta_alcance_preliminar'
   ];
 
   if (respuestasWizard && typeof respuestasWizard === 'object') {
@@ -157,18 +179,132 @@ exports.handler = async (event) => {
       }
     }
 
-    // 2. Si hay correo, intentar upsert por email con degradación controlada
+    // 2. Si hay correo, verificar si ya existe un contacto y si tiene un caso abierto
     if (correo) {
-      const upsertRet = await fetchHubSpotConDegradacion(
-        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email`,
-        {
-          method: 'PATCH',
-          headers: H,
-          body: JSON.stringify({ properties })
-        },
-        properties
+      const getContactRes = await fetch(
+        `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(correo)}?idProperty=email&properties=email,firstname,lastname,referencia_pago,pago_confirmado,estado_caso_insolvencia,estado_revision,servicio_lyzbri,servicio_comprado,lyzbri_case_type,hechos_completos`,
+        { method: 'GET', headers: H }
       );
-      if (upsertRet.res.status === 404) {
+
+      if (getContactRes.ok) {
+        const contactData = await getContactRes.json();
+        const prevProps = contactData.properties || {};
+        const prevRef = prevProps.referencia_pago;
+
+        // Si ya tiene este mismo radicado, es el mismo caso (idempotencia)
+        if (prevRef && prevRef === referenciaPago) {
+          const patchRet = await fetchHubSpotConDegradacion(
+            `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contactData.id)}`,
+            {
+              method: 'PATCH',
+              headers: H,
+              body: JSON.stringify({ properties })
+            },
+            properties
+          );
+          if (!patchRet.res.ok) {
+            const errText = patchRet.errText || await patchRet.res.text();
+            return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
+          }
+          return {
+            statusCode: 200,
+            body: JSON.stringify({
+              ok: true,
+              creado: false,
+              deduplicado: true,
+              id: contactData.id,
+              degradado: patchRet.degradado,
+              propiedades_omitidas: patchRet.rechazadas
+            })
+          };
+        }
+
+        // Si existe un radicado previo DIFERENTE, verificar si el caso anterior está pagado y aún en curso
+        if (prevRef && prevRef !== referenciaPago) {
+          const pagoConfirmado = String(prevProps.pago_confirmado).toLowerCase() === 'true';
+
+          if (pagoConfirmado) {
+            // Criterios de reauditoría Cowork (13 oct 2026):
+            // 1. Identificar insolvencia exclusivamente cuando lyzbri_case_type empieza por INSOLV_ (no por servicio_lyzbri = deudas).
+            const esInsolvenciaPrev = Boolean(prevProps.lyzbri_case_type && String(prevProps.lyzbri_case_type).startsWith('INSOLV_'));
+
+            let casoEnCurso = false;
+            if (esInsolvenciaPrev) {
+              // 2. Para insolvencia, considerar entregado un caso cuyo estado_caso_insolvencia sea ENTREGADO o CERRADO
+              const entregado = ['ENTREGADO', 'CERRADO', 'ENTREGA_SERVICIO'].includes(prevProps.estado_caso_insolvencia);
+              casoEnCurso = !entregado;
+            } else {
+              // 3. Para servicios automáticos, considerar en curso únicamente cuando hechos_completos no sea 'true',
+              // o estado_revision sea MANUAL_REVIEW o ERROR_ENTREGA. Un caso con hechos_completos = true y
+              // ENVIADO_A_MAKE o estado vacío permite una nueva compra.
+              const hechosIncompletos = String(prevProps.hechos_completos).toLowerCase() !== 'true';
+              const enRevisionCritica = ['MANUAL_REVIEW', 'ERROR_ENTREGA'].includes(prevProps.estado_revision);
+              casoEnCurso = hechosIncompletos || enRevisionCritica;
+            }
+
+            if (casoEnCurso) {
+              const detalleAlerta = `Intento de nueva compra (${servicio || properties.servicio_lyzbri}, nuevo radicado: ${referenciaPago}) para correo con caso anterior en curso no entregado (radicado anterior: ${prevRef}, servicio anterior: ${prevProps.servicio_lyzbri || prevProps.servicio_comprado || 'N/A'}, tipo: ${esInsolvenciaPrev ? 'insolvencia' : 'automatico'}, estado_insolv: ${prevProps.estado_caso_insolvencia || 'N/A'}, estado_rev: ${prevProps.estado_revision || 'N/A'}, hechos_completos: ${prevProps.hechos_completos}). Se bloqueó la sobrescritura y se derivó a MANUAL_REVIEW.`;
+
+              await alertar(referenciaPago, detalleAlerta, {
+                correo,
+                radicado_anterior: prevRef,
+                radicado_nuevo: referenciaPago,
+                servicio_anterior: prevProps.servicio_lyzbri || prevProps.servicio_comprado,
+                servicio_nuevo: servicio || properties.servicio_lyzbri,
+                contacto_id: contactData.id,
+                pago_confirmado_anterior: prevProps.pago_confirmado,
+                hechos_completos_anterior: prevProps.hechos_completos,
+                estado_revision_anterior: prevProps.estado_revision,
+                estado_insolv_anterior: prevProps.estado_caso_insolvencia
+              });
+
+              return {
+                statusCode: 409,
+                body: JSON.stringify({
+                  ok: false,
+                  reason: 'caso_abierto_existente',
+                  bloqueado_por_caso_abierto: true,
+                  mensaje: 'Existe un caso en curso con pago confirmado asociado a este correo electrónico. Por favor contáctanos por WhatsApp para gestionar tu nuevo requerimiento sin afectar tu caso actual.',
+                  whatsapp_url: 'https://wa.me/573115872929',
+                  contacto_id: contactData.id,
+                  radicado_anterior: prevRef,
+                  radicado_nuevo: referenciaPago
+                })
+              };
+            }
+          }
+          // Si el caso anterior no está pagado, o ya fue entregado efectivamente, permitir
+          // que la nueva cotización/compra actualice el caso conforme al comportamiento esperado.
+        }
+
+        // Si el contacto existe pero NO tiene un caso abierto previo (p. ej. lead sin pagar o radicado vacío),
+        // se actualiza de forma segura
+        const patchRet = await fetchHubSpotConDegradacion(
+          `https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(contactData.id)}`,
+          {
+            method: 'PATCH',
+            headers: H,
+            body: JSON.stringify({ properties })
+          },
+          properties
+        );
+        if (!patchRet.res.ok) {
+          const errText = patchRet.errText || await patchRet.res.text();
+          return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
+        }
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            ok: true,
+            creado: false,
+            degradado: patchRet.degradado,
+            propiedades_omitidas: patchRet.rechazadas
+          })
+        };
+      }
+
+      if (getContactRes.status === 404) {
+        // Contacto nuevo: creación con POST
         const createRet = await fetchHubSpotConDegradacion(
           'https://api.hubapi.com/crm/v3/objects/contacts',
           {
@@ -192,19 +328,9 @@ exports.handler = async (event) => {
           })
         };
       }
-      if (!upsertRet.res.ok) {
-        const errText = upsertRet.errText || await upsertRet.res.text();
-        return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_update_failed', detail: errText }) };
-      }
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          ok: true,
-          creado: false,
-          degradado: upsertRet.degradado,
-          propiedades_omitidas: upsertRet.rechazadas
-        })
-      };
+
+      const errText = await getContactRes.text();
+      return { statusCode: 502, body: JSON.stringify({ ok: false, reason: 'hubspot_lookup_failed', detail: errText }) };
     }
 
     // 3. Sin correo: creacion directa asegurando referencia_pago unica con degradacion controlada
